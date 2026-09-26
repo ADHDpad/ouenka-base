@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>応援歌BASE</title>
+
+    <!-- デザイン -->
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================
+         サイトタイトル
+    ====================================== -->
+
+    <h1>応援歌BASE</h1>
+
+    <p class="subtitle">
+        選手を検索して応援歌を再生
+    </p>
+
+
+
+    <!-- =====================================
+         選手検索エリア
+    ====================================== -->
+
+    <div class="player">
+
+        <h2>選手一覧</h2>
+
+
+        <!-- 検索ボックス -->
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="選手名を検索"
+            oninput="searchPlayers()"
+            autocomplete="off"
+        >
+
+
+
+        <!-- =================================
+             検索結果
+
+             search.js がここに
+
+             選手名
+             曲を再生
+             MIDIを出力
+             GarageBand ZIPを出力
+
+             を自動で作ります
+        ================================== -->
+
+        <div id="playerButtons"></div>
+
+
+
+        <!-- =================================
+             再生中の曲
+        ================================== -->
+
+        <div id="nowPlaying">
+            選手を検索してください
+        </div>
+
+
+
+        <!-- =================================
+             歌詞表示
+        ================================== -->
+
+        <div id="lyricsArea">
+
+            <h3 id="lyricsTitle"></h3>
+
+            <div id="lyrics"></div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- =====================================
+         JavaScript
+
+         順番が大事なので
+         players → player → search
+    ====================================== -->
+
+    <script src="players.js"></script>
+
+    <script src="player.js"></script>
+
+    <script src="search.js"></script>
+
+
+</body>
+
+</html>
