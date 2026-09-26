@@ -209,7 +209,7 @@ function showPlayerMenu(
         document.createElement("button");
 
     garageButton.textContent =
-        ""GarageBandファイル出力（iPhoneのみ）"";
+        "GarageBandファイル出力（iPhoneのみ）";
 
 
     garageButton.onclick =
