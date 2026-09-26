@@ -1,97 +1,210 @@
-const players = {
+// ========================================
+// 選手データ
+// players.csv から自動で読み込み
+// ========================================
 
-    // ========================================
-    // 天野浩一
-    // ========================================
-
-    amano: {
-
-        name: "天野浩一",
-
-        reading: "あまのこういち",
-
-        // 応援歌
-        audio:
-            "データ/天野浩一/天野浩一.m4a",
-
-        // MIDI 3トラックをまとめたZIP
-        midiZip:
-            "データ/天野浩一/天野浩一_MIDI.zip",
-
-        // GarageBandプロジェクト
-        garageBandZip:
-            "データ/天野浩一/天野浩一.zip",
-
-        // 歌詞
-        lyrics:
-`海渡る風の中
-心躍る理想の国へ
-共に旅立とう
-金色の未来`
-
-    },
+const players = {};
 
 
-    // ========================================
-    // 堂林翔太
-    // ========================================
+// ========================================
+// CSV読み込み
+// ========================================
 
-    dobayashi: {
+async function loadPlayers() {
 
-        name: "堂林翔太",
+    try {
 
-        reading: "どうばやししょうた",
+        const response =
+            await fetch("players.csv");
 
-        // 応援歌
-        audio:
-            "データ/堂林翔太/堂林翔太.m4a",
-
-        // MIDI 3トラックをまとめたZIP
-        midiZip:
-            "データ/堂林翔太/堂林翔太_MIDI.zip",
-
-        // GarageBandプロジェクト
-        garageBandZip:
-            "データ/堂林翔太/堂林翔太.zip",
-
-        // 歌詞
-        lyrics:
-`光り輝く その道を
-翔けぬけて魅せろ
-堂林SHOW TIME!`
-
-    },
+        if (!response.ok) {
+            throw new Error(
+                "players.csvを読み込めませんでした"
+            );
+        }
 
 
-    // ========================================
-    // 細川凌平
-    // ========================================
+        const text =
+            await response.text();
 
-    hosokawa: {
 
-        name: "細川凌平",
+        const lines =
+            text.trim().split(/\r?\n/);
 
-        reading: "ほそかわりょうへい",
 
-        // 応援歌
-        audio:
-            "データ/細川凌平/細川凌平.m4a",
+        // 1行目は見出しなので飛ばす
+        for (
+            let i = 1;
+            i < lines.length;
+            i++
+        ) {
 
-        // MIDI 3トラックをまとめたZIP
-        midiZip:
-            "データ/細川凌平/細川凌平_MIDI.zip",
+            const columns =
+                parseCSVLine(lines[i]);
 
-        // GarageBandプロジェクト
-        garageBandZip:
-            "データ/細川凌平/細川凌平.zip",
 
-        // 歌詞
-        lyrics:
-`さあ行くぞ かっ飛ばせ
-フィールド駆けろ
-煌びやかな栄冠を
-掴むぞ凌平`
+            if (columns.length < 13) {
+                continue;
+            }
+
+
+            const id =
+                columns[0].trim();
+
+
+            if (!id) {
+                continue;
+            }
+
+
+            players[id] = {
+
+                name:
+                    columns[1].trim(),
+
+                reading:
+                    columns[2].trim(),
+
+                team:
+                    columns[3].trim(),
+
+                active:
+                    Number(columns[4]),
+
+                audio:
+                    columns[5].trim(),
+
+                melodyMidi:
+                    columns[6].trim(),
+
+                chordMidi:
+                    columns[7].trim(),
+
+                bassMidi:
+                    columns[8].trim(),
+
+                midiZip:
+                    columns[9].trim(),
+
+                garageBandZip:
+                    columns[10].trim(),
+
+                pickupBeats:
+                    Number(columns[11]),
+
+                lyrics:
+                    columns[12]
+                        .replace(/\\n/g, "\n")
+                        .trim()
+
+            };
+
+        }
+
+
+        console.log(
+            "選手データ読み込み完了",
+            players
+        );
+
+
+        // CSV読み込み完了を知らせる
+        window.dispatchEvent(
+            new Event("playersLoaded")
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById(
+            "nowPlaying"
+        ).textContent =
+            "選手データを読み込めませんでした";
 
     }
 
-};
+}
+
+
+
+// ========================================
+// CSVの1行を分解
+// "" で囲まれた歌詞にも対応
+// ========================================
+
+function parseCSVLine(line) {
+
+    const result = [];
+
+    let current = "";
+
+    let insideQuotes = false;
+
+
+    for (
+        let i = 0;
+        i < line.length;
+        i++
+    ) {
+
+        const char =
+            line[i];
+
+
+        if (char === '"') {
+
+            // "" は文字としての "
+            if (
+                insideQuotes &&
+                line[i + 1] === '"'
+            ) {
+
+                current += '"';
+
+                i++;
+
+            } else {
+
+                insideQuotes =
+                    !insideQuotes;
+
+            }
+
+        }
+
+        else if (
+            char === "," &&
+            !insideQuotes
+        ) {
+
+            result.push(current);
+
+            current = "";
+
+        }
+
+        else {
+
+            current += char;
+
+        }
+
+    }
+
+
+    result.push(current);
+
+
+    return result;
+
+}
+
+
+
+// ========================================
+// ページ読み込み時にCSVを読み込む
+// ========================================
+
+loadPlayers();
