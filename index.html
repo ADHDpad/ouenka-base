@@ -10,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>応援歌BASE</title>
+    <link rel="manifest" href="manifest.json">
 
     <!-- デザイン -->
     <link
@@ -114,6 +114,13 @@
 
     <script src="search.js"></script>
 
+   <script>
+   if ("serviceWorker" in navigator) {
+       navigator.serviceWorker.register("./service-worker.js");
+   }
+
+
+</script>
 
 </body>
 
