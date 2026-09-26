@@ -1,0 +1,9 @@
+{
+  "name": "応援歌BASE",
+  "short_name": "応援歌BASE",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "ja"
+}
