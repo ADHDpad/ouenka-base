@@ -13,8 +13,6 @@ function searchPlayers() {
     const resultArea =
         document.getElementById("playerButtons");
 
-
-    // 前の検索結果を消す
     resultArea.innerHTML = "";
 
 
@@ -24,7 +22,7 @@ function searchPlayers() {
     }
 
 
-    // players.js の選手を検索
+    // CSVから読み込んだ選手を検索
     Object.keys(players).forEach(function(playerId) {
 
         const player =
@@ -36,11 +34,15 @@ function searchPlayers() {
         const reading =
             player.reading.toLowerCase();
 
+        const team =
+            player.team.toLowerCase();
 
-        // 名前・読み仮名で部分一致
+
+        // 選手名・読み・球団で検索
         if (
             name.includes(keyword) ||
-            reading.includes(keyword)
+            reading.includes(keyword) ||
+            team.includes(keyword)
         ) {
 
             createPlayerButton(
@@ -57,7 +59,7 @@ function searchPlayers() {
 
 
 // ========================================
-// 検索結果に「選手名ボタン」を作る
+// 検索結果に選手ボタンを作る
 // ========================================
 
 function createPlayerButton(playerId, player) {
@@ -65,8 +67,6 @@ function createPlayerButton(playerId, player) {
     const resultArea =
         document.getElementById("playerButtons");
 
-
-    // 選手全体を入れる箱
     const playerBox =
         document.createElement("div");
 
@@ -74,7 +74,6 @@ function createPlayerButton(playerId, player) {
         "search-player";
 
 
-    // 選手名ボタン
     const playerButton =
         document.createElement("button");
 
@@ -82,7 +81,6 @@ function createPlayerButton(playerId, player) {
         player.name;
 
 
-    // 選手名を押したとき
     playerButton.onclick =
         function() {
 
@@ -109,7 +107,7 @@ function createPlayerButton(playerId, player) {
 
 
 // ========================================
-// 選手名を押した後の3ボタン
+// 選手名を押した後のメニュー
 // ========================================
 
 function showPlayerMenu(
@@ -118,8 +116,6 @@ function showPlayerMenu(
     playerBox
 ) {
 
-    // すでにメニューが出ていたら
-    // 二重に作らない
     const oldMenu =
         playerBox.querySelector(".player-menu");
 
@@ -128,7 +124,6 @@ function showPlayerMenu(
     }
 
 
-    // 3ボタンを入れる箱
     const menu =
         document.createElement("div");
 
@@ -202,7 +197,7 @@ function showPlayerMenu(
 
 
     // ====================================
-    // ③ GarageBand ZIPを出力
+    // ③ GarageBandを出力
     // ====================================
 
     const garageButton =
@@ -246,7 +241,7 @@ function showPlayerMenu(
 
 
 // ========================================
-// ファイルを出力
+// ファイルをダウンロード
 // ========================================
 
 function downloadFile(filePath) {
@@ -288,20 +283,17 @@ function selectPlayer(playerId) {
     }
 
 
-    // 応援歌を再生
     playSong(
         playerId
     );
 
 
-    // 歌詞タイトル
     document.getElementById(
         "lyricsTitle"
     ).textContent =
         player.name + " 応援歌";
 
 
-    // 歌詞表示
     document.getElementById(
         "lyrics"
     ).textContent =
@@ -312,16 +304,20 @@ function selectPlayer(playerId) {
 
 
 // ========================================
-// ページを開いた直後
+// CSV読み込み完了時
 // ========================================
 
 window.addEventListener(
-    "DOMContentLoaded",
+    "playersLoaded",
     function() {
 
         document.getElementById(
             "playerButtons"
         ).innerHTML = "";
+
+        console.log(
+            "検索機能準備完了"
+        );
 
     }
 );
