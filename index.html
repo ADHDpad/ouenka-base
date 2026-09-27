@@ -10,13 +10,16 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+    <meta name="theme-color" content="#ffffff">
+
     <link rel="manifest" href="manifest.json">
 
-    <!-- デザイン -->
     <link
         rel="stylesheet"
         href="style.css"
     >
+
+    <title>応援歌BASE</title>
 
 </head>
 
@@ -45,8 +48,6 @@
         <h2>選手一覧</h2>
 
 
-        <!-- 検索ボックス -->
-
         <input
             type="text"
             id="searchInput"
@@ -56,37 +57,13 @@
         >
 
 
-
-        <!-- =================================
-             検索結果
-
-             search.js がここに
-
-             選手名
-             曲を再生
-             MIDIを出力
-             GarageBand ZIPを出力
-
-             を自動で作ります
-        ================================== -->
-
         <div id="playerButtons"></div>
 
-
-
-        <!-- =================================
-             再生中の曲
-        ================================== -->
 
         <div id="nowPlaying">
             選手を検索してください
         </div>
 
-
-
-        <!-- =================================
-             歌詞表示
-        ================================== -->
 
         <div id="lyricsArea">
 
@@ -97,15 +74,31 @@
         </div>
 
 
+        <!-- =================================
+             更新ボタン
+        ================================== -->
+
+        <button
+            type="button"
+            onclick="updateApp()"
+            style="
+                margin-top:30px;
+                padding:10px 20px;
+                border:none;
+                border-radius:10px;
+                cursor:pointer;
+            "
+        >
+            🔄 最新版に更新
+        </button>
+
+
     </div>
 
 
 
     <!-- =====================================
          JavaScript
-
-         順番が大事なので
-         players → player → search
     ====================================== -->
 
     <script src="players.js"></script>
@@ -114,13 +107,121 @@
 
     <script src="search.js"></script>
 
-   <script>
-   if ("serviceWorker" in navigator) {
-       navigator.serviceWorker.register("./service-worker.js");
-   }
 
 
-</script>
+    <!-- =====================================
+         Service Worker
+    ====================================== -->
+
+    <script>
+
+        // ====================================
+        // Service Worker登録
+        // ====================================
+
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener("load", async () => {
+
+                try {
+
+                    const registration =
+                        await navigator.serviceWorker.register(
+                            "./service-worker.js"
+                        );
+
+                    // サーバーに新しいService Workerが
+                    // ないか毎回確認
+                    await registration.update();
+
+                    console.log(
+                        "Service Worker確認完了"
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Service Worker登録エラー:",
+                        error
+                    );
+
+                }
+
+            });
+
+        }
+
+
+
+        // ====================================
+        // 最新版に更新
+        // ====================================
+
+        async function updateApp() {
+
+            try {
+
+                // Service Workerを取得
+                if ("serviceWorker" in navigator) {
+
+                    const registrations =
+                        await navigator.serviceWorker.getRegistrations();
+
+                    // Service Worker解除
+                    for (const registration of registrations) {
+
+                        await registration.unregister();
+
+                    }
+
+                }
+
+
+                // Cache Storageを削除
+                if ("caches" in window) {
+
+                    const cacheNames =
+                        await caches.keys();
+
+                    for (const cacheName of cacheNames) {
+
+                        await caches.delete(cacheName);
+
+                    }
+
+                }
+
+
+                // URLを変えて強制的に最新版を取得
+                const url =
+                    new URL(window.location.href);
+
+                url.searchParams.set(
+                    "_update",
+                    Date.now()
+                );
+
+                window.location.replace(
+                    url.toString()
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "更新エラー:",
+                    error
+                );
+
+                // 万一エラーでも再読み込み
+                window.location.reload();
+
+            }
+
+        }
+
+    </script>
+
 
 </body>
 
