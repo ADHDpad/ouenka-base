@@ -88,11 +88,15 @@
 
 
     <!-- =====================================
-         選手検索
+         メイン
     ====================================== -->
 
     <main>
 
+
+        <!-- =================================
+             選手検索
+        ================================== -->
 
         <section class="search-section">
 
@@ -101,16 +105,35 @@
             </h2>
 
 
+            <!-- 検索ボックス -->
+
             <div class="search-area">
 
-                <input
-                    type="text"
-                    id="searchInput"
-                    placeholder="選手名を検索"
-                    oninput="searchPlayers()"
-                    autocomplete="off"
-                >
+                <div class="search-input-wrapper">
 
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="選手名を検索"
+                        oninput="searchPlayers()"
+                        autocomplete="off"
+                    >
+
+
+                    <button
+                        type="button"
+                        id="clearSearchButton"
+                        onclick="clearSearch()"
+                        aria-label="検索文字を消す"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+
+
+                <!-- 検索候補 -->
 
                 <div
                     id="searchSuggestions"
@@ -119,7 +142,10 @@
             </div>
 
 
-            <!-- 選択した選手 -->
+
+            <!-- =================================
+                 選手を選択した後の3ボタン
+            ================================== -->
 
             <div
                 id="playerButtons"
@@ -127,7 +153,9 @@
 
 
 
-            <!-- 再生中 -->
+            <!-- =================================
+                 再生中
+            ================================== -->
 
             <div
                 id="nowPlaying"
@@ -137,7 +165,9 @@
 
 
 
-            <!-- 歌詞 -->
+            <!-- =================================
+                 歌詞
+            ================================== -->
 
             <div
                 id="lyricsArea"
@@ -290,7 +320,7 @@
 
 
     <!-- =====================================
-         Service Worker / 更新処理
+         Service Worker
     ====================================== -->
 
     <script>
@@ -430,7 +460,7 @@
 
 
         // ====================================
-        // 今後追加する機能
+        // メドレー作成
         // ====================================
 
         function showComingSoon() {

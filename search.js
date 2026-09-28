@@ -1,11 +1,18 @@
 // ========================================
 // 選手検索
-// 検索候補方式
 // ========================================
 
 
 // 検索候補の最大表示件数
 const MAX_SUGGESTIONS = 10;
+
+
+// 現在選択している選手
+let selectedPlayerId = null;
+
+
+// 選択した時点の検索文字
+let selectedSearchText = "";
 
 
 
@@ -28,10 +35,58 @@ function searchPlayers() {
             .toLowerCase();
 
 
+    const currentText =
+        searchInput.value;
+
+
     const suggestions =
         document.getElementById(
             "searchSuggestions"
         );
+
+
+    const clearButton =
+        document.getElementById(
+            "clearSearchButton"
+        );
+
+
+
+    // ====================================
+    // ×ボタンの表示
+    // ====================================
+
+    if (
+        searchInput.value.length > 0
+    ) {
+
+        clearButton.style.display =
+            "flex";
+
+    }
+    else {
+
+        clearButton.style.display =
+            "none";
+
+    }
+
+
+
+    // ====================================
+    // 選手選択後に文字を変更した場合
+    // 3ボタンなどを消す
+    // ====================================
+
+    if (
+        selectedPlayerId !== null &&
+        currentText !== selectedSearchText
+    ) {
+
+        clearSelectedPlayer();
+
+    }
+
 
 
     // 一度候補を消す
@@ -39,8 +94,9 @@ function searchPlayers() {
         "";
 
 
+
     // ====================================
-    // 空欄なら候補を閉じる
+    // 空欄
     // ====================================
 
     if (
@@ -58,7 +114,7 @@ function searchPlayers() {
 
 
     // ====================================
-    // 一致した選手を取得
+    // 一致する選手を検索
     // ====================================
 
     const matchedPlayers =
@@ -202,11 +258,6 @@ function searchPlayers() {
                 item.player.name;
 
 
-
-            // =================================
-            // 候補を選択
-            // =================================
-
             candidate.onclick =
                 function() {
 
@@ -246,16 +297,48 @@ function selectSearchCandidate(
     player
 ) {
 
-    // 検索欄を選手名にする
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
 
-    document.getElementById(
-        "searchInput"
-    ).value =
+
+    // ====================================
+    // 検索欄を選手名にする
+    // ====================================
+
+    searchInput.value =
         player.name;
 
 
 
+    // ====================================
+    // 選択状態を保存
+    // ====================================
+
+    selectedPlayerId =
+        playerId;
+
+
+    selectedSearchText =
+        player.name;
+
+
+
+    // ====================================
+    // ×ボタン表示
+    // ====================================
+
+    document.getElementById(
+        "clearSearchButton"
+    ).style.display =
+        "flex";
+
+
+
+    // ====================================
     // 検索候補を閉じる
+    // ====================================
 
     const suggestions =
         document.getElementById(
@@ -272,22 +355,11 @@ function selectSearchCandidate(
 
 
 
-    // 以前の選手を消す
+    // ====================================
+    // 3ボタンを直接表示
+    // ====================================
 
-    const resultArea =
-        document.getElementById(
-            "playerButtons"
-        );
-
-
-    resultArea.innerHTML =
-        "";
-
-
-
-    // 選択した選手を表示
-
-    createPlayerButton(
+    showPlayerActions(
         playerId,
         player
     );
@@ -297,10 +369,10 @@ function selectSearchCandidate(
 
 
 // ========================================
-// 選手ボタンを作成
+// 3種類のボタンを表示
 // ========================================
 
-function createPlayerButton(
+function showPlayerActions(
     playerId,
     player
 ) {
@@ -311,79 +383,8 @@ function createPlayerButton(
         );
 
 
-    const playerBox =
-        document.createElement(
-            "div"
-        );
-
-
-    playerBox.className =
-        "search-player";
-
-
-    const playerButton =
-        document.createElement(
-            "button"
-        );
-
-
-    playerButton.textContent =
-        player.name;
-
-
-    playerButton.onclick =
-        function() {
-
-            showPlayerMenu(
-
-                playerId,
-
-                player,
-
-                playerBox
-
-            );
-
-        };
-
-
-    playerBox.appendChild(
-        playerButton
-    );
-
-
-    resultArea.appendChild(
-        playerBox
-    );
-
-}
-
-
-
-// ========================================
-// 選手名を押した後のメニュー
-// ========================================
-
-function showPlayerMenu(
-    playerId,
-    player,
-    playerBox
-) {
-
-    const oldMenu =
-        playerBox.querySelector(
-            ".player-menu"
-        );
-
-
-    if (
-        oldMenu
-    ) {
-
-        return;
-
-    }
-
+    resultArea.innerHTML =
+        "";
 
 
     const menu =
@@ -398,7 +399,7 @@ function showPlayerMenu(
 
 
     // ====================================
-    // 曲を再生
+    // ① 曲を再生
     // ====================================
 
     const playButton =
@@ -428,7 +429,7 @@ function showPlayerMenu(
 
 
     // ====================================
-    // MIDIを出力
+    // ② MIDIを出力
     // ====================================
 
     const midiButton =
@@ -472,7 +473,7 @@ function showPlayerMenu(
 
 
     // ====================================
-    // GarageBand
+    // ③ GarageBand
     // ====================================
 
     const garageButton =
@@ -514,9 +515,116 @@ function showPlayerMenu(
     );
 
 
-    playerBox.appendChild(
+    resultArea.appendChild(
         menu
     );
+
+}
+
+
+
+// ========================================
+// 選択した選手の表示を消す
+// ========================================
+
+function clearSelectedPlayer() {
+
+    selectedPlayerId =
+        null;
+
+
+    selectedSearchText =
+        "";
+
+
+    // 3ボタンを消す
+
+    document.getElementById(
+        "playerButtons"
+    ).innerHTML =
+        "";
+
+
+    // 再生中表示を戻す
+
+    document.getElementById(
+        "nowPlaying"
+    ).textContent =
+        "選手を検索してください";
+
+
+    // 歌詞タイトルを消す
+
+    document.getElementById(
+        "lyricsTitle"
+    ).textContent =
+        "";
+
+
+    // 歌詞を消す
+
+    document.getElementById(
+        "lyrics"
+    ).textContent =
+        "";
+
+}
+
+
+
+// ========================================
+// ×ボタン
+// ========================================
+
+function clearSearch() {
+
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
+
+
+    // 検索文字を消す
+
+    searchInput.value =
+        "";
+
+
+    // 候補を閉じる
+
+    const suggestions =
+        document.getElementById(
+            "searchSuggestions"
+        );
+
+
+    suggestions.innerHTML =
+        "";
+
+
+    suggestions.style.display =
+        "none";
+
+
+
+    // ×ボタンを消す
+
+    document.getElementById(
+        "clearSearchButton"
+    ).style.display =
+        "none";
+
+
+
+    // 選択した選手を解除
+
+    clearSelectedPlayer();
+
+
+
+    // 検索欄にカーソルを戻す
+
+    searchInput.focus();
 
 }
 
@@ -581,6 +689,7 @@ function selectPlayer(
     }
 
 
+    // player.js の再生処理を使用
     playSong(
         playerId
     );
