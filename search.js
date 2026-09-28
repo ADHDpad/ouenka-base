@@ -160,7 +160,37 @@ function showPlayerMenu(
 
 
     // ====================================
-    // ② MIDIを出力
+    // ② MIDI試聴
+    // 現在は堂林翔太のみ
+    // ====================================
+
+    if (player.name === "堂林翔太") {
+
+        const midiPlayButton =
+            document.createElement("button");
+
+        midiPlayButton.textContent =
+            "🎹 MIDI試聴";
+
+
+        midiPlayButton.onclick =
+            function() {
+
+                playDobayashiMidi();
+
+            };
+
+
+        menu.appendChild(
+            midiPlayButton
+        );
+
+    }
+
+
+
+    // ====================================
+    // ③ MIDIを出力
     // ====================================
 
     const midiButton =
@@ -197,7 +227,7 @@ function showPlayerMenu(
 
 
     // ====================================
-    // ③ GarageBandを出力
+    // ④ GarageBandを出力
     // ====================================
 
     const garageButton =
