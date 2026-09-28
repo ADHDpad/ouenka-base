@@ -12,7 +12,10 @@
 
     <meta name="theme-color" content="#ffffff">
 
-    <link rel="manifest" href="manifest.json">
+    <link
+        rel="manifest"
+        href="manifest.json"
+    >
 
     <link
         rel="stylesheet"
@@ -45,18 +48,52 @@
 
     <div class="player">
 
-        <h2>選手一覧</h2>
+        <h2>選手検索</h2>
 
 
-        <input
-            type="text"
-            id="searchInput"
-            placeholder="選手名を検索"
-            oninput="searchPlayers()"
-            autocomplete="off"
+        <!-- 検索ボックス全体 -->
+        <div
+            class="search-area"
+            style="
+                position: relative;
+                width: 100%;
+                max-width: 400px;
+                margin: 0 auto;
+            "
         >
 
+            <!-- 検索入力 -->
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="選手名を検索"
+                oninput="searchPlayers()"
+                autocomplete="off"
+            >
 
+
+            <!-- 検索候補 -->
+            <div
+                id="searchSuggestions"
+                style="
+                    display: none;
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    right: 0;
+                    background: white;
+                    border: 1px solid #cccccc;
+                    border-radius: 0 0 10px 10px;
+                    overflow: hidden;
+                    z-index: 1000;
+                    text-align: left;
+                "
+            ></div>
+
+        </div>
+
+
+        <!-- 選択された選手 -->
         <div id="playerButtons"></div>
 
 
@@ -72,6 +109,7 @@
             <div id="lyrics"></div>
 
         </div>
+
 
 
         <!-- =================================
@@ -107,45 +145,50 @@
 
     <script src="search.js"></script>
 
+
+
     <!-- =====================================
          Service Worker
     ====================================== -->
 
     <script>
 
-        // ====================================
-        // Service Worker登録
-        // ====================================
-
         if ("serviceWorker" in navigator) {
 
-            window.addEventListener("load", async () => {
+            window.addEventListener(
+                "load",
+                async () => {
 
-                try {
+                    try {
 
-                    const registration =
-                        await navigator.serviceWorker.register(
-                            "./service-worker.js"
+                        const registration =
+                            await navigator
+                                .serviceWorker
+                                .register(
+                                    "./service-worker.js"
+                                );
+
+
+                        await registration.update();
+
+
+                        console.log(
+                            "Service Worker確認完了"
                         );
 
-                    // サーバーに新しいService Workerが
-                    // ないか毎回確認
-                    await registration.update();
+                    }
 
-                    console.log(
-                        "Service Worker確認完了"
-                    );
+                    catch (error) {
 
-                } catch (error) {
+                        console.error(
+                            "Service Worker登録エラー:",
+                            error
+                        );
 
-                    console.error(
-                        "Service Worker登録エラー:",
-                        error
-                    );
+                    }
 
                 }
-
-            });
+            );
 
         }
 
@@ -159,59 +202,79 @@
 
             try {
 
-                // Service Workerを取得
-                if ("serviceWorker" in navigator) {
+                if (
+                    "serviceWorker"
+                    in navigator
+                ) {
 
                     const registrations =
-                        await navigator.serviceWorker.getRegistrations();
+                        await navigator
+                            .serviceWorker
+                            .getRegistrations();
 
-                    // Service Worker解除
-                    for (const registration of registrations) {
 
-                        await registration.unregister();
+                    for (
+                        const registration
+                        of registrations
+                    ) {
+
+                        await registration
+                            .unregister();
 
                     }
 
                 }
 
 
-                // Cache Storageを削除
-                if ("caches" in window) {
+                if (
+                    "caches"
+                    in window
+                ) {
 
                     const cacheNames =
                         await caches.keys();
 
-                    for (const cacheName of cacheNames) {
 
-                        await caches.delete(cacheName);
+                    for (
+                        const cacheName
+                        of cacheNames
+                    ) {
+
+                        await caches.delete(
+                            cacheName
+                        );
 
                     }
 
                 }
 
 
-                // URLを変えて強制的に最新版を取得
                 const url =
-                    new URL(window.location.href);
+                    new URL(
+                        window.location.href
+                    );
+
 
                 url.searchParams.set(
                     "_update",
                     Date.now()
                 );
 
+
                 window.location.replace(
                     url.toString()
                 );
 
+            }
 
-            } catch (error) {
+            catch (error) {
 
                 console.error(
                     "更新エラー:",
                     error
                 );
 
-                // 万一エラーでも再読み込み
+
                 window.location.reload();
 
             }

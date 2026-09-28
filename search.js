@@ -1,84 +1,336 @@
 // ========================================
 // 選手検索
+// 検索候補方式
 // ========================================
 
 function searchPlayers() {
 
-    const keyword = document
-        .getElementById("searchInput")
-        .value
-        .trim()
-        .toLowerCase();
-
-    const resultArea =
-        document.getElementById("playerButtons");
-
-    resultArea.innerHTML = "";
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
 
 
-    // 検索欄が空なら何も表示しない
+    const keyword =
+        searchInput
+            .value
+            .trim()
+            .toLowerCase();
+
+
+    const suggestions =
+        document.getElementById(
+            "searchSuggestions"
+        );
+
+
+    // 一度候補を消す
+    suggestions.innerHTML = "";
+
+
+    // ====================================
+    // 空欄なら候補を閉じる
+    // ====================================
+
     if (keyword === "") {
+
+        suggestions.style.display =
+            "none";
+
         return;
+
     }
 
 
-    // CSVから読み込んだ選手を検索
-    Object.keys(players).forEach(function(playerId) {
 
-        const player =
-            players[playerId];
+    // ====================================
+    // 一致した選手を取得
+    // ====================================
 
-        const name =
-            player.name.toLowerCase();
-
-        const reading =
-            player.reading.toLowerCase();
-
-        const team =
-            player.team.toLowerCase();
+    const matchedPlayers = [];
 
 
-        // 選手名・読み・球団で検索
-        if (
-            name.includes(keyword) ||
-            reading.includes(keyword) ||
-            team.includes(keyword)
-        ) {
+    Object.keys(players).forEach(
+        function(playerId) {
 
-            createPlayerButton(
-                playerId,
-                player
+            const player =
+                players[playerId];
+
+
+            const name =
+                (
+                    player.name || ""
+                ).toLowerCase();
+
+
+            const reading =
+                (
+                    player.reading || ""
+                ).toLowerCase();
+
+
+            const team =
+                (
+                    player.team || ""
+                ).toLowerCase();
+
+
+            if (
+
+                name.includes(keyword) ||
+
+                reading.includes(keyword) ||
+
+                team.includes(keyword)
+
+            ) {
+
+                matchedPlayers.push({
+
+                    playerId:
+                        playerId,
+
+                    player:
+                        player
+
+                });
+
+            }
+
+        }
+    );
+
+
+
+    // ====================================
+    // 候補なし
+    // ====================================
+
+    if (
+        matchedPlayers.length === 0
+    ) {
+
+        const noResult =
+            document.createElement(
+                "div"
+            );
+
+
+        noResult.textContent =
+            "該当する選手はいません";
+
+
+        noResult.style.padding =
+            "12px";
+
+
+        noResult.style.color =
+            "#777";
+
+
+        suggestions.appendChild(
+            noResult
+        );
+
+
+        suggestions.style.display =
+            "block";
+
+
+        return;
+
+    }
+
+
+
+    // ====================================
+    // 検索候補を作る
+    // ====================================
+
+    matchedPlayers.forEach(
+        function(item) {
+
+            const candidate =
+                document.createElement(
+                    "div"
+                );
+
+
+            candidate.textContent =
+                item.player.name;
+
+
+            candidate.style.padding =
+                "12px 15px";
+
+
+            candidate.style.cursor =
+                "pointer";
+
+
+            candidate.style.borderBottom =
+                "1px solid #eeeeee";
+
+
+            candidate.style.color =
+                "#222";
+
+
+            candidate.style.background =
+                "#ffffff";
+
+
+
+            // マウスを乗せた時
+            candidate.onmouseenter =
+                function() {
+
+                    candidate.style.background =
+                        "#f2f2f2";
+
+                };
+
+
+            candidate.onmouseleave =
+                function() {
+
+                    candidate.style.background =
+                        "#ffffff";
+
+                };
+
+
+
+            // =================================
+            // 候補を選択
+            // =================================
+
+            candidate.onclick =
+                function() {
+
+                    selectSearchCandidate(
+                        item.playerId,
+                        item.player
+                    );
+
+                };
+
+
+            suggestions.appendChild(
+                candidate
             );
 
         }
+    );
 
-    });
+
+    suggestions.style.display =
+        "block";
 
 }
 
 
 
 // ========================================
-// 検索結果に選手ボタンを作る
+// 検索候補を選択
 // ========================================
 
-function createPlayerButton(playerId, player) {
+function selectSearchCandidate(
+    playerId,
+    player
+) {
+
+    // ====================================
+    // テキストボックスを選手名にする
+    // ====================================
+
+    document.getElementById(
+        "searchInput"
+    ).value =
+        player.name;
+
+
+
+    // ====================================
+    // 検索候補を閉じる
+    // ====================================
+
+    const suggestions =
+        document.getElementById(
+            "searchSuggestions"
+        );
+
+
+    suggestions.innerHTML = "";
+
+
+    suggestions.style.display =
+        "none";
+
+
+
+    // ====================================
+    // 以前の選手ボタンを消す
+    // ====================================
 
     const resultArea =
-        document.getElementById("playerButtons");
+        document.getElementById(
+            "playerButtons"
+        );
+
+
+    resultArea.innerHTML = "";
+
+
+
+    // ====================================
+    // 選択した選手だけ表示
+    // ====================================
+
+    createPlayerButton(
+        playerId,
+        player
+    );
+
+}
+
+
+
+// ========================================
+// 選手ボタンを作る
+// ========================================
+
+function createPlayerButton(
+    playerId,
+    player
+) {
+
+    const resultArea =
+        document.getElementById(
+            "playerButtons"
+        );
+
 
     const playerBox =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     playerBox.className =
         "search-player";
 
 
+
     const playerButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
+
 
     playerButton.textContent =
         player.name;
+
 
 
     playerButton.onclick =
@@ -117,15 +369,22 @@ function showPlayerMenu(
 ) {
 
     const oldMenu =
-        playerBox.querySelector(".player-menu");
+        playerBox.querySelector(
+            ".player-menu"
+        );
+
 
     if (oldMenu) {
         return;
     }
 
 
+
     const menu =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     menu.className =
         "player-menu";
@@ -137,7 +396,10 @@ function showPlayerMenu(
     // ====================================
 
     const playButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
+
 
     playButton.textContent =
         "▶ 曲を再生";
@@ -164,7 +426,10 @@ function showPlayerMenu(
     // ====================================
 
     const midiButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
+
 
     midiButton.textContent =
         "MIDIを出力";
@@ -173,13 +438,16 @@ function showPlayerMenu(
     midiButton.onclick =
         function() {
 
-            if (!player.midiZip) {
+            if (
+                !player.midiZip
+            ) {
 
                 alert(
                     "MIDIファイルが登録されていません"
                 );
 
                 return;
+
             }
 
 
@@ -201,7 +469,10 @@ function showPlayerMenu(
     // ====================================
 
     const garageButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
+
 
     garageButton.textContent =
         "GarageBandファイル出力（iPhoneのみ）";
@@ -210,13 +481,16 @@ function showPlayerMenu(
     garageButton.onclick =
         function() {
 
-            if (!player.garageBandZip) {
+            if (
+                !player.garageBandZip
+            ) {
 
                 alert(
                     "GarageBandファイルが登録されていません"
                 );
 
                 return;
+
             }
 
 
@@ -244,21 +518,31 @@ function showPlayerMenu(
 // ファイルをダウンロード
 // ========================================
 
-function downloadFile(filePath) {
+function downloadFile(
+    filePath
+) {
 
     const link =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
+
 
     link.href =
         filePath;
 
-    link.download = "";
+
+    link.download =
+        "";
+
 
     document.body.appendChild(
         link
     );
 
+
     link.click();
+
 
     document.body.removeChild(
         link
@@ -272,7 +556,9 @@ function downloadFile(filePath) {
 // 曲を再生＋歌詞表示
 // ========================================
 
-function selectPlayer(playerId) {
+function selectPlayer(
+    playerId
+) {
 
     const player =
         players[playerId];
@@ -291,7 +577,8 @@ function selectPlayer(playerId) {
     document.getElementById(
         "lyricsTitle"
     ).textContent =
-        player.name + " 応援歌";
+        player.name +
+        " 応援歌";
 
 
     document.getElementById(
@@ -304,7 +591,7 @@ function selectPlayer(playerId) {
 
 
 // ========================================
-// CSV読み込み完了時
+// CSV読み込み完了
 // ========================================
 
 window.addEventListener(
@@ -313,10 +600,12 @@ window.addEventListener(
 
         document.getElementById(
             "playerButtons"
-        ).innerHTML = "";
+        ).innerHTML =
+            "";
+
 
         console.log(
-            "検索機能準備完了"
+            "検索候補機能準備完了"
         );
 
     }
