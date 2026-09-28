@@ -53,7 +53,7 @@
             class="top-menu-button"
             onclick="showComingSoon()"
         >
-            メドレー作成
+            後日追加予定
         </button>
 
     </header>
@@ -95,92 +95,98 @@
 
 
         <!-- =================================
-             選手検索
+             選手名から検索
         ================================== -->
 
-        <section class="search-section">
+        <section class="search-area-container">
 
-            <h2>
-                選手検索
+
+            <!-- 紺色の箱の外 -->
+
+            <h2 class="search-title">
+                選手名から検索
             </h2>
 
 
-            <!-- 検索ボックス -->
 
-            <div class="search-area">
+            <!-- 紺色の検索エリア -->
 
-                <div class="search-input-wrapper">
-
-                    <input
-                        type="text"
-                        id="searchInput"
-                        placeholder="選手名を検索"
-                        oninput="searchPlayers()"
-                        autocomplete="off"
-                    >
+            <div class="search-section">
 
 
-                    <button
-                        type="button"
-                        id="clearSearchButton"
-                        onclick="clearSearch()"
-                        aria-label="検索文字を消す"
-                    >
-                        ×
-                    </button>
+                <!-- 検索ボックス -->
+
+                <div class="search-area">
+
+                    <div class="search-input-wrapper">
+
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="選手名を検索"
+                            oninput="searchPlayers()"
+                            autocomplete="off"
+                        >
+
+
+                        <button
+                            type="button"
+                            id="clearSearchButton"
+                            onclick="clearSearch()"
+                            aria-label="検索文字を消す"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+
+
+                    <!-- 検索候補 -->
+
+                    <div
+                        id="searchSuggestions"
+                    ></div>
 
                 </div>
 
 
 
-                <!-- 検索候補 -->
+                <!-- 選手選択後の3ボタン -->
 
                 <div
-                    id="searchSuggestions"
+                    id="playerButtons"
                 ></div>
 
-            </div>
 
 
-
-            <!-- =================================
-                 選手を選択した後の3ボタン
-            ================================== -->
-
-            <div
-                id="playerButtons"
-            ></div>
-
-
-
-            <!-- =================================
-                 再生中
-            ================================== -->
-
-            <div
-                id="nowPlaying"
-            >
-                選手を検索してください
-            </div>
-
-
-
-            <!-- =================================
-                 歌詞
-            ================================== -->
-
-            <div
-                id="lyricsArea"
-            >
-
-                <h3
-                    id="lyricsTitle"
-                ></h3>
-
+                <!-- 再生中 -->
 
                 <div
-                    id="lyrics"
-                ></div>
+                    id="nowPlaying"
+                >
+                    選手を検索してください
+                </div>
+
+
+
+                <!-- 歌詞 -->
+
+                <div
+                    id="lyricsArea"
+                >
+
+                    <h3
+                        id="lyricsTitle"
+                    ></h3>
+
+
+                    <div
+                        id="lyrics"
+                    ></div>
+
+                </div>
+
 
             </div>
 
@@ -199,102 +205,153 @@
             </h2>
 
 
+
+            <!-- リーグ名 -->
+
+            <div class="league-headings">
+
+                <div class="league-heading">
+                    パ・リーグ
+                </div>
+
+                <div class="league-heading">
+                    セ・リーグ
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================
+                 左：パ・リーグ
+                 右：セ・リーグ
+            ================================== -->
+
             <div class="team-grid">
 
 
+                <!-- 1段目 -->
+
                 <button
                     type="button"
-                    class="team-button"
+                    class="team-button softbank"
                 >
-                    広島東洋カープ
+                    福岡ソフトバンク<br>
+                    ホークス
                 </button>
 
 
                 <button
                     type="button"
-                    class="team-button"
+                    class="team-button giants"
                 >
-                    阪神タイガース
+                    読売<br>
+                    ジャイアンツ
+                </button>
+
+
+
+                <!-- 2段目 -->
+
+                <button
+                    type="button"
+                    class="team-button fighters"
+                >
+                    北海道日本ハム<br>
+                    ファイターズ
                 </button>
 
 
                 <button
                     type="button"
-                    class="team-button"
+                    class="team-button tigers"
                 >
-                    横浜DeNAベイスターズ
+                    阪神<br>
+                    タイガース
+                </button>
+
+
+
+                <!-- 3段目 -->
+
+                <button
+                    type="button"
+                    class="team-button buffaloes"
+                >
+                    オリックス<br>
+                    バファローズ
                 </button>
 
 
                 <button
                     type="button"
-                    class="team-button"
+                    class="team-button baystars"
                 >
-                    読売ジャイアンツ
+                    横浜DeNA<br>
+                    ベイスターズ
+                </button>
+
+
+
+                <!-- 4段目 -->
+
+                <button
+                    type="button"
+                    class="team-button eagles"
+                >
+                    東北楽天<br>
+                    ゴールデンイーグルス
                 </button>
 
 
                 <button
                     type="button"
-                    class="team-button"
+                    class="team-button carp"
                 >
-                    東京ヤクルトスワローズ
+                    広島東洋<br>
+                    カープ
+                </button>
+
+
+
+                <!-- 5段目 -->
+
+                <button
+                    type="button"
+                    class="team-button lions"
+                >
+                    埼玉西武<br>
+                    ライオンズ
                 </button>
 
 
                 <button
                     type="button"
-                    class="team-button"
+                    class="team-button swallows"
                 >
-                    中日ドラゴンズ
+                    東京ヤクルト<br>
+                    スワローズ
+                </button>
+
+
+
+                <!-- 6段目 -->
+
+                <button
+                    type="button"
+                    class="team-button marines"
+                >
+                    千葉ロッテ<br>
+                    マリーンズ
                 </button>
 
 
                 <button
                     type="button"
-                    class="team-button"
+                    class="team-button dragons"
                 >
-                    福岡ソフトバンクホークス
-                </button>
-
-
-                <button
-                    type="button"
-                    class="team-button"
-                >
-                    北海道日本ハムファイターズ
-                </button>
-
-
-                <button
-                    type="button"
-                    class="team-button"
-                >
-                    オリックス・バファローズ
-                </button>
-
-
-                <button
-                    type="button"
-                    class="team-button"
-                >
-                    東北楽天ゴールデンイーグルス
-                </button>
-
-
-                <button
-                    type="button"
-                    class="team-button"
-                >
-                    埼玉西武ライオンズ
-                </button>
-
-
-                <button
-                    type="button"
-                    class="team-button"
-                >
-                    千葉ロッテマリーンズ
+                    中日<br>
+                    ドラゴンズ
                 </button>
 
 
@@ -460,13 +517,13 @@
 
 
         // ====================================
-        // メドレー作成
+        // 後日追加予定
         // ====================================
 
         function showComingSoon() {
 
             alert(
-                "メドレー作成功能は今後追加予定です"
+                "この機能は後日追加予定です"
             );
 
         }
