@@ -106,7 +106,6 @@ function searchPlayers() {
         suggestions.style.display =
             "none";
 
-
         return;
 
     }
@@ -303,18 +302,9 @@ function selectSearchCandidate(
         );
 
 
-    // ====================================
-    // 検索欄を選手名にする
-    // ====================================
-
     searchInput.value =
         player.name;
 
-
-
-    // ====================================
-    // 選択状態を保存
-    // ====================================
 
     selectedPlayerId =
         playerId;
@@ -325,20 +315,12 @@ function selectSearchCandidate(
 
 
 
-    // ====================================
-    // ×ボタン表示
-    // ====================================
-
     document.getElementById(
         "clearSearchButton"
     ).style.display =
         "flex";
 
 
-
-    // ====================================
-    // 検索候補を閉じる
-    // ====================================
 
     const suggestions =
         document.getElementById(
@@ -355,9 +337,7 @@ function selectSearchCandidate(
 
 
 
-    // ====================================
     // 3ボタンを直接表示
-    // ====================================
 
     showPlayerActions(
         playerId,
@@ -453,7 +433,6 @@ function showPlayerActions(
                     "MIDIファイルが登録されていません"
                 );
 
-
                 return;
 
             }
@@ -497,7 +476,6 @@ function showPlayerActions(
                     "GarageBandファイルが登録されていません"
                 );
 
-
                 return;
 
             }
@@ -537,15 +515,11 @@ function clearSelectedPlayer() {
         "";
 
 
-    // 3ボタンを消す
-
     document.getElementById(
         "playerButtons"
     ).innerHTML =
         "";
 
-
-    // 再生中表示を戻す
 
     document.getElementById(
         "nowPlaying"
@@ -553,15 +527,11 @@ function clearSelectedPlayer() {
         "選手を検索してください";
 
 
-    // 歌詞タイトルを消す
-
     document.getElementById(
         "lyricsTitle"
     ).textContent =
         "";
 
-
-    // 歌詞を消す
 
     document.getElementById(
         "lyrics"
@@ -584,13 +554,9 @@ function clearSearch() {
         );
 
 
-    // 検索文字を消す
-
     searchInput.value =
         "";
 
-
-    // 候補を閉じる
 
     const suggestions =
         document.getElementById(
@@ -606,23 +572,14 @@ function clearSearch() {
         "none";
 
 
-
-    // ×ボタンを消す
-
     document.getElementById(
         "clearSearchButton"
     ).style.display =
         "none";
 
 
-
-    // 選択した選手を解除
-
     clearSelectedPlayer();
 
-
-
-    // 検索欄にカーソルを戻す
 
     searchInput.focus();
 
@@ -632,37 +589,151 @@ function clearSearch() {
 
 // ========================================
 // ファイルダウンロード
+//
+// 変更点：
+// ファイルへ直接移動せず
+// JavaScriptで取得してから保存する
 // ========================================
 
-function downloadFile(
+async function downloadFile(
     filePath
 ) {
 
-    const link =
-        document.createElement(
-            "a"
+    try {
+
+        // ====================================
+        // ファイルを取得
+        // ====================================
+
+        const response =
+            await fetch(
+                filePath
+            );
+
+
+        if (
+            !response.ok
+        ) {
+
+            throw new Error(
+                "ファイルを取得できませんでした"
+            );
+
+        }
+
+
+
+        // ====================================
+        // Blobデータに変換
+        // ====================================
+
+        const blob =
+            await response.blob();
+
+
+
+        // ====================================
+        // 一時的なダウンロードURLを作る
+        // ====================================
+
+        const blobUrl =
+            URL.createObjectURL(
+                blob
+            );
+
+
+
+        // ====================================
+        // 元のファイル名を取得
+        // ====================================
+
+        const fileName =
+            decodeURIComponent(
+                filePath
+                    .split("/")
+                    .pop()
+            );
+
+
+
+        // ====================================
+        // ダウンロード用リンクを作成
+        // ====================================
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+
+        link.href =
+            blobUrl;
+
+
+        link.download =
+            fileName;
+
+
+        // 別画面へ移動させない
+
+        link.style.display =
+            "none";
+
+
+        document.body.appendChild(
+            link
         );
 
 
-    link.href =
-        filePath;
+
+        // ====================================
+        // ダウンロード開始
+        // ====================================
+
+        link.click();
 
 
-    link.download =
-        "";
+
+        // ====================================
+        // 後片付け
+        // ====================================
+
+        document.body.removeChild(
+            link
+        );
 
 
-    document.body.appendChild(
-        link
-    );
+        setTimeout(
+
+            function() {
+
+                URL.revokeObjectURL(
+                    blobUrl
+                );
+
+            },
+
+            3000
+
+        );
+
+    }
+
+    catch (
+        error
+    ) {
+
+        console.error(
+            "ダウンロードエラー:",
+            error
+        );
 
 
-    link.click();
+        alert(
+            "ファイルをダウンロードできませんでした"
+        );
 
-
-    document.body.removeChild(
-        link
-    );
+    }
 
 }
 
@@ -689,7 +760,6 @@ function selectPlayer(
     }
 
 
-    // player.js の再生処理を使用
     playSong(
         playerId
     );
