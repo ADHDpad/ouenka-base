@@ -1,19 +1,15 @@
 /* ========================================
    応援歌BASE
-   DATA SYSTEM DESIGN
+   FIGHT SONG DATABASE
 ======================================== */
 
 :root {
     --navy: #071d33;
     --navy2: #0b2f55;
-    --blue: #168fd1;
-    --light-blue: #dbeaf5;
-
     --text: #0b2948;
     --sub-text: #60758b;
-
     --line: #cbd8e4;
-    --background: #f7fafc;
+    --background: #ffffff;
     --white: #ffffff;
 }
 
@@ -36,7 +32,7 @@ body {
     margin: 0;
     padding: 0;
 
-    background-color: var(--background);
+    background-color: #ffffff;
     color: var(--text);
 
     font-family:
@@ -46,33 +42,6 @@ body {
         sans-serif;
 
     text-align: center;
-}
-
-
-/* 薄いシステムグリッド */
-
-body::before {
-    content: "";
-
-    position: fixed;
-    inset: 0;
-
-    pointer-events: none;
-
-    background-image:
-        linear-gradient(
-            rgba(11, 47, 85, 0.025) 1px,
-            transparent 1px
-        ),
-        linear-gradient(
-            90deg,
-            rgba(11, 47, 85, 0.025) 1px,
-            transparent 1px
-        );
-
-    background-size: 28px 28px;
-
-    z-index: -1;
 }
 
 
@@ -113,7 +82,7 @@ body::before {
 
 
 /* ========================================
-   左上ブランド
+   左上
 ======================================== */
 
 .top-brand {
@@ -132,9 +101,10 @@ body::before {
 .top-brand-sub {
     margin-top: 5px;
 
-    color: #a9bfd2;
+    color: #b7cada;
 
     font-size: 9px;
+    font-weight: bold;
 
     letter-spacing: 3px;
 }
@@ -185,9 +155,7 @@ body::before {
 
     cursor: pointer;
 
-    transition:
-        background-color 0.15s,
-        transform 0.15s;
+    transition: 0.15s;
 }
 
 
@@ -203,7 +171,7 @@ body::before {
 
 
 .top-button-icon {
-    font-size: 26px;
+    font-size: 25px;
     line-height: 1;
 }
 
@@ -222,7 +190,7 @@ body::before {
 
 
 /* ========================================
-   システムバージョン
+   バージョン
 ======================================== */
 
 .system-version {
@@ -243,19 +211,17 @@ body::before {
 
 
 /* ========================================
-   タイトルエリア
+   ロゴエリア
 ======================================== */
 
 .site-header {
-    position: relative;
-
     width: 100%;
     max-width: 1050px;
 
     margin: 0 auto;
 
     padding:
-        38px
+        35px
         20px
         25px;
 
@@ -265,27 +231,25 @@ body::before {
 }
 
 
-/* 上の英字 */
-
 .header-system-label {
     margin-bottom: 12px;
 
     color: #496985;
 
-    font-size: 11px;
+    font-size: 10px;
     font-weight: bold;
 
-    letter-spacing: 6px;
+    letter-spacing: 5px;
 }
 
 
 /* ========================================
-   応援歌BASEロゴ
+   新しい応援歌BASEロゴ
 ======================================== */
 
 .site-icon {
-    width: 290px;
-    max-width: 70vw;
+    width: 440px;
+    max-width: 85vw;
 
     margin: 0 auto;
 }
@@ -307,13 +271,14 @@ body::before {
 
 .subtitle {
     margin:
-        12px
+        10px
         0
         0;
 
     color: var(--sub-text);
 
     font-size: 15px;
+    font-weight: bold;
 
     letter-spacing: 1px;
 }
@@ -325,7 +290,6 @@ body::before {
 
 main {
     width: 100%;
-
     max-width: 1050px;
 
     margin: 0 auto;
@@ -338,7 +302,7 @@ main {
 
 
 /* ========================================
-   共通セクション見出し
+   セクションタイトル
 ======================================== */
 
 .section-header {
@@ -348,13 +312,13 @@ main {
 
     align-items: center;
 
-    margin-bottom: 16px;
+    margin-bottom: 15px;
 
-    padding-bottom: 12px;
+    padding-bottom: 11px;
 
     border-bottom:
         1px solid
-        var(--line);
+        #8ca8bf;
 
     text-align: left;
 }
@@ -363,15 +327,14 @@ main {
 .section-number {
     min-width: 72px;
 
-    padding-right: 17px;
-
     margin-right: 17px;
+    padding-right: 17px;
 
     border-right:
         1px solid
         var(--line);
 
-    color: #55738f;
+    color: #557b99;
 
     font-size: 42px;
     font-weight: 300;
@@ -407,7 +370,7 @@ main {
 
 
 .section-code {
-    color: #6d8297;
+    color: #496985;
 
     font-size: 9px;
     font-weight: bold;
@@ -417,7 +380,7 @@ main {
 
 
 /* ========================================
-   01 PLAYER SEARCH
+   PLAYER SEARCH
 ======================================== */
 
 .search-area-container {
@@ -426,7 +389,7 @@ main {
     margin:
         0
         auto
-        38px;
+        30px;
 }
 
 
@@ -435,16 +398,12 @@ main {
 ======================================== */
 
 .search-section {
-    position: relative;
-
     width: 100%;
 
     padding:
         30px
         38px
         28px;
-
-    overflow: hidden;
 
     background:
         linear-gradient(
@@ -462,48 +421,13 @@ main {
     color: #ffffff;
 
     box-shadow:
-        0 12px 30px
-        rgba(4, 27, 49, 0.14);
-}
-
-
-/* パネル内の薄いグリッド */
-
-.search-section::before {
-    content: "";
-
-    position: absolute;
-
-    inset: 0;
-
-    pointer-events: none;
-
-    background-image:
-        linear-gradient(
-            rgba(255, 255, 255, 0.025) 1px,
-            transparent 1px
-        ),
-        linear-gradient(
-            90deg,
-            rgba(255, 255, 255, 0.025) 1px,
-            transparent 1px
-        );
-
-    background-size:
-        24px
-        24px;
-}
-
-
-.search-section > * {
-    position: relative;
-
-    z-index: 1;
+        0 8px 22px
+        rgba(4, 27, 49, 0.13);
 }
 
 
 /* ========================================
-   検索エリア
+   検索欄
 ======================================== */
 
 .search-area {
@@ -521,10 +445,6 @@ main {
 }
 
 
-/* ========================================
-   虫眼鏡
-======================================== */
-
 .search-icon {
     position: absolute;
 
@@ -536,17 +456,13 @@ main {
 
     color: #294f70;
 
-    font-size: 30px;
+    font-size: 29px;
 
     z-index: 2;
 
     pointer-events: none;
 }
 
-
-/* ========================================
-   検索ボックス
-======================================== */
 
 #searchInput {
     width: 100%;
@@ -565,11 +481,8 @@ main {
 
     outline: none;
 
-    background-color:
-        #ffffff;
-
-    color:
-        var(--text);
+    background-color: #ffffff;
+    color: var(--text);
 
     font-family: inherit;
 
@@ -592,8 +505,7 @@ main {
 
 
 #searchInput:focus {
-    border-color:
-        #31a9e8;
+    border-color: #31a9e8;
 
     box-shadow:
         0 0 0 3px
@@ -602,7 +514,7 @@ main {
 
 
 /* ========================================
-   ×ボタン
+   検索クリア
 ======================================== */
 
 #clearSearchButton {
@@ -628,11 +540,9 @@ main {
     border: none;
     border-radius: 4px;
 
-    background:
-        transparent;
+    background-color: transparent;
 
-    color:
-        var(--text);
+    color: var(--text);
 
     font-family: inherit;
 
@@ -643,8 +553,7 @@ main {
 
 
 #clearSearchButton:hover {
-    background-color:
-        #eaf0f5;
+    background-color: #eaf0f5;
 }
 
 
@@ -682,11 +591,8 @@ main {
 
     border-radius: 5px;
 
-    background-color:
-        #ffffff;
-
-    color:
-        var(--text);
+    background-color: #ffffff;
+    color: var(--text);
 
     font-family: inherit;
 
@@ -695,13 +601,7 @@ main {
 
     cursor: pointer;
 
-    box-shadow:
-        0 3px 8px
-        rgba(0, 0, 0, 0.07);
-
-    transition:
-        transform 0.12s,
-        background-color 0.12s;
+    transition: 0.12s;
 }
 
 
@@ -716,34 +616,30 @@ main {
     transform:
         translateY(-50%);
 
-    color:
-        #52718d;
+    color: #52718d;
 
     font-size: 25px;
 }
 
 
 .search-candidate:hover {
-    background-color:
-        #eef6fb;
+    background-color: #eef6fb;
 
-    transform:
-        translateX(3px);
+    transform: translateX(3px);
 }
 
 
 .no-search-result {
     padding: 18px;
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
     text-align: center;
 }
 
 
 /* ========================================
-   選手選択後のボタン
+   選手メニュー
 ======================================== */
 
 #playerButtons {
@@ -783,11 +679,8 @@ main {
 
     border-radius: 5px;
 
-    background-color:
-        #ffffff;
-
-    color:
-        var(--text);
+    background-color: #ffffff;
+    color: var(--text);
 
     font-family: inherit;
 
@@ -796,9 +689,7 @@ main {
 
     cursor: pointer;
 
-    transition:
-        transform 0.12s,
-        background-color 0.12s;
+    transition: 0.12s;
 }
 
 
@@ -809,19 +700,16 @@ main {
 
     right: 18px;
 
-    color:
-        #52718d;
+    color: #52718d;
 
     font-size: 23px;
 }
 
 
 .player-menu button:hover {
-    background-color:
-        #eef6fb;
+    background-color: #eef6fb;
 
-    transform:
-        translateX(3px);
+    transform: translateX(3px);
 }
 
 
@@ -840,19 +728,19 @@ main {
         auto
         0;
 
-    padding-top: 18px;
+    padding:
+        18px
+        10px
+        0;
 
     border-top:
         1px solid
         rgba(255, 255, 255, 0.28);
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
     font-size: 14px;
     font-weight: bold;
-
-    letter-spacing: 0.5px;
 }
 
 
@@ -877,8 +765,7 @@ main {
         0
         12px;
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
     font-size: 18px;
 }
@@ -889,11 +776,9 @@ main {
 
     margin: 0 auto;
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
-    white-space:
-        pre-wrap;
+    white-space: pre-wrap;
 
     text-align: center;
 
@@ -904,23 +789,21 @@ main {
 
 
 /* ========================================
-   02 TEAM SEARCH
+   TEAM SEARCH
 ======================================== */
 
 .team-section {
     width: 100%;
 
-    margin:
-        0
-        auto;
+    margin: 0 auto;
 }
 
 
 /* ========================================
-   12球団グリッド
+   2リーグ
 ======================================== */
 
-.team-grid {
+.league-container {
     width: 100%;
 
     display: grid;
@@ -928,7 +811,72 @@ main {
     grid-template-columns:
         repeat(2, minmax(0, 1fr));
 
-    gap: 13px;
+    gap: 28px;
+}
+
+
+/* ========================================
+   リーグ1列
+======================================== */
+
+.league-column {
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+}
+
+
+/* ========================================
+   リーグタイトル
+======================================== */
+
+.league-title {
+    width: 100%;
+
+    min-height: 50px;
+
+    padding:
+        0
+        18px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    background:
+        linear-gradient(
+            135deg,
+            #073154,
+            #0b507b
+        );
+
+    border-radius: 5px;
+
+    color: #ffffff;
+
+    text-align: left;
+}
+
+
+.league-title span {
+    font-size: 19px;
+    font-weight: bold;
+}
+
+
+.league-title small {
+    color: #c4d6e4;
+
+    font-size: 8px;
+    font-weight: bold;
+
+    letter-spacing: 2px;
 }
 
 
@@ -942,15 +890,15 @@ main {
     position: relative;
 
     width: 100%;
-    min-height: 92px;
+    min-height: 80px;
 
     margin: 0;
 
     padding:
-        14px
-        45px
-        14px
-        25px;
+        12px
+        42px
+        12px
+        20px;
 
     display: flex;
 
@@ -960,19 +908,18 @@ main {
 
     border:
         1px solid
-        #d0dbe5;
+        #ccd9e4;
 
-    border-radius: 6px;
+    border-radius: 5px;
 
     background:
         linear-gradient(
             135deg,
             #ffffff,
-            #f8fbfd
+            #f9fbfd
         );
 
-    color:
-        var(--text);
+    color: var(--text);
 
     font-family: inherit;
 
@@ -981,17 +928,14 @@ main {
     cursor: pointer;
 
     box-shadow:
-        0 4px 10px
+        0 3px 8px
         rgba(12, 43, 71, 0.06);
 
-    transition:
-        transform 0.15s,
-        box-shadow 0.15s,
-        border-color 0.15s;
+    transition: 0.15s;
 }
 
 
-/* 球団カラーライン */
+/* 左側球団カラー */
 
 .team-button::before {
     content: "";
@@ -1004,7 +948,7 @@ main {
     width: 8px;
     height: 100%;
 
-    background:
+    background-color:
         var(--team-color);
 }
 
@@ -1017,7 +961,7 @@ main {
         #9eb5c8;
 
     box-shadow:
-        0 8px 18px
+        0 7px 16px
         rgba(12, 43, 71, 0.12);
 }
 
@@ -1029,27 +973,26 @@ main {
 
 
 /* ========================================
-   球団番号
+   番号
 ======================================== */
 
 .team-number {
-    width: 55px;
+    width: 50px;
 
     flex-shrink: 0;
 
-    margin-right: 18px;
-
-    padding-right: 15px;
+    margin-right: 15px;
+    padding-right: 13px;
 
     border-right:
         1px solid
         var(--line);
 
-    color:
-        #607b94;
+    color: #68829a;
 
-    font-size: 18px;
-    font-weight: normal;
+    font-size: 17px;
+
+    text-align: center;
 }
 
 
@@ -1069,27 +1012,25 @@ main {
 
 
 .team-info strong {
-    color:
-        var(--text);
+    color: var(--text);
 
-    font-size: 15px;
+    font-size: 14px;
 
     line-height: 1.4;
 }
 
 
 .team-info small {
-    margin-top: 6px;
+    margin-top: 5px;
 
     overflow: hidden;
 
-    color:
-        #73879a;
+    color: #73879a;
 
-    font-size: 8px;
+    font-size: 7px;
     font-weight: bold;
 
-    letter-spacing: 1.2px;
+    letter-spacing: 1.1px;
 
     white-space: nowrap;
 
@@ -1104,31 +1045,24 @@ main {
 .team-arrow {
     position: absolute;
 
-    right: 18px;
+    right: 15px;
     top: 50%;
 
     transform:
         translateY(-50%);
 
-    color:
-        #173d5e;
+    color: #173d5e;
 
-    font-size: 28px;
-    font-weight: 300;
+    font-size: 26px;
 }
 
 
 /* ========================================
-   球団カラー
+   パ・リーグ球団色
 ======================================== */
 
 .softbank {
     --team-color: #f5c400;
-}
-
-
-.giants {
-    --team-color: #f58220;
 }
 
 
@@ -1137,18 +1071,8 @@ main {
 }
 
 
-.tigers {
-    --team-color: #ffd400;
-}
-
-
 .buffaloes {
     --team-color: #17264d;
-}
-
-
-.baystars {
-    --team-color: #0786c8;
 }
 
 
@@ -1157,23 +1081,42 @@ main {
 }
 
 
-.carp {
-    --team-color: #e31b2b;
-}
-
-
 .lions {
     --team-color: #16477e;
 }
 
 
-.swallows {
-    --team-color: #159447;
+.marines {
+    --team-color: #171717;
 }
 
 
-.marines {
-    --team-color: #171717;
+/* ========================================
+   セ・リーグ球団色
+======================================== */
+
+.giants {
+    --team-color: #f58220;
+}
+
+
+.tigers {
+    --team-color: #ffd400;
+}
+
+
+.baystars {
+    --team-color: #0786c8;
+}
+
+
+.carp {
+    --team-color: #e31b2b;
+}
+
+
+.swallows {
+    --team-color: #159447;
 }
 
 
@@ -1197,11 +1140,8 @@ main {
 
     display: flex;
 
-    justify-content:
-        space-between;
-
-    align-items:
-        center;
+    justify-content: space-between;
+    align-items: center;
 
     gap: 20px;
 
@@ -1216,8 +1156,7 @@ main {
         3px solid
         #dce8f2;
 
-    color:
-        #a9bfd2;
+    color: #a9bfd2;
 
     font-size: 8px;
     font-weight: bold;
@@ -1239,12 +1178,12 @@ main {
     }
 
 
-    .system-version {
+    .top-brand {
         display: none;
     }
 
 
-    .top-brand {
+    .system-version {
         display: none;
     }
 
@@ -1258,24 +1197,32 @@ main {
 
 
     main {
-        padding-left: 18px;
-        padding-right: 18px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+
+    .league-container {
+        gap: 15px;
     }
 
 
     .team-button {
-        min-height: 88px;
-
-        padding-left: 20px;
+        padding-left: 17px;
     }
 
 
     .team-number {
-        width: 45px;
+        width: 42px;
 
-        margin-right: 12px;
+        margin-right: 10px;
 
-        padding-right: 10px;
+        padding-right: 8px;
+    }
+
+
+    .team-info strong {
+        font-size: 13px;
     }
 
 }
@@ -1310,7 +1257,7 @@ main {
 
         padding:
             7px
-            10px;
+            8px;
 
         font-size: 13px;
     }
@@ -1321,11 +1268,13 @@ main {
     }
 
 
+    /* ロゴ */
+
     .site-header {
         padding:
-            27px
-            15px
-            20px;
+            24px
+            12px
+            18px;
     }
 
 
@@ -1334,19 +1283,19 @@ main {
 
         font-size: 8px;
 
-        letter-spacing: 4px;
+        letter-spacing: 3px;
     }
 
 
     .site-icon {
-        width: 220px;
+        width: 330px;
 
-        max-width: 70vw;
+        max-width: 92vw;
     }
 
 
     .subtitle {
-        margin-top: 8px;
+        margin-top: 6px;
 
         font-size: 13px;
     }
@@ -1354,8 +1303,8 @@ main {
 
     main {
         padding:
-            22px
-            12px
+            20px
+            10px
             45px;
     }
 
@@ -1363,27 +1312,26 @@ main {
     /* セクション */
 
     .section-header {
-        margin-bottom: 12px;
+        margin-bottom: 11px;
 
-        padding-bottom: 10px;
+        padding-bottom: 9px;
     }
 
 
     .section-number {
-        min-width: 54px;
+        min-width: 52px;
 
-        margin-right: 11px;
+        margin-right: 10px;
+        padding-right: 10px;
 
-        padding-right: 11px;
-
-        font-size: 32px;
+        font-size: 31px;
     }
 
 
     .section-english {
         font-size: 8px;
 
-        letter-spacing: 3px;
+        letter-spacing: 2.5px;
     }
 
 
@@ -1400,25 +1348,23 @@ main {
     /* 検索 */
 
     .search-area-container {
-        margin-bottom: 30px;
+        margin-bottom: 27px;
     }
 
 
     .search-section {
         padding:
-            20px
-            14px;
-
-        border-radius: 5px;
+            19px
+            13px;
     }
 
 
     #searchInput {
         padding:
             16px
-            45px
+            44px
             16px
-            48px;
+            47px;
 
         font-size: 16px;
     }
@@ -1442,8 +1388,6 @@ main {
 
 
     #nowPlaying {
-        margin-top: 22px;
-
         font-size: 13px;
     }
 
@@ -1454,25 +1398,50 @@ main {
 
 
     /* ====================================
-       スマホは12球団を1列
+       スマホでもリーグを分ける
+       パ → セ の順で縦表示
     ==================================== */
 
-    .team-grid {
+    .league-container {
         grid-template-columns:
             1fr;
 
-        gap: 9px;
+        gap: 24px;
+    }
+
+
+    .league-column {
+        gap: 8px;
+    }
+
+
+    .league-title {
+        min-height: 45px;
+
+        padding:
+            0
+            15px;
+    }
+
+
+    .league-title span {
+        font-size: 17px;
+    }
+
+
+    .league-title small {
+        font-size: 7px;
     }
 
 
     .team-button {
-        min-height: 78px;
+        min-height: 72px;
 
         padding:
-            11px
-            40px
-            11px
-            19px;
+            10px
+            38px
+            10px
+            17px;
     }
 
 
@@ -1480,10 +1449,9 @@ main {
         width: 43px;
 
         margin-right: 11px;
-
         padding-right: 9px;
 
-        font-size: 16px;
+        font-size: 15px;
     }
 
 
@@ -1493,16 +1461,16 @@ main {
 
 
     .team-info small {
-        margin-top: 4px;
+        margin-top: 3px;
 
         font-size: 7px;
     }
 
 
     .team-arrow {
-        right: 14px;
+        right: 13px;
 
-        font-size: 25px;
+        font-size: 24px;
     }
 
 
