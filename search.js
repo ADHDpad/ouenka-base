@@ -1,11 +1,7 @@
-alert("新しいsearch.jsが読み込まれました");
-
 // ========================================
 // 選手検索
 // ========================================
 
-function searchPlayers() {
-function searchPlayers() {
 function searchPlayers() {
 
     const keyword = document
