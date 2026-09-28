@@ -3,18 +3,38 @@
 // 検索候補方式
 // ========================================
 
+
+// ========================================
+// 検索候補の最大表示件数
+// ========================================
+
+const MAX_SUGGESTIONS = 10;
+
+
+
+// ========================================
+// 選手を検索
+// ========================================
+
 function searchPlayers() {
 
     const searchInput =
-        document.getElementById("searchInput");
+        document.getElementById(
+            "searchInput"
+        );
+
 
     const keyword =
-        searchInput.value
+        searchInput
+            .value
             .trim()
             .toLowerCase();
 
+
     const suggestions =
-        document.getElementById("searchSuggestions");
+        document.getElementById(
+            "searchSuggestions"
+        );
 
 
     // 一度候補を消す
@@ -27,10 +47,13 @@ function searchPlayers() {
 
     if (keyword === "") {
 
-        suggestions.style.display = "none";
+        suggestions.style.display =
+            "none";
 
         return;
+
     }
+
 
 
     // ====================================
@@ -48,31 +71,40 @@ function searchPlayers() {
 
 
             const name =
-                (player.name || "")
-                    .toLowerCase();
+                (
+                    player.name || ""
+                ).toLowerCase();
 
 
             const reading =
-                (player.reading || "")
-                    .toLowerCase();
+                (
+                    player.reading || ""
+                ).toLowerCase();
 
 
             const team =
-                (player.team || "")
-                    .toLowerCase();
+                (
+                    player.team || ""
+                ).toLowerCase();
 
 
             if (
+
                 name.includes(keyword) ||
+
                 reading.includes(keyword) ||
+
                 team.includes(keyword)
+
             ) {
 
                 matchedPlayers.push({
 
-                    playerId: playerId,
+                    playerId:
+                        playerId,
 
-                    player: player
+                    player:
+                        player
 
                 });
 
@@ -82,14 +114,19 @@ function searchPlayers() {
     );
 
 
+
     // ====================================
     // 候補なし
     // ====================================
 
-    if (matchedPlayers.length === 0) {
+    if (
+        matchedPlayers.length === 0
+    ) {
 
         const noResult =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
 
         noResult.textContent =
@@ -101,7 +138,7 @@ function searchPlayers() {
 
 
         noResult.style.color =
-            "#777";
+            "#ffffff";
 
 
         noResult.style.textAlign =
@@ -118,23 +155,40 @@ function searchPlayers() {
 
 
         return;
+
     }
+
+
+
+    // ====================================
+    // 最大10件までにする
+    // ====================================
+
+    const displayPlayers =
+        matchedPlayers.slice(
+            0,
+            MAX_SUGGESTIONS
+        );
+
 
 
     // ====================================
     // 検索候補を作る
     // ====================================
 
-    matchedPlayers.forEach(
+    displayPlayers.forEach(
         function(item) {
 
             const candidate =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
 
             // 選手名
             candidate.textContent =
                 item.player.name;
+
 
 
             // =================================
@@ -185,6 +239,7 @@ function searchPlayers() {
                 "border-box";
 
 
+
             // =================================
             // マウスを乗せた時
             // =================================
@@ -194,6 +249,7 @@ function searchPlayers() {
 
                     candidate.style.background =
                         "#f3f7ff";
+
 
                     candidate.style.borderColor =
                         "#8db7ff";
@@ -207,10 +263,12 @@ function searchPlayers() {
                     candidate.style.background =
                         "#ffffff";
 
+
                     candidate.style.borderColor =
                         "#d8dde6";
 
                 };
+
 
 
             // =================================
@@ -252,7 +310,9 @@ function selectSearchCandidate(
     player
 ) {
 
+    // ====================================
     // テキストボックスを選手名にする
+    // ====================================
 
     document.getElementById(
         "searchInput"
@@ -260,7 +320,10 @@ function selectSearchCandidate(
         player.name;
 
 
+
+    // ====================================
     // 検索候補を閉じる
+    // ====================================
 
     const suggestions =
         document.getElementById(
@@ -268,13 +331,18 @@ function selectSearchCandidate(
         );
 
 
-    suggestions.innerHTML = "";
+    suggestions.innerHTML =
+        "";
+
 
     suggestions.style.display =
         "none";
 
 
+
+    // ====================================
     // 以前の選手ボタンを消す
+    // ====================================
 
     const resultArea =
         document.getElementById(
@@ -282,10 +350,14 @@ function selectSearchCandidate(
         );
 
 
-    resultArea.innerHTML = "";
+    resultArea.innerHTML =
+        "";
 
 
+
+    // ====================================
     // 選択した選手だけ表示
+    // ====================================
 
     createPlayerButton(
         playerId,
@@ -312,7 +384,9 @@ function createPlayerButton(
 
 
     const playerBox =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     playerBox.className =
@@ -320,7 +394,9 @@ function createPlayerButton(
 
 
     const playerButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
 
     playerButton.textContent =
@@ -369,16 +445,21 @@ function showPlayerMenu(
 
 
     if (oldMenu) {
+
         return;
+
     }
 
 
     const menu =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     menu.className =
         "player-menu";
+
 
 
     // ====================================
@@ -386,7 +467,9 @@ function showPlayerMenu(
     // ====================================
 
     const playButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
 
     playButton.textContent =
@@ -408,12 +491,15 @@ function showPlayerMenu(
     );
 
 
+
     // ====================================
     // ② MIDIを出力
     // ====================================
 
     const midiButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
 
     midiButton.textContent =
@@ -423,13 +509,16 @@ function showPlayerMenu(
     midiButton.onclick =
         function() {
 
-            if (!player.midiZip) {
+            if (
+                !player.midiZip
+            ) {
 
                 alert(
                     "MIDIファイルが登録されていません"
                 );
 
                 return;
+
             }
 
 
@@ -445,12 +534,15 @@ function showPlayerMenu(
     );
 
 
+
     // ====================================
     // ③ GarageBandを出力
     // ====================================
 
     const garageButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
 
     garageButton.textContent =
@@ -460,13 +552,16 @@ function showPlayerMenu(
     garageButton.onclick =
         function() {
 
-            if (!player.garageBandZip) {
+            if (
+                !player.garageBandZip
+            ) {
 
                 alert(
                     "GarageBandファイルが登録されていません"
                 );
 
                 return;
+
             }
 
 
@@ -499,7 +594,9 @@ function downloadFile(
 ) {
 
     const link =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
 
 
     link.href =
@@ -539,7 +636,9 @@ function selectPlayer(
 
 
     if (!player) {
+
         return;
+
     }
 
 
