@@ -858,7 +858,7 @@ async function playDobayashiMidi() {
             ),
 
             loadMidi(
-                "データ/堂林翔太/③MIDIベース.mid"
+                "データ/堂林翔太/③MIDIベース.mid"
             )
 
         ]);
