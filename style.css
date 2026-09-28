@@ -41,7 +41,7 @@ h1 {
 
 
 /* ========================================
-   選手一覧エリア
+   選手エリア
 ======================================== */
 
 .player {
@@ -62,13 +62,27 @@ h1 {
 }
 
 
-/* 選手一覧タイトル */
+/* 選手検索タイトル */
 
 .player h2 {
     color: #ffffff;
 
     margin-top: 0;
     margin-bottom: 20px;
+}
+
+
+/* ========================================
+   検索エリア
+======================================== */
+
+.search-area {
+    position: relative;
+
+    width: 100%;
+    max-width: 400px;
+
+    margin: 0 auto;
 }
 
 
@@ -117,7 +131,30 @@ h1 {
 
 
 /* ========================================
-   検索結果
+   検索候補全体
+======================================== */
+
+#searchSuggestions {
+    display: none;
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    background-color: #0B2F55;
+
+    padding: 0 0 10px 0;
+
+    border: none;
+
+    border-radius: 0 0 18px 18px;
+
+    text-align: left;
+}
+
+
+/* ========================================
+   選択された選手
 ======================================== */
 
 #playerButtons {
@@ -264,13 +301,10 @@ button:active {
 #lyrics {
     color: #ffffff;
 
-    /* players.js の改行をそのまま表示 */
     white-space: pre-wrap;
 
-    /* 各行を中央揃え */
     text-align: center;
 
-    /* 読みやすい行間 */
     line-height: 1.9;
 
     font-size: 16px;
