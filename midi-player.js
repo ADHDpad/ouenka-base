@@ -850,7 +850,7 @@ async function playDobayashiMidi() {
         ] = await Promise.all([
 
             loadMidi(
-                "データ/堂林翔太/①MIDIメロディー.mid"
+                "データ/堂林翔太/①MIDIメロディー.mid"
             ),
 
             loadMidi(
