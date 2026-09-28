@@ -2,18 +2,19 @@
 // 選手検索
 // ========================================
 
-
-// 検索候補の最大表示件数
 const MAX_SUGGESTIONS = 10;
 
-
-// 現在選択している選手
 let selectedPlayerId = null;
-
-
-// 選択した時点の検索文字
 let selectedSearchText = "";
 
+
+// ========================================
+// GarageBand先読み用
+// ========================================
+
+let preparedGarageBandFile = null;
+let preparedGarageBandPath = "";
+let garageBandPreparing = false;
 
 
 // ========================================
@@ -23,27 +24,20 @@ let selectedSearchText = "";
 function searchPlayers() {
 
     const searchInput =
-        document.getElementById(
-            "searchInput"
-        );
-
+        document.getElementById("searchInput");
 
     const keyword =
-        searchInput
-            .value
+        searchInput.value
             .trim()
             .toLowerCase();
 
-
     const currentText =
         searchInput.value;
-
 
     const suggestions =
         document.getElementById(
             "searchSuggestions"
         );
-
 
     const clearButton =
         document.getElementById(
@@ -51,11 +45,9 @@ function searchPlayers() {
         );
 
 
-    // ×ボタンの表示
+    // ×ボタン
 
-    if (
-        searchInput.value.length > 0
-    ) {
+    if (searchInput.value.length > 0) {
 
         clearButton.style.display =
             "flex";
@@ -69,7 +61,7 @@ function searchPlayers() {
     }
 
 
-    // 選手選択後に検索文字を変更した場合
+    // 選手選択後に文字を変更した場合
 
     if (
         selectedPlayerId !== null &&
@@ -81,13 +73,10 @@ function searchPlayers() {
     }
 
 
-    suggestions.innerHTML =
-        "";
+    suggestions.innerHTML = "";
 
 
-    if (
-        keyword === ""
-    ) {
+    if (keyword === "") {
 
         suggestions.style.display =
             "none";
@@ -98,57 +87,39 @@ function searchPlayers() {
 
 
     // ====================================
-    // 一致する選手を検索
+    // 一致する選手
     // ====================================
 
-    const matchedPlayers =
-        [];
+    const matchedPlayers = [];
 
 
-    Object.keys(
-        players
-    ).forEach(
+    Object.keys(players).forEach(
 
         function(playerId) {
 
             const player =
                 players[playerId];
 
-
             const name =
-                (
-                    player.name ||
-                    ""
-                ).toLowerCase();
-
+                (player.name || "")
+                    .toLowerCase();
 
             const reading =
-                (
-                    player.reading ||
-                    ""
-                ).toLowerCase();
-
+                (player.reading || "")
+                    .toLowerCase();
 
             const team =
-                (
-                    player.team ||
-                    ""
-                ).toLowerCase();
+                (player.team || "")
+                    .toLowerCase();
 
 
             if (
 
-                name.includes(
-                    keyword
-                ) ||
+                name.includes(keyword) ||
 
-                reading.includes(
-                    keyword
-                ) ||
+                reading.includes(keyword) ||
 
-                team.includes(
-                    keyword
-                )
+                team.includes(keyword)
 
             ) {
 
@@ -173,41 +144,32 @@ function searchPlayers() {
     // 候補なし
     // ====================================
 
-    if (
-        matchedPlayers.length === 0
-    ) {
+    if (matchedPlayers.length === 0) {
 
         const noResult =
             document.createElement(
                 "div"
             );
 
-
         noResult.className =
             "no-search-result";
 
-
         noResult.textContent =
             "該当する選手はいません";
-
 
         suggestions.appendChild(
             noResult
         );
 
-
         suggestions.style.display =
             "block";
-
 
         return;
 
     }
 
 
-    // ====================================
     // 最大10件
-    // ====================================
 
     const displayPlayers =
         matchedPlayers.slice(
@@ -217,7 +179,7 @@ function searchPlayers() {
 
 
     // ====================================
-    // 検索候補を作成
+    // 検索候補
     // ====================================
 
     displayPlayers.forEach(
@@ -229,10 +191,8 @@ function searchPlayers() {
                     "div"
                 );
 
-
             candidate.className =
                 "search-candidate";
-
 
             candidate.textContent =
                 item.player.name;
@@ -265,7 +225,6 @@ function searchPlayers() {
         "block";
 
 }
-
 
 
 // ========================================
@@ -315,17 +274,27 @@ function selectSearchCandidate(
         "none";
 
 
+    // 3ボタン表示
+
     showPlayerActions(
         playerId,
+        player
+    );
+
+
+    // ====================================
+    // GarageBand ZIPをここで先読み
+    // ====================================
+
+    prepareGarageBandFile(
         player
     );
 
 }
 
 
-
 // ========================================
-// 3種類のボタンを表示
+// 3種類のボタン
 // ========================================
 
 function showPlayerActions(
@@ -351,7 +320,6 @@ function showPlayerActions(
 
     menu.className =
         "player-menu";
-
 
 
     // ====================================
@@ -383,9 +351,8 @@ function showPlayerActions(
     );
 
 
-
     // ====================================
-    // ② MIDIを出力
+    // ② MIDI
     // ====================================
 
     const midiButton =
@@ -401,9 +368,7 @@ function showPlayerActions(
     midiButton.onclick =
         function() {
 
-            if (
-                !player.midiZip
-            ) {
+            if (!player.midiZip) {
 
                 alert(
                     "MIDIファイルが登録されていません"
@@ -414,7 +379,7 @@ function showPlayerActions(
             }
 
 
-            shareFile(
+            shareFileNormally(
                 player.midiZip
             );
 
@@ -424,7 +389,6 @@ function showPlayerActions(
     menu.appendChild(
         midiButton
     );
-
 
 
     // ====================================
@@ -437,28 +401,23 @@ function showPlayerActions(
         );
 
 
+    garageButton.id =
+        "garageBandButton";
+
+
     garageButton.textContent =
-        "GarageBandファイル出力（iPhoneのみ）";
+        "GarageBand準備中…";
+
+
+    garageButton.disabled =
+        true;
 
 
     garageButton.onclick =
         function() {
 
-            if (
-                !player.garageBandZip
-            ) {
-
-                alert(
-                    "GarageBandファイルが登録されていません"
-                );
-
-                return;
-
-            }
-
-
-            shareFile(
-                player.garageBandZip
+            sharePreparedGarageBand(
+                player
             );
 
         };
@@ -476,109 +435,361 @@ function showPlayerActions(
 }
 
 
-
 // ========================================
-// 選択した選手の表示を消す
+// GarageBandファイルを先読み
 // ========================================
 
-function clearSelectedPlayer() {
+async function prepareGarageBandFile(
+    player
+) {
 
-    selectedPlayerId =
+    // 前の選手のデータを消す
+
+    preparedGarageBandFile =
         null;
 
-
-    selectedSearchText =
+    preparedGarageBandPath =
         "";
 
-
-    document.getElementById(
-        "playerButtons"
-    ).innerHTML =
-        "";
+    garageBandPreparing =
+        false;
 
 
-    document.getElementById(
-        "nowPlaying"
-    ).textContent =
-        "選手を検索してください";
-
-
-    document.getElementById(
-        "lyricsTitle"
-    ).textContent =
-        "";
-
-
-    document.getElementById(
-        "lyrics"
-    ).textContent =
-        "";
-
-}
-
-
-
-// ========================================
-// ×ボタン
-// ========================================
-
-function clearSearch() {
-
-    const searchInput =
+    const button =
         document.getElementById(
-            "searchInput"
+            "garageBandButton"
         );
 
 
-    searchInput.value =
-        "";
+    // ファイル未登録
+
+    if (!player.garageBandZip) {
+
+        if (button) {
+
+            button.textContent =
+                "GarageBandファイル未登録";
+
+            button.disabled =
+                true;
+
+        }
+
+        return;
+
+    }
 
 
-    const suggestions =
-        document.getElementById(
-            "searchSuggestions"
-        );
+    garageBandPreparing =
+        true;
 
 
-    suggestions.innerHTML =
-        "";
+    if (button) {
 
+        button.textContent =
+            "GarageBand準備中…";
 
-    suggestions.style.display =
-        "none";
+        button.disabled =
+            true;
 
+    }
 
-    document.getElementById(
-        "clearSearchButton"
-    ).style.display =
-        "none";
-
-
-    clearSelectedPlayer();
-
-
-    searchInput.focus();
-
-}
-
-
-
-// ========================================
-// ファイルを共有
-//
-// iPhoneではダウンロード画面ではなく
-// 共有画面を使用する
-// ========================================
-
-async function shareFile(
-    filePath
-) {
 
     try {
 
         // ====================================
-        // ファイルを取得
+        // ZIP取得
         // ====================================
+
+        const response =
+            await fetch(
+                player.garageBandZip
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "GarageBandファイルを取得できませんでした"
+            );
+
+        }
+
+
+        // ====================================
+        // Blob化
+        // ====================================
+
+        const blob =
+            await response.blob();
+
+
+        // ====================================
+        // ファイル名
+        // ====================================
+
+        const fileName =
+            decodeURIComponent(
+
+                player.garageBandZip
+                    .split("/")
+                    .pop()
+
+            );
+
+
+        // ====================================
+        // Fileを作る
+        // ====================================
+
+        preparedGarageBandFile =
+            new File(
+
+                [blob],
+
+                fileName,
+
+                {
+                    type:
+                        blob.type ||
+                        "application/zip"
+                }
+
+            );
+
+
+        preparedGarageBandPath =
+            player.garageBandZip;
+
+
+        garageBandPreparing =
+            false;
+
+
+        // ====================================
+        // 同じ選手をまだ表示中なら
+        // ボタンを使用可能にする
+        // ====================================
+
+        if (
+
+            selectedPlayerId !== null &&
+
+            preparedGarageBandPath ===
+                player.garageBandZip
+
+        ) {
+
+            const currentButton =
+                document.getElementById(
+                    "garageBandButton"
+                );
+
+
+            if (currentButton) {
+
+                currentButton.textContent =
+                    "GarageBandファイル出力（iPhoneのみ）";
+
+                currentButton.disabled =
+                    false;
+
+            }
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "GarageBand準備エラー:",
+            error
+        );
+
+
+        garageBandPreparing =
+            false;
+
+
+        const currentButton =
+            document.getElementById(
+                "garageBandButton"
+            );
+
+
+        if (currentButton) {
+
+            currentButton.textContent =
+                "GarageBand準備失敗";
+
+            currentButton.disabled =
+                false;
+
+        }
+
+    }
+
+}
+
+
+// ========================================
+// 準備済みGarageBandファイルを共有
+// ========================================
+
+function sharePreparedGarageBand(
+    player
+) {
+
+    // まだ準備中
+
+    if (garageBandPreparing) {
+
+        alert(
+            "GarageBandファイルを準備中です"
+        );
+
+        return;
+
+    }
+
+
+    // 準備できていない
+
+    if (
+
+        !preparedGarageBandFile ||
+
+        preparedGarageBandPath !==
+            player.garageBandZip
+
+    ) {
+
+        alert(
+            "GarageBandファイルの準備ができていません"
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        const shareData = {
+
+            files: [
+                preparedGarageBandFile
+            ]
+
+        };
+
+
+        // ====================================
+        // 共有できるか確認
+        // ====================================
+
+        if (
+
+            navigator.share &&
+
+            navigator.canShare &&
+
+            navigator.canShare(
+                shareData
+            )
+
+        ) {
+
+            /*
+             * 重要
+             *
+             * ここではfetchしない。
+             *
+             * ボタンを押した直後に
+             * navigator.share()を実行する。
+             */
+
+            const result =
+                navigator.share(
+                    shareData
+                );
+
+
+            if (
+
+                result &&
+
+                typeof result.catch ===
+                    "function"
+
+            ) {
+
+                result.catch(
+
+                    function(error) {
+
+                        if (
+                            error.name !==
+                            "AbortError"
+                        ) {
+
+                            console.error(
+                                "GarageBand共有エラー:",
+                                error
+                            );
+
+
+                            alert(
+                                "GarageBandファイルを共有できませんでした"
+                            );
+
+                        }
+
+                    }
+
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        alert(
+            "この端末ではGarageBandファイル共有に対応していません"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "GarageBand共有エラー:",
+            error
+        );
+
+
+        alert(
+            "GarageBandファイルを共有できませんでした"
+        );
+
+    }
+
+}
+
+
+// ========================================
+// MIDI共有
+// ========================================
+
+async function shareFileNormally(
+    filePath
+) {
+
+    try {
 
         const response =
             await fetch(
@@ -586,9 +797,7 @@ async function shareFile(
             );
 
 
-        if (
-            !response.ok
-        ) {
+        if (!response.ok) {
 
             throw new Error(
                 "ファイルを取得できませんでした"
@@ -597,32 +806,19 @@ async function shareFile(
         }
 
 
-
-        // ====================================
-        // Blobに変換
-        // ====================================
-
         const blob =
             await response.blob();
 
 
-
-        // ====================================
-        // ファイル名を取得
-        // ====================================
-
         const fileName =
             decodeURIComponent(
+
                 filePath
                     .split("/")
                     .pop()
+
             );
 
-
-
-        // ====================================
-        // Fileオブジェクトを作成
-        // ====================================
 
         const file =
             new File(
@@ -640,10 +836,12 @@ async function shareFile(
             );
 
 
+        const shareData = {
 
-        // ====================================
-        // この端末がファイル共有に対応しているか
-        // ====================================
+            files: [file]
+
+        };
+
 
         if (
 
@@ -651,35 +849,20 @@ async function shareFile(
 
             navigator.canShare &&
 
-            navigator.canShare({
-
-                files: [file]
-
-            })
+            navigator.canShare(
+                shareData
+            )
 
         ) {
 
-            // =================================
-            // iPhoneの共有画面を表示
-            // =================================
-
-            await navigator.share({
-
-                files: [file]
-
-            });
-
+            await navigator.share(
+                shareData
+            );
 
             return;
 
         }
 
-
-
-        // ====================================
-        // ファイル共有に対応していない場合
-        // 従来のダウンロードに切り替える
-        // ====================================
 
         fallbackDownload(
             blob,
@@ -688,13 +871,7 @@ async function shareFile(
 
     }
 
-    catch (
-        error
-    ) {
-
-        // ユーザーが共有画面で
-        // 「キャンセル」を押した場合は
-        // エラー表示しない
+    catch (error) {
 
         if (
             error.name ===
@@ -707,13 +884,13 @@ async function shareFile(
 
 
         console.error(
-            "ファイル共有エラー:",
+            "MIDI共有エラー:",
             error
         );
 
 
         alert(
-            "ファイルを開けませんでした"
+            "MIDIファイルを開けませんでした"
         );
 
     }
@@ -721,9 +898,7 @@ async function shareFile(
 }
 
 
-
 // ========================================
-// 共有非対応端末用
 // 通常ダウンロード
 // ========================================
 
@@ -786,9 +961,104 @@ function fallbackDownload(
 }
 
 
+// ========================================
+// 選択解除
+// ========================================
+
+function clearSelectedPlayer() {
+
+    selectedPlayerId =
+        null;
+
+
+    selectedSearchText =
+        "";
+
+
+    // GarageBand先読みデータも解除
+
+    preparedGarageBandFile =
+        null;
+
+    preparedGarageBandPath =
+        "";
+
+    garageBandPreparing =
+        false;
+
+
+    document.getElementById(
+        "playerButtons"
+    ).innerHTML =
+        "";
+
+
+    document.getElementById(
+        "nowPlaying"
+    ).textContent =
+        "選手を検索してください";
+
+
+    document.getElementById(
+        "lyricsTitle"
+    ).textContent =
+        "";
+
+
+    document.getElementById(
+        "lyrics"
+    ).textContent =
+        "";
+
+}
+
 
 // ========================================
-// 曲を再生＋歌詞表示
+// ×ボタン
+// ========================================
+
+function clearSearch() {
+
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
+
+
+    searchInput.value =
+        "";
+
+
+    const suggestions =
+        document.getElementById(
+            "searchSuggestions"
+        );
+
+
+    suggestions.innerHTML =
+        "";
+
+
+    suggestions.style.display =
+        "none";
+
+
+    document.getElementById(
+        "clearSearchButton"
+    ).style.display =
+        "none";
+
+
+    clearSelectedPlayer();
+
+
+    searchInput.focus();
+
+}
+
+
+// ========================================
+// 曲を再生＋歌詞
 // ========================================
 
 function selectPlayer(
@@ -799,9 +1069,7 @@ function selectPlayer(
         players[playerId];
 
 
-    if (
-        !player
-    ) {
+    if (!player) {
 
         return;
 
@@ -826,7 +1094,6 @@ function selectPlayer(
         player.lyrics;
 
 }
-
 
 
 // ========================================
