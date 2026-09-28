@@ -119,14 +119,8 @@ function showPlayerMenu(
     const oldMenu =
         playerBox.querySelector(".player-menu");
 
-
-    // すでにメニューが出ていたら閉じる
     if (oldMenu) {
-
-        oldMenu.remove();
-
         return;
-
     }
 
 
@@ -166,95 +160,7 @@ function showPlayerMenu(
 
 
     // ====================================
-    // 堂林翔太だけ
-    // MIDI試聴・MIDI編集を表示
-    // ====================================
-
-    if (player.name === "堂林翔太") {
-
-
-        // =================================
-        // ② MIDI試聴
-        // =================================
-
-        const midiPlayButton =
-            document.createElement("button");
-
-        midiPlayButton.textContent =
-            "🎹 MIDI試聴";
-
-
-        midiPlayButton.onclick =
-            function() {
-
-                if (
-                    typeof playDobayashiMidi
-                    !== "function"
-                ) {
-
-                    alert(
-                        "midi-player.js が読み込まれていません"
-                    );
-
-                    return;
-
-                }
-
-
-                playDobayashiMidi();
-
-            };
-
-
-        menu.appendChild(
-            midiPlayButton
-        );
-
-
-
-        // =================================
-        // ③ MIDI編集
-        // =================================
-
-        const midiEditButton =
-            document.createElement("button");
-
-        midiEditButton.textContent =
-            "✏️ MIDI編集";
-
-
-        midiEditButton.onclick =
-            function() {
-
-                if (
-                    typeof openMidiEditor
-                    !== "function"
-                ) {
-
-                    alert(
-                        "midi-editor.js が読み込まれていません"
-                    );
-
-                    return;
-
-                }
-
-
-                openMidiEditor();
-
-            };
-
-
-        menu.appendChild(
-            midiEditButton
-        );
-
-    }
-
-
-
-    // ====================================
-    // ④ MIDIを出力
+    // ② MIDIを出力
     // ====================================
 
     const midiButton =
@@ -274,7 +180,6 @@ function showPlayerMenu(
                 );
 
                 return;
-
             }
 
 
@@ -292,7 +197,7 @@ function showPlayerMenu(
 
 
     // ====================================
-    // ⑤ GarageBandを出力
+    // ③ GarageBandを出力
     // ====================================
 
     const garageButton =
@@ -312,7 +217,6 @@ function showPlayerMenu(
                 );
 
                 return;
-
             }
 
 
@@ -345,21 +249,16 @@ function downloadFile(filePath) {
     const link =
         document.createElement("a");
 
-
     link.href =
         filePath;
 
-    link.download =
-        "";
-
+    link.download = "";
 
     document.body.appendChild(
         link
     );
 
-
     link.click();
-
 
     document.body.removeChild(
         link
@@ -415,7 +314,6 @@ window.addEventListener(
         document.getElementById(
             "playerButtons"
         ).innerHTML = "";
-
 
         console.log(
             "検索機能準備完了"
