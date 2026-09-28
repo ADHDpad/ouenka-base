@@ -1,31 +1,44 @@
 // ========================================
 // 応援歌BASE MIDIプレイヤー
-// GarageBandから作った音源でMIDIを演奏
+// 長音WAV音源対応版
+// ========================================
+
+
+// ========================================
+// AudioContext
 // ========================================
 
 let midiAudioContext = null;
-let midiPlaying = false;
+
+
+// 現在鳴っている音
 let midiSources = [];
 
 
 // ========================================
-// 音源設定
+// 音源フォルダ
 // ========================================
 
 const soundFolders = {
 
-    melody: "音源/メロディー/",
-    chord: "音源/コード進行/",
-    bass: "音源/ベース/"
+    melody:
+        "音源/メロディー/",
+
+    chord:
+        "音源/コード進行/",
+
+    bass:
+        "音源/ベース/"
 
 };
 
 
 // ========================================
-// 12音のファイル名
+// 音名
 // ========================================
 
 const noteNames = [
+
     "C",
     "Cs",
     "D",
@@ -38,104 +51,199 @@ const noteNames = [
     "A",
     "As",
     "B"
+
 ];
 
 
 // ========================================
-// 読み込んだ音源を保存
+// 読み込み済み音源
 // ========================================
 
 const soundBuffers = {
 
     melody: {},
+
     chord: {},
+
     bass: {}
 
 };
 
 
 // ========================================
-// ドラム
+// MIDI 可変長数値
 // ========================================
 
-let drumBuffer = null;
-
-
-// ========================================
-// MIDIから可変長数値を読む
-// ========================================
-
-function readVariableLength(data, state) {
+function readVariableLength(
+    data,
+    state
+) {
 
     let value = 0;
 
+
     while (true) {
 
-        const byte = data[state.pos++];
+        const byte =
+            data[state.pos++];
+
 
         value =
             (value << 7) |
             (byte & 0x7F);
 
-        if ((byte & 0x80) === 0) {
+
+        if (
+            (byte & 0x80) === 0
+        ) {
+
             break;
+
         }
 
     }
 
+
     return value;
+
 }
+
 
 
 // ========================================
 // 32bit整数
 // ========================================
 
-function readUint32(data, pos) {
+function readUint32(
+    data,
+    pos
+) {
 
     return (
-        data[pos] * 0x1000000 +
-        data[pos + 1] * 0x10000 +
-        data[pos + 2] * 0x100 +
+
+        data[pos] *
+        0x1000000 +
+
+        data[pos + 1] *
+        0x10000 +
+
+        data[pos + 2] *
+        0x100 +
+
         data[pos + 3]
+
     );
 
 }
+
+
+
+// ========================================
+// Note OFF処理
+// ========================================
+
+function finishNote(
+    activeNotes,
+    notes,
+    noteNumber,
+    tick
+) {
+
+    const start =
+        activeNotes[
+            noteNumber
+        ];
+
+
+    if (!start) {
+        return;
+    }
+
+
+    notes.push({
+
+        midi:
+            noteNumber,
+
+        velocity:
+            start.velocity,
+
+        startTick:
+            start.tick,
+
+        endTick:
+            tick
+
+    });
+
+
+    delete activeNotes[
+        noteNumber
+    ];
+
+}
+
 
 
 // ========================================
 // MIDI解析
 // ========================================
 
-function parseMidi(arrayBuffer) {
+function parseMidi(
+    arrayBuffer
+) {
 
     const data =
-        new Uint8Array(arrayBuffer);
+        new Uint8Array(
+            arrayBuffer
+        );
 
+
+    // ticks per quarter note
     const division =
-        (data[12] << 8) |
+        (
+            data[12] << 8
+        ) |
         data[13];
+
 
     let pos = 14;
 
+
     const notes = [];
 
-    let tempo = 500000;
+
+    // デフォルト120 BPM
+    let tempo =
+        500000;
 
 
-    while (pos < data.length) {
+    while (
+        pos <
+        data.length
+    ) {
 
+
+        // =================================
         // MTrkを探す
+        // =================================
+
         if (
+
             data[pos] !== 0x4D ||
+
             data[pos + 1] !== 0x54 ||
+
             data[pos + 2] !== 0x72 ||
+
             data[pos + 3] !== 0x6B
+
         ) {
 
             pos++;
 
             continue;
+
         }
 
 
@@ -147,11 +255,16 @@ function parseMidi(arrayBuffer) {
 
 
         const trackEnd =
-            pos + 8 + trackLength;
+            pos +
+            8 +
+            trackLength;
 
 
         const state = {
-            pos: pos + 8
+
+            pos:
+                pos + 8
+
         };
 
 
@@ -159,10 +272,15 @@ function parseMidi(arrayBuffer) {
 
         let runningStatus = 0;
 
+
         const activeNotes = {};
 
 
-        while (state.pos < trackEnd) {
+        while (
+            state.pos <
+            trackEnd
+        ) {
+
 
             const delta =
                 readVariableLength(
@@ -170,20 +288,30 @@ function parseMidi(arrayBuffer) {
                     state
                 );
 
+
             tick += delta;
 
 
             let status =
-                data[state.pos];
+                data[
+                    state.pos
+                ];
 
 
+            // =================================
             // Running Status
-            if (status < 0x80) {
+            // =================================
+
+            if (
+                status < 0x80
+            ) {
 
                 status =
                     runningStatus;
 
-            } else {
+            }
+
+            else {
 
                 state.pos++;
 
@@ -197,10 +325,15 @@ function parseMidi(arrayBuffer) {
             // Meta Event
             // =================================
 
-            if (status === 0xFF) {
+            if (
+                status === 0xFF
+            ) {
 
                 const type =
-                    data[state.pos++];
+                    data[
+                        state.pos++
+                    ];
+
 
                 const length =
                     readVariableLength(
@@ -211,25 +344,38 @@ function parseMidi(arrayBuffer) {
 
                 // Tempo
                 if (
+
                     type === 0x51 &&
+
                     length === 3
+
                 ) {
 
                     tempo =
-                        data[state.pos] *
+
+                        data[
+                            state.pos
+                        ] *
                         65536 +
 
-                        data[state.pos + 1] *
+                        data[
+                            state.pos + 1
+                        ] *
                         256 +
 
-                        data[state.pos + 2];
+                        data[
+                            state.pos + 2
+                        ];
 
                 }
 
 
-                state.pos += length;
+                state.pos +=
+                    length;
+
 
                 continue;
+
             }
 
 
@@ -238,8 +384,11 @@ function parseMidi(arrayBuffer) {
             // =================================
 
             if (
+
                 status === 0xF0 ||
+
                 status === 0xF7
+
             ) {
 
                 const length =
@@ -248,37 +397,60 @@ function parseMidi(arrayBuffer) {
                         state
                     );
 
-                state.pos += length;
+
+                state.pos +=
+                    length;
+
 
                 continue;
+
             }
 
 
             const command =
-                status & 0xF0;
+                status &
+                0xF0;
 
 
             // =================================
             // Note ON
             // =================================
 
-            if (command === 0x90) {
+            if (
+                command === 0x90
+            ) {
 
                 const note =
-                    data[state.pos++];
+                    data[
+                        state.pos++
+                    ];
+
 
                 const velocity =
-                    data[state.pos++];
+                    data[
+                        state.pos++
+                    ];
 
 
-                if (velocity > 0) {
+                if (
+                    velocity > 0
+                ) {
 
-                    activeNotes[note] = {
-                        tick: tick,
-                        velocity: velocity
+                    activeNotes[
+                        note
+                    ] = {
+
+                        tick:
+                            tick,
+
+                        velocity:
+                            velocity
+
                     };
 
-                } else {
+                }
+
+                else {
 
                     finishNote(
                         activeNotes,
@@ -296,12 +468,18 @@ function parseMidi(arrayBuffer) {
             // Note OFF
             // =================================
 
-            else if (command === 0x80) {
+            else if (
+                command === 0x80
+            ) {
 
                 const note =
-                    data[state.pos++];
+                    data[
+                        state.pos++
+                    ];
+
 
                 state.pos++;
+
 
                 finishNote(
                     activeNotes,
@@ -314,12 +492,16 @@ function parseMidi(arrayBuffer) {
 
 
             // =================================
-            // Program Change / Channel Pressure
+            // Program Change
+            // Channel Pressure
             // =================================
 
             else if (
+
                 command === 0xC0 ||
+
                 command === 0xD0
+
             ) {
 
                 state.pos++;
@@ -328,7 +510,7 @@ function parseMidi(arrayBuffer) {
 
 
             // =================================
-            // その他2バイトイベント
+            // その他
             // =================================
 
             else {
@@ -340,9 +522,11 @@ function parseMidi(arrayBuffer) {
         }
 
 
-        pos = trackEnd;
+        pos =
+            trackEnd;
 
     }
+
 
 
     // ========================================
@@ -350,28 +534,38 @@ function parseMidi(arrayBuffer) {
     // ========================================
 
     const secondsPerTick =
+
         tempo /
         1000000 /
         division;
 
 
-    for (const note of notes) {
+    notes.forEach(
+        function(note) {
 
-        note.time =
-            note.startTick *
-            secondsPerTick;
 
-        note.duration =
-            Math.max(
-                0.05,
-                (
-                    note.endTick -
-                    note.startTick
-                ) *
-                secondsPerTick
-            );
+            note.time =
 
-    }
+                note.startTick *
+                secondsPerTick;
+
+
+            note.duration =
+
+                Math.max(
+
+                    0.03,
+
+                    (
+                        note.endTick -
+                        note.startTick
+                    ) *
+                    secondsPerTick
+
+                );
+
+        }
+    );
 
 
     return notes;
@@ -379,169 +573,24 @@ function parseMidi(arrayBuffer) {
 }
 
 
+
 // ========================================
-// Note OFF処理
+// MIDIファイル読み込み
 // ========================================
 
-function finishNote(
-    activeNotes,
-    notes,
-    noteNumber,
-    tick
+async function loadMidi(
+    url
 ) {
-
-    const start =
-        activeNotes[noteNumber];
-
-
-    if (!start) {
-        return;
-    }
-
-
-    notes.push({
-
-        midi: noteNumber,
-
-        velocity:
-            start.velocity,
-
-        startTick:
-            start.tick,
-
-        endTick:
-            tick
-
-    });
-
-
-    delete activeNotes[noteNumber];
-
-}
-
-
-// ========================================
-// 音源読み込み
-// ========================================
-
-async function loadSound(
-    part,
-    midiNumber
-) {
-
-    const noteIndex =
-        ((midiNumber % 12) + 12) % 12;
-
-
-    const fileName =
-        noteNames[noteIndex] +
-        "4.mp3";
-
-
-    // 同じ音は再読込しない
-    if (
-        soundBuffers[part][fileName]
-    ) {
-
-        return {
-            buffer:
-                soundBuffers[part][fileName],
-
-            rate:
-                getPlaybackRate(
-                    midiNumber
-                )
-        };
-
-    }
-
-
-    const url =
-        soundFolders[part] +
-        fileName;
-
 
     const response =
-        await fetch(url);
-
-
-    if (!response.ok) {
-
-        throw new Error(
-            "音源がありません: " +
+        await fetch(
             url
         );
 
-    }
 
-
-    const arrayBuffer =
-        await response.arrayBuffer();
-
-
-    const buffer =
-        await midiAudioContext
-            .decodeAudioData(
-                arrayBuffer
-            );
-
-
-    soundBuffers[part][fileName] =
-        buffer;
-
-
-    return {
-
-        buffer: buffer,
-
-        rate:
-            getPlaybackRate(
-                midiNumber
-            )
-
-    };
-
-}
-
-
-// ========================================
-// C4～B4を別オクターブへ変換
-// ========================================
-
-function getPlaybackRate(
-    midiNumber
-) {
-
-    // MIDI 60～71 が
-    // C4～B4の素材
-
-    const sampleMidi =
-        60 +
-        (((midiNumber % 12) + 12) % 12);
-
-
-    return Math.pow(
-        2,
-        (
-            midiNumber -
-            sampleMidi
-        ) / 12
-    );
-
-}
-
-
-// ========================================
-// MIDIファイル取得
-// ========================================
-
-async function loadMidi(url) {
-
-    const response =
-        await fetch(url);
-
-
-    if (!response.ok) {
+    if (
+        !response.ok
+    ) {
 
         throw new Error(
             "MIDIがありません: " +
@@ -551,56 +600,471 @@ async function loadMidi(url) {
     }
 
 
-    const buffer =
-        await response.arrayBuffer();
+    const arrayBuffer =
+        await response
+            .arrayBuffer();
 
 
-    return parseMidi(buffer);
+    return parseMidi(
+        arrayBuffer
+    );
 
 }
 
 
+
 // ========================================
-// ドラム読み込み
+// MIDI番号から
+// 使用するWAVを決める
 // ========================================
 
-async function loadDrum() {
+function getSampleInfo(
+    midiNumber
+) {
 
-    if (drumBuffer) {
-        return;
+    const noteIndex =
+
+        (
+            (
+                midiNumber %
+                12
+            ) +
+            12
+        ) %
+        12;
+
+
+    // 今回の素材は
+    // C4～B4
+    const sampleMidi =
+        60 +
+        noteIndex;
+
+
+    const fileName =
+
+        noteNames[
+            noteIndex
+        ] +
+        "4.wav";
+
+
+    // オクターブ違いは
+    // playbackRateで対応
+    const playbackRate =
+
+        Math.pow(
+
+            2,
+
+            (
+                midiNumber -
+                sampleMidi
+            ) /
+            12
+
+        );
+
+
+    return {
+
+        fileName:
+            fileName,
+
+        playbackRate:
+            playbackRate
+
+    };
+
+}
+
+
+
+// ========================================
+// WAV音源読み込み
+// ========================================
+
+async function loadSound(
+    part,
+    midiNumber
+) {
+
+    const info =
+        getSampleInfo(
+            midiNumber
+        );
+
+
+    // キャッシュ済み
+    if (
+        soundBuffers[
+            part
+        ][
+            info.fileName
+        ]
+    ) {
+
+        return {
+
+            buffer:
+
+                soundBuffers[
+                    part
+                ][
+                    info.fileName
+                ],
+
+            rate:
+                info.playbackRate
+
+        };
+
     }
+
+
+    const url =
+
+        soundFolders[
+            part
+        ] +
+
+        info.fileName;
 
 
     const response =
         await fetch(
-            "音源/ドラム/ドラム.m4a"
+            url
         );
 
 
-    if (!response.ok) {
+    if (
+        !response.ok
+    ) {
 
         throw new Error(
-            "ドラム音源がありません"
+            "WAV音源がありません: " +
+            url
         );
 
     }
 
 
     const arrayBuffer =
-        await response.arrayBuffer();
+        await response
+            .arrayBuffer();
 
 
-    drumBuffer =
+    const audioBuffer =
+
         await midiAudioContext
             .decodeAudioData(
                 arrayBuffer
             );
 
+
+    soundBuffers[
+        part
+    ][
+        info.fileName
+    ] =
+        audioBuffer;
+
+
+    return {
+
+        buffer:
+            audioBuffer,
+
+        rate:
+            info.playbackRate
+
+    };
+
 }
 
 
+
 // ========================================
-// 1パート演奏
+// MIDIプレイヤー停止
+// ========================================
+
+function stopMidiSong() {
+
+    midiSources.forEach(
+        function(item) {
+
+            try {
+
+                // Gainを即座に落とす
+                if (
+                    item.gain
+                ) {
+
+                    const now =
+                        midiAudioContext
+                            .currentTime;
+
+
+                    item.gain.gain
+                        .cancelScheduledValues(
+                            now
+                        );
+
+
+                    item.gain.gain
+                        .setValueAtTime(
+                            item.gain.gain.value,
+                            now
+                        );
+
+
+                    item.gain.gain
+                        .linearRampToValueAtTime(
+                            0.0001,
+                            now + 0.03
+                        );
+
+                }
+
+
+                if (
+                    item.source
+                ) {
+
+                    item.source.stop(
+                        midiAudioContext
+                            .currentTime +
+                        0.04
+                    );
+
+                }
+
+            }
+
+            catch (error) {
+
+                // 停止済みなら無視
+
+            }
+
+        }
+    );
+
+
+    midiSources = [];
+
+}
+
+
+
+// ========================================
+// 1音鳴らす
+// ========================================
+
+function scheduleNote(
+    note,
+    sound,
+    startTime
+) {
+
+    const source =
+
+        midiAudioContext
+            .createBufferSource();
+
+
+    source.buffer =
+        sound.buffer;
+
+
+    source.playbackRate
+        .setValueAtTime(
+            sound.rate,
+            startTime
+        );
+
+
+
+    // ====================================
+    // Gain
+    // ====================================
+
+    const gain =
+
+        midiAudioContext
+            .createGain();
+
+
+    const volume =
+
+        Math.max(
+
+            0.08,
+
+            Math.min(
+
+                1,
+
+                note.velocity /
+                127
+
+            )
+
+        );
+
+
+
+    // ====================================
+    // 時間
+    // ====================================
+
+    const noteStart =
+
+        startTime +
+        note.time;
+
+
+    const noteEnd =
+
+        noteStart +
+        note.duration;
+
+
+
+    // ====================================
+    // Attack
+    // ====================================
+
+    const attack =
+        0.008;
+
+
+    // ====================================
+    // Release
+    //
+    // 次の音に少し重なることで
+    // ブツ切れ感を減らす
+    // ====================================
+
+    const release =
+        0.22;
+
+
+
+    // 最初はほぼ無音
+    gain.gain
+        .setValueAtTime(
+            0.0001,
+            noteStart
+        );
+
+
+    // ほんの少しだけ
+    // フェードイン
+    gain.gain
+        .linearRampToValueAtTime(
+            volume,
+            noteStart +
+            attack
+        );
+
+
+    // MIDI上の音符終了まで
+    // 音量を維持
+    gain.gain
+        .setValueAtTime(
+            volume,
+            noteEnd
+        );
+
+
+    // MIDI終了後も
+    // WAVの余韻を少し残す
+    gain.gain
+        .exponentialRampToValueAtTime(
+            0.0001,
+            noteEnd +
+            release
+        );
+
+
+
+    source.connect(
+        gain
+    );
+
+
+    gain.connect(
+        midiAudioContext
+            .destination
+    );
+
+
+
+    // ====================================
+    // 再生開始
+    // ====================================
+
+    source.start(
+        noteStart
+    );
+
+
+
+    // ====================================
+    // WAV自体は音符終了時に
+    // ブツ切りしない
+    // ====================================
+
+    const availableDuration =
+
+        sound.buffer.duration /
+        sound.rate;
+
+
+    const wantedDuration =
+
+        note.duration +
+        release +
+        0.05;
+
+
+    const playDuration =
+
+        Math.min(
+
+            availableDuration,
+
+            wantedDuration
+
+        );
+
+
+    source.stop(
+
+        noteStart +
+        playDuration
+
+    );
+
+
+
+    midiSources.push({
+
+        source:
+            source,
+
+        gain:
+            gain
+
+    });
+
+}
+
+
+
+// ========================================
+// 1パートを予約再生
 // ========================================
 
 async function schedulePart(
@@ -609,13 +1073,23 @@ async function schedulePart(
     startTime
 ) {
 
-    // 必要な音源を先にロード
+    // ====================================
+    // 使用音を先読み
+    // ====================================
+
     const uniqueNotes =
+
         [
             ...new Set(
+
                 notes.map(
-                    note => note.midi
+                    function(note) {
+
+                        return note.midi;
+
+                    }
                 )
+
             )
         ];
 
@@ -628,7 +1102,10 @@ async function schedulePart(
         of uniqueNotes
     ) {
 
-        loaded[midiNumber] =
+        loaded[
+            midiNumber
+        ] =
+
             await loadSound(
                 part,
                 midiNumber
@@ -637,306 +1114,200 @@ async function schedulePart(
     }
 
 
-    // 音符を予約
-    for (const note of notes) {
 
-        const sound =
-            loaded[note.midi];
+    // ====================================
+    // 全音符を予約
+    // ====================================
 
+    notes.forEach(
+        function(note) {
 
-        const source =
-            midiAudioContext
-                .createBufferSource();
+            scheduleNote(
 
+                note,
 
-        source.buffer =
-            sound.buffer;
+                loaded[
+                    note.midi
+                ],
 
+                startTime
 
-        source.playbackRate.value =
-            sound.rate;
-
-
-        const gain =
-            midiAudioContext
-                .createGain();
-
-
-        gain.gain.value =
-            Math.min(
-                1,
-                note.velocity / 100
             );
 
-
-        source.connect(gain);
-
-        gain.connect(
-            midiAudioContext.destination
-        );
-
-
-        const when =
-            startTime +
-            note.time;
-
-
-        source.start(
-            when
-        );
-
-
-        // playbackRateを変えると
-        // 実際の再生時間も変わるため、
-        // MIDIの音符長で停止させる
-        source.stop(
-            when +
-            note.duration
-        );
-
-
-        midiSources.push(
-            source
-        );
-
-    }
-
-}
-
-
-// ========================================
-// ドラムをループ
-// ========================================
-
-function scheduleDrum(
-    startTime,
-    duration
-) {
-
-    if (!drumBuffer) {
-        return;
-    }
-
-
-    const source =
-        midiAudioContext
-            .createBufferSource();
-
-
-    source.buffer =
-        drumBuffer;
-
-
-    source.loop = true;
-
-
-    source.connect(
-        midiAudioContext.destination
-    );
-
-
-    source.start(
-        startTime
-    );
-
-
-    source.stop(
-        startTime +
-        duration
-    );
-
-
-    midiSources.push(
-        source
-    );
-
-}
-
-
-// ========================================
-// 停止
-// ========================================
-
-function stopMidiSong() {
-
-    for (
-        const source
-        of midiSources
-    ) {
-
-        try {
-
-            source.stop();
-
-        } catch (error) {
-
-            // すでに停止済みなら無視
-
         }
-
-    }
-
-
-    midiSources = [];
-
-    midiPlaying = false;
-
-
-    const nowPlaying =
-        document.getElementById(
-            "nowPlaying"
-        );
-
-
-    if (nowPlaying) {
-
-        nowPlaying.textContent =
-            "停止しました";
-
-    }
+    );
 
 }
 
 
+
 // ========================================
-// 堂林翔太 MIDI試聴
+// 堂林翔太
+// MIDI試聴
 // ========================================
 
 async function playDobayashiMidi() {
 
     try {
 
-        // 前回分を停止
-        stopMidiSong();
 
+        // ====================================
+        // AudioContext
+        // ====================================
 
-        // AudioContext作成
-        if (!midiAudioContext) {
+        if (
+            !midiAudioContext
+        ) {
 
             midiAudioContext =
+
                 new (
+
                     window.AudioContext ||
+
                     window.webkitAudioContext
+
                 )();
 
         }
 
 
-        await midiAudioContext.resume();
+        await midiAudioContext
+            .resume();
+
+
+
+        // 前回の音を停止
+        stopMidiSong();
+
 
 
         const nowPlaying =
+
             document.getElementById(
                 "nowPlaying"
             );
 
 
-        if (nowPlaying) {
+        if (
+            nowPlaying
+        ) {
 
             nowPlaying.textContent =
-                "MIDI音源を読み込み中…";
+                "MIDIを読み込み中…";
 
         }
 
 
+
         // ====================================
-        // 3つのMIDIを読み込み
+        // MIDI読み込み
+        //
+        // ※ 実際のファイル名と
+        // 完全一致させる
         // ====================================
 
         const [
             melody,
             chord,
             bass
-        ] = await Promise.all([
+        ] =
 
-            loadMidi(
-                "データ/堂林翔太/①MIDIメロディー.mid"
-            ),
-
-            loadMidi(
-                "データ/堂林翔太/②MIDIコード進行.mid"
-            ),
-
-            loadMidi(
-                "データ/堂林翔太/③MIDIベース.mid"
-            )
-
-        ]);
+            await Promise.all([
 
 
-        // ドラム
-        await loadDrum();
+                loadMidi(
+
+                    "データ/堂林翔太/①MIDIメロディー.mid"
+
+                ),
 
 
-        // ====================================
-        // 曲の長さ
-        // ====================================
+                loadMidi(
 
-        const allNotes = [
-            ...melody,
-            ...chord,
-            ...bass
-        ];
+                    "データ/堂林翔太/②MIDIコード進行.mid"
+
+                ),
 
 
-        let duration = 0;
+                loadMidi(
+
+                    "データ/堂林翔太/③MIDIベース.mid"
+
+                )
 
 
-        for (const note of allNotes) {
+            ]);
 
-            duration =
-                Math.max(
-                    duration,
-                    note.time +
-                    note.duration
-                );
+
+
+        if (
+            nowPlaying
+        ) {
+
+            nowPlaying.textContent =
+                "GarageBand音源を読み込み中…";
 
         }
 
 
+
         // ====================================
-        // 少し未来から一斉スタート
+        // まず必要な音源を
+        // 全部読み込んでから開始
         // ====================================
 
         const startTime =
-            midiAudioContext.currentTime +
-            0.15;
+
+            midiAudioContext
+                .currentTime +
+            0.25;
+
 
 
         await Promise.all([
 
+
             schedulePart(
+
                 melody,
+
                 "melody",
+
                 startTime
+
             ),
 
+
             schedulePart(
+
                 chord,
+
                 "chord",
+
                 startTime
+
             ),
 
+
             schedulePart(
+
                 bass,
+
                 "bass",
+
                 startTime
+
             )
+
 
         ]);
 
 
-        // ドラム
-        scheduleDrum(
-            startTime,
-            duration
-        );
 
-
-        midiPlaying = true;
-
-
-        if (nowPlaying) {
+        if (
+            nowPlaying
+        ) {
 
             nowPlaying.textContent =
                 "♪ MIDI試聴中：堂林翔太";
@@ -944,29 +1315,25 @@ async function playDobayashiMidi() {
         }
 
 
-        // 曲終了後
-        setTimeout(
-            () => {
+    }
 
-                midiPlaying = false;
+    catch (error) {
 
-            },
-            (duration + 1) * 1000
+        console.error(
+            error
         );
 
 
-    } catch (error) {
-
-        console.error(error);
-
-
         const nowPlaying =
+
             document.getElementById(
                 "nowPlaying"
             );
 
 
-        if (nowPlaying) {
+        if (
+            nowPlaying
+        ) {
 
             nowPlaying.textContent =
                 "MIDI再生エラー";
@@ -975,8 +1342,11 @@ async function playDobayashiMidi() {
 
 
         alert(
+
             "MIDI再生でエラーが発生しました。\n\n" +
+
             error.message
+
         );
 
     }
