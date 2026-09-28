@@ -1,14 +1,45 @@
 // ========================================
 // 応援歌BASE MIDIエディター
+// テンポ170 / 4拍子 / 16分音符スナップ
 // ========================================
 
+
+// ========================================
+// 基本設定
+// ========================================
+
+const EDITOR_BPM = 170;
+const EDITOR_BEATS_PER_BAR = 4;
+const EDITOR_DIVISIONS = 4; // 1拍を4分割 = 16分音符
+
+const EDITOR_BEAT_SECONDS =
+    60 / EDITOR_BPM;
+
+const EDITOR_GRID_SECONDS =
+    EDITOR_BEAT_SECONDS /
+    EDITOR_DIVISIONS;
+
+
+// 表示サイズ
+const EDITOR_BEAT_WIDTH = 120;
+const EDITOR_GRID_WIDTH =
+    EDITOR_BEAT_WIDTH /
+    EDITOR_DIVISIONS;
+
+const EDITOR_NOTE_HEIGHT = 26;
+
+
+// 表示する音域
+const EDITOR_MIN_NOTE = 48;
+const EDITOR_MAX_NOTE = 84;
+
+
+// 編集中の音符
 let editorNotes = [];
 
-let editorPixelsPerSecond = 100;
-let editorNoteHeight = 24;
 
-let editorMinNote = 48;
-let editorMaxNote = 84;
+// エディター試聴用
+let editorPreviewSources = [];
 
 
 // ========================================
@@ -19,13 +50,10 @@ async function openMidiEditor() {
 
     try {
 
-        // --------------------------------
-        // MIDIを読み込む
-        // --------------------------------
-
-        const response = await fetch(
-            "データ/堂林翔太/①MIDIメロディー.mid"
-        );
+        const response =
+            await fetch(
+                "データ/堂林翔太/①MIDIメロディー.mid"
+            );
 
 
         if (!response.ok) {
@@ -41,21 +69,29 @@ async function openMidiEditor() {
             await response.arrayBuffer();
 
 
-        // midi-player.js の
-        // parseMidi()を使用
+        // midi-player.js のMIDI解析を使用
         editorNotes =
             parseMidi(arrayBuffer);
 
 
-        console.log(
-            "読み込んだ音符:",
-            editorNotes
-        );
+        // 16分音符単位に揃える
+        editorNotes.forEach(function(note) {
 
+            note.time =
+                snapTime(
+                    note.time
+                );
 
-        // --------------------------------
-        // 編集画面を作る
-        // --------------------------------
+            note.duration =
+                Math.max(
+                    EDITOR_GRID_SECONDS,
+                    snapTime(
+                        note.duration
+                    )
+                );
+
+        });
+
 
         createMidiEditor();
 
@@ -76,96 +112,267 @@ async function openMidiEditor() {
 
 
 // ========================================
-// 編集画面を作成
+// 時間を16分音符に吸着
+// ========================================
+
+function snapTime(seconds) {
+
+    return (
+        Math.round(
+            seconds /
+            EDITOR_GRID_SECONDS
+        ) *
+        EDITOR_GRID_SECONDS
+    );
+
+}
+
+
+
+// ========================================
+// 秒 → X座標
+// ========================================
+
+function timeToX(seconds) {
+
+    return (
+        seconds /
+        EDITOR_GRID_SECONDS
+    ) *
+    EDITOR_GRID_WIDTH;
+
+}
+
+
+
+// ========================================
+// X座標 → 秒
+// ========================================
+
+function xToTime(x) {
+
+    return (
+        x /
+        EDITOR_GRID_WIDTH
+    ) *
+    EDITOR_GRID_SECONDS;
+
+}
+
+
+
+// ========================================
+// MIDI番号 → Y座標
+// ========================================
+
+function midiToY(midi) {
+
+    return (
+        EDITOR_MAX_NOTE -
+        midi
+    ) *
+    EDITOR_NOTE_HEIGHT;
+
+}
+
+
+
+// ========================================
+// Y座標 → MIDI番号
+// ========================================
+
+function yToMidi(y) {
+
+    return (
+        EDITOR_MAX_NOTE -
+        Math.round(
+            y /
+            EDITOR_NOTE_HEIGHT
+        )
+    );
+
+}
+
+
+
+// ========================================
+// MIDI番号 → 音名
+// ========================================
+
+function midiToName(midi) {
+
+    const names = [
+        "C",
+        "C♯",
+        "D",
+        "D♯",
+        "E",
+        "F",
+        "F♯",
+        "G",
+        "G♯",
+        "A",
+        "A♯",
+        "B"
+    ];
+
+
+    const name =
+        names[
+            ((midi % 12) + 12) % 12
+        ];
+
+
+    const octave =
+        Math.floor(
+            midi / 12
+        ) - 1;
+
+
+    return (
+        name +
+        octave
+    );
+
+}
+
+
+
+// ========================================
+// エディター画面を作成
 // ========================================
 
 function createMidiEditor() {
 
-    // 以前の画面があれば削除
-    const oldEditor =
+    const old =
         document.getElementById(
             "midiEditorOverlay"
         );
 
-    if (oldEditor) {
 
-        oldEditor.remove();
-
+    if (old) {
+        old.remove();
     }
 
 
     // ====================================
-    // 全体
+    // 曲の長さを計算
+    // ====================================
+
+    let songEnd = 0;
+
+
+    editorNotes.forEach(function(note) {
+
+        songEnd =
+            Math.max(
+                songEnd,
+                note.time +
+                note.duration
+            );
+
+    });
+
+
+    // 必要小節数
+    const barSeconds =
+        EDITOR_BEAT_SECONDS *
+        EDITOR_BEATS_PER_BAR;
+
+
+    let barCount =
+        Math.ceil(
+            songEnd /
+            barSeconds
+        );
+
+
+    // 最低8小節表示
+    barCount =
+        Math.max(
+            8,
+            barCount
+        );
+
+
+    // 少し余白
+    barCount += 1;
+
+
+    const totalBeats =
+        barCount *
+        EDITOR_BEATS_PER_BAR;
+
+
+    const rollWidth =
+        totalBeats *
+        EDITOR_BEAT_WIDTH;
+
+
+    const rollHeight =
+        (
+            EDITOR_MAX_NOTE -
+            EDITOR_MIN_NOTE +
+            1
+        ) *
+        EDITOR_NOTE_HEIGHT;
+
+
+
+    // ====================================
+    // 全画面
     // ====================================
 
     const overlay =
         document.createElement("div");
 
+
     overlay.id =
         "midiEditorOverlay";
 
 
-    overlay.style.position =
-        "fixed";
+    Object.assign(
+        overlay.style,
+        {
+            position: "fixed",
+            left: "0",
+            top: "0",
+            width: "100%",
+            height: "100%",
+            background: "#101010",
+            zIndex: "9999",
+            display: "flex",
+            flexDirection: "column",
+            color: "white"
+        }
+    );
 
-    overlay.style.left =
-        "0";
-
-    overlay.style.top =
-        "0";
-
-    overlay.style.width =
-        "100%";
-
-    overlay.style.height =
-        "100%";
-
-    overlay.style.background =
-        "#111";
-
-    overlay.style.zIndex =
-        "9999";
-
-    overlay.style.display =
-        "flex";
-
-    overlay.style.flexDirection =
-        "column";
 
 
     // ====================================
-    // 上部メニュー
+    // ヘッダー
     // ====================================
 
     const header =
         document.createElement("div");
 
 
-    header.style.padding =
-        "12px";
-
-    header.style.background =
-        "#222";
-
-    header.style.color =
-        "white";
-
-    header.style.display =
-        "flex";
-
-    header.style.alignItems =
-        "center";
-
-    header.style.gap =
-        "10px";
-
-    header.style.flexWrap =
-        "wrap";
+    Object.assign(
+        header.style,
+        {
+            padding: "10px",
+            background: "#222",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            flexWrap: "wrap"
+        }
+    );
 
 
-    // タイトル
     const title =
         document.createElement("strong");
+
 
     title.textContent =
         "堂林翔太　メロディー編集";
@@ -176,23 +383,40 @@ function createMidiEditor() {
     );
 
 
+
+    // BPM表示
+    const bpmLabel =
+        document.createElement("span");
+
+
+    bpmLabel.textContent =
+        "♩ = 170";
+
+
+    bpmLabel.style.opacity =
+        "0.7";
+
+
+    header.appendChild(
+        bpmLabel
+    );
+
+
+
     // ====================================
-    // 再生ボタン
+    // 試聴
     // ====================================
 
     const playButton =
         document.createElement("button");
+
 
     playButton.textContent =
         "▶ 試聴";
 
 
     playButton.onclick =
-        function() {
-
-            previewEditorNotes();
-
-        };
+        previewEditorNotes;
 
 
     header.appendChild(
@@ -200,23 +424,21 @@ function createMidiEditor() {
     );
 
 
+
     // ====================================
-    // 停止ボタン
+    // 停止
     // ====================================
 
     const stopButton =
         document.createElement("button");
+
 
     stopButton.textContent =
         "■ 停止";
 
 
     stopButton.onclick =
-        function() {
-
-            stopMidiSong();
-
-        };
+        stopEditorPreview;
 
 
     header.appendChild(
@@ -224,12 +446,14 @@ function createMidiEditor() {
     );
 
 
+
     // ====================================
-    // 閉じるボタン
+    // 閉じる
     // ====================================
 
     const closeButton =
         document.createElement("button");
+
 
     closeButton.textContent =
         "✕ 閉じる";
@@ -238,7 +462,7 @@ function createMidiEditor() {
     closeButton.onclick =
         function() {
 
-            stopMidiSong();
+            stopEditorPreview();
 
             overlay.remove();
 
@@ -255,22 +479,53 @@ function createMidiEditor() {
     );
 
 
+
     // ====================================
-    // スクロール領域
+    // 説明
+    // ====================================
+
+    const info =
+        document.createElement("div");
+
+
+    info.textContent =
+        "移動：バーをドラッグ　｜　長さ：バー右端の白い部分をドラッグ　｜　横＝16分音符単位　｜　縦＝半音単位";
+
+
+    Object.assign(
+        info.style,
+        {
+            padding: "7px 12px",
+            background: "#181818",
+            fontSize: "13px",
+            color: "#bbb"
+        }
+    );
+
+
+    overlay.appendChild(
+        info
+    );
+
+
+
+    // ====================================
+    // スクロール部分
     // ====================================
 
     const scrollArea =
         document.createElement("div");
 
 
-    scrollArea.style.flex =
-        "1";
+    Object.assign(
+        scrollArea.style,
+        {
+            flex: "1",
+            overflow: "auto",
+            position: "relative"
+        }
+    );
 
-    scrollArea.style.overflow =
-        "auto";
-
-    scrollArea.style.position =
-        "relative";
 
 
     // ====================================
@@ -280,54 +535,23 @@ function createMidiEditor() {
     const roll =
         document.createElement("div");
 
+
     roll.id =
         "midiPianoRoll";
 
-    roll.style.position =
-        "relative";
 
-
-    // 曲の最後を取得
-    let songLength = 12;
-
-
-    editorNotes.forEach(
-        function(note) {
-
-            songLength =
-                Math.max(
-                    songLength,
-                    note.time +
-                    note.duration
-                );
-
+    Object.assign(
+        roll.style,
+        {
+            position: "relative",
+            width:
+                rollWidth + "px",
+            height:
+                rollHeight + "px",
+            background: "#171717"
         }
     );
 
-
-    roll.style.width =
-        (
-            songLength *
-            editorPixelsPerSecond +
-            200
-        ) +
-        "px";
-
-
-    roll.style.height =
-        (
-            (
-                editorMaxNote -
-                editorMinNote +
-                1
-            ) *
-            editorNoteHeight
-        ) +
-        "px";
-
-
-    roll.style.background =
-        "#181818";
 
 
     // ====================================
@@ -335,97 +559,207 @@ function createMidiEditor() {
     // ====================================
 
     for (
-        let midi = editorMinNote;
-        midi <= editorMaxNote;
+        let midi = EDITOR_MIN_NOTE;
+        midi <= EDITOR_MAX_NOTE;
         midi++
     ) {
 
-        const line =
+        const row =
             document.createElement("div");
 
 
-        line.style.position =
-            "absolute";
+        Object.assign(
+            row.style,
+            {
+                position: "absolute",
+                left: "0",
+                top:
+                    midiToY(midi) +
+                    "px",
+                width: "100%",
+                height:
+                    EDITOR_NOTE_HEIGHT +
+                    "px",
+                boxSizing: "border-box",
+                borderBottom:
+                    "1px solid #292929"
+            }
+        );
 
-        line.style.left =
-            "0";
 
-        line.style.width =
-            "100%";
+        // Cだけ少し分かりやすく
+        if (midi % 12 === 0) {
 
-        line.style.height =
-            "1px";
+            row.style.background =
+                "#1d1d1d";
 
-        line.style.background =
-            "#333";
-
-
-        line.style.top =
-            (
-                (
-                    editorMaxNote -
-                    midi
-                ) *
-                editorNoteHeight
-            ) +
-            "px";
+        }
 
 
         roll.appendChild(
-            line
+            row
         );
 
     }
 
 
+
     // ====================================
-    // 縦線
-    // 1秒ごと
+    // 小節・拍・16分線
     // ====================================
 
+    const totalGrids =
+        totalBeats *
+        EDITOR_DIVISIONS;
+
+
     for (
-        let second = 0;
-        second <= songLength + 2;
-        second++
+        let grid = 0;
+        grid <= totalGrids;
+        grid++
     ) {
 
         const line =
             document.createElement("div");
 
 
-        line.style.position =
-            "absolute";
-
-        line.style.top =
-            "0";
-
-        line.style.height =
-            "100%";
-
-        line.style.width =
-            "1px";
-
-        line.style.background =
-            "#444";
+        const x =
+            grid *
+            EDITOR_GRID_WIDTH;
 
 
-        line.style.left =
+        const beatNumber =
+            grid /
+            EDITOR_DIVISIONS;
+
+
+        const isBeat =
+            grid %
+            EDITOR_DIVISIONS === 0;
+
+
+        const isBar =
+            grid %
             (
-                second *
-                editorPixelsPerSecond
-            ) +
-            "px";
+                EDITOR_DIVISIONS *
+                EDITOR_BEATS_PER_BAR
+            ) === 0;
+
+
+        Object.assign(
+            line.style,
+            {
+                position: "absolute",
+                left:
+                    x + "px",
+                top: "0",
+                height: "100%",
+                pointerEvents: "none"
+            }
+        );
+
+
+        if (isBar) {
+
+            line.style.width =
+                "2px";
+
+            line.style.background =
+                "#888";
+
+        }
+
+        else if (isBeat) {
+
+            line.style.width =
+                "1px";
+
+            line.style.background =
+                "#555";
+
+        }
+
+        else {
+
+            line.style.width =
+                "1px";
+
+            line.style.background =
+                "#292929";
+
+        }
 
 
         roll.appendChild(
             line
         );
 
+
+
+        // =================================
+        // 小節番号
+        // =================================
+
+        if (isBar) {
+
+            const barLabel =
+                document.createElement(
+                    "div"
+                );
+
+
+            const barNumber =
+                Math.floor(
+                    grid /
+                    (
+                        EDITOR_DIVISIONS *
+                        EDITOR_BEATS_PER_BAR
+                    )
+                ) + 1;
+
+
+            barLabel.textContent =
+                barNumber;
+
+
+            Object.assign(
+                barLabel.style,
+                {
+                    position:
+                        "absolute",
+
+                    left:
+                        (
+                            x + 5
+                        ) + "px",
+
+                    top:
+                        "3px",
+
+                    color:
+                        "#aaa",
+
+                    fontSize:
+                        "12px",
+
+                    pointerEvents:
+                        "none"
+                }
+            );
+
+
+            roll.appendChild(
+                barLabel
+            );
+
+        }
+
     }
 
 
+
     // ====================================
-    // MIDI音符を表示
+    // 音符
     // ====================================
 
     editorNotes.forEach(
@@ -460,7 +794,7 @@ function createMidiEditor() {
 
 
 // ========================================
-// 1個の音符をバーとして表示
+// 音符バー作成
 // ========================================
 
 function createEditorNote(
@@ -469,92 +803,151 @@ function createEditorNote(
     index
 ) {
 
-    const noteBar =
+    const bar =
         document.createElement("div");
 
 
-    noteBar.className =
+    bar.className =
         "midi-editor-note";
 
 
-    noteBar.dataset.index =
+    bar.dataset.index =
         index;
 
 
-    noteBar.style.position =
-        "absolute";
+    Object.assign(
+        bar.style,
+        {
+            position: "absolute",
+
+            left:
+                timeToX(
+                    note.time
+                ) +
+                "px",
+
+            top:
+                midiToY(
+                    note.midi
+                ) +
+                "px",
+
+            width:
+                Math.max(
+                    EDITOR_GRID_WIDTH,
+                    timeToX(
+                        note.duration
+                    )
+                ) +
+                "px",
+
+            height:
+                (
+                    EDITOR_NOTE_HEIGHT -
+                    4
+                ) +
+                "px",
+
+            background:
+                "#22c55e",
+
+            border:
+                "1px solid #86efac",
+
+            borderRadius:
+                "3px",
+
+            boxSizing:
+                "border-box",
+
+            cursor:
+                "grab",
+
+            touchAction:
+                "none",
+
+            zIndex:
+                "10"
+        }
+    );
 
 
-    noteBar.style.left =
-        (
-            note.time *
-            editorPixelsPerSecond
-        ) +
-        "px";
+
+    // 音名
+    const label =
+        document.createElement("span");
 
 
-    noteBar.style.top =
-        (
-            (
-                editorMaxNote -
-                note.midi
-            ) *
-            editorNoteHeight
-        ) +
-        "px";
+    label.textContent =
+        midiToName(
+            note.midi
+        );
 
 
-    noteBar.style.width =
-        Math.max(
-            8,
-            note.duration *
-            editorPixelsPerSecond
-        ) +
-        "px";
+    Object.assign(
+        label.style,
+        {
+            fontSize: "10px",
+            paddingLeft: "4px",
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+            color: "#071b0d"
+        }
+    );
 
 
-    noteBar.style.height =
-        (
-            editorNoteHeight -
-            3
-        ) +
-        "px";
+    bar.appendChild(
+        label
+    );
 
 
-    noteBar.style.background =
-        "#28c76f";
+
+    // ====================================
+    // 右端の長さ変更ハンドル
+    // ====================================
+
+    const resizeHandle =
+        document.createElement("div");
 
 
-    noteBar.style.borderRadius =
-        "4px";
+    Object.assign(
+        resizeHandle.style,
+        {
+            position: "absolute",
+            right: "0",
+            top: "0",
+            width: "9px",
+            height: "100%",
+            background:
+                "rgba(255,255,255,0.65)",
+            cursor: "ew-resize",
+            touchAction: "none"
+        }
+    );
 
 
-    noteBar.style.cursor =
-        "grab";
+    bar.appendChild(
+        resizeHandle
+    );
 
 
-    noteBar.style.boxSizing =
-        "border-box";
+    enableNoteMove(
+        bar,
+        resizeHandle,
+        note,
+        label
+    );
 
 
-    noteBar.style.border =
-        "1px solid #8affb7";
-
-
-    noteBar.title =
-        "MIDI " +
-        note.midi;
-
-
-    // ドラッグ操作
-    enableNoteDragging(
-        noteBar,
+    enableNoteResize(
+        bar,
+        resizeHandle,
         note
     );
 
 
     roll.appendChild(
-        noteBar
+        bar
     );
 
 }
@@ -562,12 +955,14 @@ function createEditorNote(
 
 
 // ========================================
-// 音符をドラッグして編集
+// 音符移動
 // ========================================
 
-function enableNoteDragging(
-    element,
-    note
+function enableNoteMove(
+    bar,
+    resizeHandle,
+    note,
+    label
 ) {
 
     let dragging = false;
@@ -579,11 +974,22 @@ function enableNoteDragging(
     let originalTop = 0;
 
 
-    element.addEventListener(
+    bar.addEventListener(
         "pointerdown",
         function(event) {
 
+            // 右端ならサイズ変更なので
+            // 移動処理をしない
+            if (
+                event.target ===
+                resizeHandle
+            ) {
+                return;
+            }
+
+
             dragging = true;
+
 
             startX =
                 event.clientX;
@@ -594,29 +1000,28 @@ function enableNoteDragging(
 
             originalLeft =
                 parseFloat(
-                    element.style.left
+                    bar.style.left
                 );
-
 
             originalTop =
                 parseFloat(
-                    element.style.top
+                    bar.style.top
                 );
 
 
-            element.setPointerCapture(
+            bar.setPointerCapture(
                 event.pointerId
             );
 
 
-            element.style.cursor =
+            bar.style.cursor =
                 "grabbing";
 
         }
     );
 
 
-    element.addEventListener(
+    bar.addEventListener(
         "pointermove",
         function(event) {
 
@@ -635,70 +1040,93 @@ function enableNoteDragging(
                 startY;
 
 
-            // ----------------------------
-            // 横方向
-            // ----------------------------
 
-            let newLeft =
+            // =================================
+            // 横方向
+            // 16分音符単位
+            // =================================
+
+            let left =
                 originalLeft +
                 dx;
 
 
-            if (newLeft < 0) {
-                newLeft = 0;
-            }
+            left =
+                Math.round(
+                    left /
+                    EDITOR_GRID_WIDTH
+                ) *
+                EDITOR_GRID_WIDTH;
 
 
-            element.style.left =
-                newLeft +
-                "px";
+            left =
+                Math.max(
+                    0,
+                    left
+                );
 
 
-            // ----------------------------
+            bar.style.left =
+                left + "px";
+
+
+
+            // =================================
             // 縦方向
-            // 1音単位に吸着
-            // ----------------------------
+            // 半音単位
+            // =================================
 
-            let newTop =
+            let top =
                 originalTop +
                 dy;
 
 
-            newTop =
+            top =
                 Math.round(
-                    newTop /
-                    editorNoteHeight
+                    top /
+                    EDITOR_NOTE_HEIGHT
                 ) *
-                editorNoteHeight;
+                EDITOR_NOTE_HEIGHT;
 
 
             const maxTop =
                 (
-                    editorMaxNote -
-                    editorMinNote
+                    EDITOR_MAX_NOTE -
+                    EDITOR_MIN_NOTE
                 ) *
-                editorNoteHeight;
+                EDITOR_NOTE_HEIGHT;
 
 
-            newTop =
+            top =
                 Math.max(
                     0,
                     Math.min(
                         maxTop,
-                        newTop
+                        top
                     )
                 );
 
 
-            element.style.top =
-                newTop +
-                "px";
+            bar.style.top =
+                top + "px";
+
+
+            const newMidi =
+                yToMidi(
+                    top
+                );
+
+
+            label.textContent =
+                midiToName(
+                    newMidi
+                );
 
         }
     );
 
 
-    element.addEventListener(
+    bar.addEventListener(
         "pointerup",
         function(event) {
 
@@ -710,45 +1138,38 @@ function enableNoteDragging(
             dragging = false;
 
 
-            element.style.cursor =
+            bar.style.cursor =
                 "grab";
 
 
-            // =================================
-            // 新しい開始時間
-            // =================================
-
             const left =
                 parseFloat(
-                    element.style.left
+                    bar.style.left
+                );
+
+
+            const top =
+                parseFloat(
+                    bar.style.top
                 );
 
 
             note.time =
-                left /
-                editorPixelsPerSecond;
-
-
-            // =================================
-            // 新しい音程
-            // =================================
-
-            const top =
-                parseFloat(
-                    element.style.top
+                snapTime(
+                    xToTime(
+                        left
+                    )
                 );
 
 
             note.midi =
-                editorMaxNote -
-                Math.round(
-                    top /
-                    editorNoteHeight
+                yToMidi(
+                    top
                 );
 
 
             console.log(
-                "編集後:",
+                "音符移動:",
                 note
             );
 
@@ -760,14 +1181,167 @@ function enableNoteDragging(
 
 
 // ========================================
-// 編集中のメロディーを試聴
+// 音符の長さ変更
+// ========================================
+
+function enableNoteResize(
+    bar,
+    resizeHandle,
+    note
+) {
+
+    let resizing = false;
+
+    let startX = 0;
+    let originalWidth = 0;
+
+
+    resizeHandle.addEventListener(
+        "pointerdown",
+        function(event) {
+
+            event.stopPropagation();
+
+
+            resizing = true;
+
+
+            startX =
+                event.clientX;
+
+
+            originalWidth =
+                parseFloat(
+                    bar.style.width
+                );
+
+
+            resizeHandle.setPointerCapture(
+                event.pointerId
+            );
+
+        }
+    );
+
+
+    resizeHandle.addEventListener(
+        "pointermove",
+        function(event) {
+
+            if (!resizing) {
+                return;
+            }
+
+
+            const dx =
+                event.clientX -
+                startX;
+
+
+            let width =
+                originalWidth +
+                dx;
+
+
+            // 16分単位に吸着
+            width =
+                Math.round(
+                    width /
+                    EDITOR_GRID_WIDTH
+                ) *
+                EDITOR_GRID_WIDTH;
+
+
+            width =
+                Math.max(
+                    EDITOR_GRID_WIDTH,
+                    width
+                );
+
+
+            bar.style.width =
+                width + "px";
+
+        }
+    );
+
+
+    resizeHandle.addEventListener(
+        "pointerup",
+        function() {
+
+            if (!resizing) {
+                return;
+            }
+
+
+            resizing = false;
+
+
+            const width =
+                parseFloat(
+                    bar.style.width
+                );
+
+
+            note.duration =
+                Math.max(
+                    EDITOR_GRID_SECONDS,
+                    snapTime(
+                        xToTime(
+                            width
+                        )
+                    )
+                );
+
+
+            console.log(
+                "音符長変更:",
+                note
+            );
+
+        }
+    );
+
+}
+
+
+
+// ========================================
+// エディター試聴停止
+// ========================================
+
+function stopEditorPreview() {
+
+    editorPreviewSources.forEach(
+        function(source) {
+
+            try {
+                source.stop();
+            }
+            catch (error) {
+                // 停止済みなら無視
+            }
+
+        }
+    );
+
+
+    editorPreviewSources = [];
+
+}
+
+
+
+// ========================================
+// 編集したメロディーを試聴
 // ========================================
 
 async function previewEditorNotes() {
 
     try {
 
-        stopMidiSong();
+        stopEditorPreview();
 
 
         if (!midiAudioContext) {
@@ -784,15 +1358,176 @@ async function previewEditorNotes() {
         await midiAudioContext.resume();
 
 
+
+        // ====================================
+        // 必要な音源を先に読み込む
+        // ====================================
+
+        const uniqueNotes =
+            [
+                ...new Set(
+                    editorNotes.map(
+                        note =>
+                            note.midi
+                    )
+                )
+            ];
+
+
+        const loaded = {};
+
+
+        for (
+            const midiNumber
+            of uniqueNotes
+        ) {
+
+            loaded[midiNumber] =
+                await loadSound(
+                    "melody",
+                    midiNumber
+                );
+
+        }
+
+
+
         const startTime =
             midiAudioContext.currentTime +
-            0.1;
+            0.15;
 
 
-        await schedulePart(
-            editorNotes,
-            "melody",
-            startTime
+
+        // ====================================
+        // 音符を鳴らす
+        // ====================================
+
+        editorNotes.forEach(
+            function(note) {
+
+                const sound =
+                    loaded[
+                        note.midi
+                    ];
+
+
+                const source =
+                    midiAudioContext
+                        .createBufferSource();
+
+
+                source.buffer =
+                    sound.buffer;
+
+
+                source.playbackRate.value =
+                    sound.rate;
+
+
+
+                // =================================
+                // 音量
+                // =================================
+
+                const gain =
+                    midiAudioContext
+                        .createGain();
+
+
+                const volume =
+                    Math.min(
+                        1,
+                        Math.max(
+                            0.15,
+                            note.velocity /
+                            127
+                        )
+                    );
+
+
+                const when =
+                    startTime +
+                    note.time;
+
+
+                const noteEnd =
+                    when +
+                    note.duration;
+
+
+                // 余韻
+                const release =
+                    0.18;
+
+
+                gain.gain.setValueAtTime(
+                    volume,
+                    when
+                );
+
+
+                // 音符終了までは
+                // 音量を維持
+                gain.gain.setValueAtTime(
+                    volume,
+                    noteEnd
+                );
+
+
+                // そこから滑らかに消す
+                gain.gain.linearRampToValueAtTime(
+                    0.0001,
+                    noteEnd +
+                    release
+                );
+
+
+                source.connect(
+                    gain
+                );
+
+
+                gain.connect(
+                    midiAudioContext
+                        .destination
+                );
+
+
+                source.start(
+                    when
+                );
+
+
+                // 元音源の長さを超えて
+                // stopしないよう安全に停止
+                const availableDuration =
+                    sound.buffer.duration /
+                    sound.rate;
+
+
+                const wantedDuration =
+                    note.duration +
+                    release;
+
+
+                const actualDuration =
+                    Math.min(
+                        availableDuration,
+                        wantedDuration
+                    );
+
+
+                source.stop(
+                    when +
+                    actualDuration
+                );
+
+
+                editorPreviewSources.push(
+                    source
+                );
+
+            }
         );
 
 
