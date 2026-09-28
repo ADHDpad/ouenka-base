@@ -12,7 +12,7 @@
 
     <meta
         name="theme-color"
-        content="#ffffff"
+        content="#071d33"
     >
 
     <link
@@ -34,27 +34,66 @@
 
 
     <!-- =====================================
-         上部メニュー
+         上部システムバー
     ====================================== -->
 
     <header class="top-menu">
 
-        <button
-            type="button"
-            class="top-menu-button"
-            onclick="updateApp()"
-        >
-            🔄 更新
-        </button>
+        <div class="top-brand">
+
+            <div class="top-brand-main">
+                OUENKA BASE
+            </div>
+
+            <div class="top-brand-sub">
+                STADIUM CHANT DATABASE
+            </div>
+
+        </div>
 
 
-        <button
-            type="button"
-            class="top-menu-button"
-            onclick="showComingSoon()"
-        >
-            後日追加予定
-        </button>
+        <div class="top-actions">
+
+            <button
+                type="button"
+                class="top-menu-button"
+                onclick="updateApp()"
+            >
+                <span class="top-button-icon">
+                    ↻
+                </span>
+
+                <span>
+                    更新
+                    <small>UPDATE</small>
+                </span>
+            </button>
+
+
+            <button
+                type="button"
+                class="top-menu-button"
+                onclick="showComingSoon()"
+            >
+                <span class="top-button-icon">
+                    ＋
+                </span>
+
+                <span>
+                    後日追加予定
+                    <small>COMING SOON</small>
+                </span>
+            </button>
+
+        </div>
+
+
+        <div class="system-version">
+
+            <span>OUENKA SYSTEM</span>
+            <span>VERSION 1.0</span>
+
+        </div>
 
     </header>
 
@@ -66,6 +105,17 @@
 
     <section class="site-header">
 
+        <div class="header-system-label">
+            STADIUM CHANT DATABASE
+        </div>
+
+
+        <!--
+            ここで現在の
+            ouenka-base-icon.png
+            を大きく表示
+        -->
+
         <div class="site-icon">
 
             <img
@@ -76,17 +126,9 @@
         </div>
 
 
-        <div class="site-title-area">
-
-            <h1>
-                応援歌BASE
-            </h1>
-
-            <p class="subtitle">
-                選手を検索して応援歌を再生
-            </p>
-
-        </div>
+        <p class="subtitle">
+            選手を検索して応援歌を再生
+        </p>
 
     </section>
 
@@ -100,28 +142,55 @@
 
 
         <!-- =================================
-             選手名から検索
+             01 PLAYER SEARCH
         ================================== -->
 
         <section class="search-area-container">
 
 
-            <h2 class="search-title">
-                選手名から検索
-            </h2>
+            <div class="section-header">
+
+                <div class="section-number">
+                    01
+                </div>
+
+
+                <div class="section-heading">
+
+                    <div class="section-english">
+                        PLAYER SEARCH
+                    </div>
+
+                    <h2>
+                        選手名から検索
+                    </h2>
+
+                </div>
+
+
+                <div class="section-code">
+                    OUENKA BASE ///
+                </div>
+
+            </div>
 
 
 
-            <!-- 紺色の検索エリア -->
+            <!-- =================================
+                 検索システム
+            ================================== -->
 
             <div class="search-section">
 
 
-                <!-- 検索ボックス -->
-
                 <div class="search-area">
 
                     <div class="search-input-wrapper">
+
+                        <span class="search-icon">
+                            ⌕
+                        </span>
+
 
                         <input
                             type="text"
@@ -198,148 +267,415 @@
 
 
         <!-- =================================
-             球団から探す
+             02 TEAM SEARCH
         ================================== -->
 
         <section class="team-section">
 
-            <h2>
-                球団から探す
-            </h2>
 
+            <div class="section-header team-header">
 
-            <div class="league-headings">
-
-                <div class="league-heading">
-                    パ・リーグ
+                <div class="section-number">
+                    02
                 </div>
 
-                <div class="league-heading">
-                    セ・リーグ
+
+                <div class="section-heading">
+
+                    <div class="section-english">
+                        TEAM SEARCH
+                    </div>
+
+                    <h2>
+                        球団から探す
+                    </h2>
+
+                </div>
+
+
+                <div class="section-code">
+                    NPB TEAMS ///
                 </div>
 
             </div>
 
 
 
-            <!--
-                左列 = パ・リーグ
-                右列 = セ・リーグ
-            -->
+            <!-- =================================
+                 12球団
+            ================================== -->
 
             <div class="team-grid">
 
+
+                <!-- 01 ソフトバンク -->
 
                 <button
                     type="button"
                     class="team-button softbank"
                 >
-                    福岡ソフトバンク<br>
-                    ホークス
+
+                    <span class="team-number">
+                        01
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            福岡ソフトバンクホークス
+                        </strong>
+
+                        <small>
+                            FUKUOKA SOFTBANK HAWKS
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
+
+
+                <!-- 02 巨人 -->
 
                 <button
                     type="button"
                     class="team-button giants"
                 >
-                    読売<br>
-                    ジャイアンツ
+
+                    <span class="team-number">
+                        02
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            読売ジャイアンツ
+                        </strong>
+
+                        <small>
+                            YOMIURI GIANTS
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
 
+
+                <!-- 03 日本ハム -->
 
                 <button
                     type="button"
                     class="team-button fighters"
                 >
-                    北海道日本ハム<br>
-                    ファイターズ
+
+                    <span class="team-number">
+                        03
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            北海道日本ハムファイターズ
+                        </strong>
+
+                        <small>
+                            HOKKAIDO NIPPONHAM FIGHTERS
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
+
+
+                <!-- 04 阪神 -->
 
                 <button
                     type="button"
                     class="team-button tigers"
                 >
-                    阪神<br>
-                    タイガース
+
+                    <span class="team-number">
+                        04
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            阪神タイガース
+                        </strong>
+
+                        <small>
+                            HANSHIN TIGERS
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
 
+
+                <!-- 05 オリックス -->
 
                 <button
                     type="button"
                     class="team-button buffaloes"
                 >
-                    オリックス<br>
-                    バファローズ
+
+                    <span class="team-number">
+                        05
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            オリックス・バファローズ
+                        </strong>
+
+                        <small>
+                            ORIX BUFFALOES
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
+
+
+                <!-- 06 DeNA -->
 
                 <button
                     type="button"
                     class="team-button baystars"
                 >
-                    横浜DeNA<br>
-                    ベイスターズ
+
+                    <span class="team-number">
+                        06
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            横浜DeNAベイスターズ
+                        </strong>
+
+                        <small>
+                            YOKOHAMA DENA BAYSTARS
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
 
+
+                <!-- 07 楽天 -->
 
                 <button
                     type="button"
                     class="team-button eagles"
                 >
-                    東北楽天<br>
-                    ゴールデンイーグルス
+
+                    <span class="team-number">
+                        07
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            東北楽天ゴールデンイーグルス
+                        </strong>
+
+                        <small>
+                            TOHOKU RAKUTEN GOLDEN EAGLES
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
+
+
+                <!-- 08 広島 -->
 
                 <button
                     type="button"
                     class="team-button carp"
                 >
-                    広島東洋<br>
-                    カープ
+
+                    <span class="team-number">
+                        08
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            広島東洋カープ
+                        </strong>
+
+                        <small>
+                            HIROSHIMA TOYO CARP
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
 
+
+                <!-- 09 西武 -->
 
                 <button
                     type="button"
                     class="team-button lions"
                 >
-                    埼玉西武<br>
-                    ライオンズ
+
+                    <span class="team-number">
+                        09
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            埼玉西武ライオンズ
+                        </strong>
+
+                        <small>
+                            SAITAMA SEIBU LIONS
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
+
+
+                <!-- 10 ヤクルト -->
 
                 <button
                     type="button"
                     class="team-button swallows"
                 >
-                    東京ヤクルト<br>
-                    スワローズ
+
+                    <span class="team-number">
+                        10
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            東京ヤクルトスワローズ
+                        </strong>
+
+                        <small>
+                            TOKYO YAKULT SWALLOWS
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
 
+
+                <!-- 11 ロッテ -->
 
                 <button
                     type="button"
                     class="team-button marines"
                 >
-                    千葉ロッテ<br>
-                    マリーンズ
+
+                    <span class="team-number">
+                        11
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            千葉ロッテマリーンズ
+                        </strong>
+
+                        <small>
+                            CHIBA LOTTE MARINES
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
+
+
+                <!-- 12 中日 -->
 
                 <button
                     type="button"
                     class="team-button dragons"
                 >
-                    中日<br>
-                    ドラゴンズ
+
+                    <span class="team-number">
+                        12
+                    </span>
+
+                    <span class="team-info">
+
+                        <strong>
+                            中日ドラゴンズ
+                        </strong>
+
+                        <small>
+                            CHUNICHI DRAGONS
+                        </small>
+
+                    </span>
+
+                    <span class="team-arrow">
+                        ›
+                    </span>
+
                 </button>
 
 
@@ -349,6 +685,28 @@
 
 
     </main>
+
+
+
+    <!-- =====================================
+         フッター
+    ====================================== -->
+
+    <footer class="system-footer">
+
+        <div>
+            OUENKA BASE
+        </div>
+
+        <div>
+            NPB TEAMS&nbsp;&nbsp;12
+        </div>
+
+        <div>
+            STADIUM CHANT DATABASE
+        </div>
+
+    </footer>
 
 
 
