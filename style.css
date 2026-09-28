@@ -8,6 +8,7 @@
 
 
 body {
+
     background-color: #ffffff;
     color: #0B2F55;
 
@@ -20,6 +21,7 @@ body {
     padding: 0;
 
     text-align: center;
+
 }
 
 
@@ -90,7 +92,8 @@ body {
     width: 100%;
     max-width: 900px;
 
-    margin: 35px auto 20px;
+    margin: 30px auto 15px;
+
     padding: 0 20px;
 
     display: flex;
@@ -98,33 +101,42 @@ body {
     justify-content: center;
     align-items: center;
 
-    gap: 20px;
+    gap: 18px;
 
 }
 
+
+
+/* ========================================
+   応援歌BASE アイコン
+======================================== */
 
 .site-icon {
 
-    width: 75px;
-    height: 75px;
+    width: 95px;
+    height: 95px;
 
     flex-shrink: 0;
 
-    display: flex;
+}
 
-    justify-content: center;
-    align-items: center;
 
-    border-radius: 20px;
+.site-icon img {
 
-    background-color: #0B2F55;
-    color: #ffffff;
+    display: block;
 
-    font-size: 42px;
-    font-weight: bold;
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
 
 }
 
+
+
+/* ========================================
+   タイトル
+======================================== */
 
 .site-title-area {
 
@@ -172,7 +184,7 @@ main {
 
 
 /* ========================================
-   選手名から検索
+   選手名から検索 全体
 ======================================== */
 
 .search-area-container {
@@ -180,26 +192,25 @@ main {
     width: 100%;
     max-width: 600px;
 
-    margin: 20px auto 45px;
+    margin: 15px auto 15px;
 
 }
 
 
 
 /* ========================================
-   「選手名から検索」
-   紺色の箱の外
+   選手名から検索
 ======================================== */
 
 .search-title {
 
-    margin: 0 0 15px 5px;
+    margin: 0 0 15px 0;
 
     color: #0B2F55;
 
     font-size: 22px;
 
-    text-align: left;
+    text-align: center;
 
 }
 
@@ -556,15 +567,17 @@ main {
     width: 100%;
     max-width: 620px;
 
-    margin: 0 auto;
+    /* 検索欄との隙間を短く */
+    margin: 5px auto 0;
 
-    padding-top: 10px;
+    padding-top: 0;
 
 }
 
 
 .team-section h2 {
 
+    margin-top: 0;
     margin-bottom: 20px;
 
     color: #0B2F55;
@@ -605,9 +618,7 @@ main {
 
 
 /* ========================================
-   12球団
-   左＝パ・リーグ
-   右＝セ・リーグ
+   球団ボタン
 ======================================== */
 
 .team-grid {
@@ -672,10 +683,8 @@ main {
 
 
 /* ========================================
-   パ・リーグ イメージカラー
+   パ・リーグ
 ======================================== */
-
-/* ソフトバンク */
 
 .softbank {
 
@@ -685,16 +694,12 @@ main {
 }
 
 
-/* 日本ハム */
-
 .fighters {
 
     background-color: #1f7fa9;
 
 }
 
-
-/* オリックス */
 
 .buffaloes {
 
@@ -703,8 +708,6 @@ main {
 }
 
 
-/* 楽天 */
-
 .eagles {
 
     background-color: #870010;
@@ -712,16 +715,12 @@ main {
 }
 
 
-/* 西武 */
-
 .lions {
 
     background-color: #143d73;
 
 }
 
-
-/* ロッテ */
 
 .marines {
 
@@ -732,10 +731,8 @@ main {
 
 
 /* ========================================
-   セ・リーグ イメージカラー
+   セ・リーグ
 ======================================== */
-
-/* 巨人 */
 
 .giants {
 
@@ -745,8 +742,6 @@ main {
 }
 
 
-/* 阪神 */
-
 .tigers {
 
     background-color: #f5d000;
@@ -755,16 +750,12 @@ main {
 }
 
 
-/* DeNA */
-
 .baystars {
 
     background-color: #0075c2;
 
 }
 
-
-/* 広島 */
 
 .carp {
 
@@ -773,16 +764,12 @@ main {
 }
 
 
-/* ヤクルト */
-
 .swallows {
 
     background-color: #159447;
 
 }
 
-
-/* 中日 */
 
 .dragons {
 
@@ -823,19 +810,20 @@ main {
 
     .site-header {
 
-        margin-top: 25px;
+        margin-top: 20px;
+        margin-bottom: 10px;
 
-        gap: 13px;
+        gap: 12px;
 
     }
 
 
+    /* スマホではアイコンを少し小さく */
+
     .site-icon {
 
-        width: 60px;
-        height: 60px;
-
-        font-size: 34px;
+        width: 78px;
+        height: 78px;
 
     }
 
@@ -867,16 +855,18 @@ main {
     .search-area-container {
 
         margin-top: 15px;
-        margin-bottom: 40px;
+        margin-bottom: 12px;
 
     }
 
 
     .search-title {
 
-        margin-left: 5px;
+        margin-left: 0;
 
         font-size: 20px;
+
+        text-align: center;
 
     }
 
@@ -908,6 +898,13 @@ main {
     .search-candidate {
 
         font-size: 16px;
+
+    }
+
+
+    .team-section {
+
+        margin-top: 0;
 
     }
 
