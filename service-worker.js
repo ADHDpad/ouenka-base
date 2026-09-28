@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-v2";
+const CACHE_NAME = "ouenka-base-v3";
 
 
 // ========================================
@@ -14,7 +14,6 @@ self.addEventListener("install", () => {
     self.skipWaiting();
 
 });
-
 
 
 // ========================================
@@ -69,24 +68,44 @@ self.addEventListener("activate", (event) => {
 });
 
 
-
 // ========================================
 // 通信
-// ========================================
-//
-// 応援歌BASEでは
-// HTML / JavaScript / 音源などを
-// Service Workerに保存しない。
-//
-// 常にサーバー側の最新版を使用する。
 // ========================================
 
 self.addEventListener("fetch", (event) => {
 
-    // GET以外はそのまま
+    // GET以外は何もしない
     if (event.request.method !== "GET") {
+
         return;
+
     }
+
+
+    const url =
+        new URL(event.request.url);
+
+
+    // ====================================
+    // 音楽ファイルはService Workerで
+    // 処理しない
+    // ====================================
+
+    if (
+        url.pathname.toLowerCase().endsWith(".m4a") ||
+        url.pathname.toLowerCase().endsWith(".mp3") ||
+        url.pathname.toLowerCase().endsWith(".wav") ||
+        url.pathname.toLowerCase().endsWith(".aac")
+    ) {
+
+        return;
+
+    }
+
+
+    // ====================================
+    // その他のファイル
+    // ====================================
 
     event.respondWith(
 
@@ -99,8 +118,9 @@ self.addEventListener("fetch", (event) => {
 
         .catch(() => {
 
-            // 通信失敗時は通常のリクエスト
-            return fetch(event.request);
+            return fetch(
+                event.request
+            );
 
         })
 
