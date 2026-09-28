@@ -51,10 +51,7 @@ function searchPlayers() {
         );
 
 
-
-    // ====================================
     // ×ボタンの表示
-    // ====================================
 
     if (
         searchInput.value.length > 0
@@ -72,11 +69,7 @@ function searchPlayers() {
     }
 
 
-
-    // ====================================
-    // 選手選択後に文字を変更した場合
-    // 3ボタンなどを消す
-    // ====================================
+    // 選手選択後に検索文字を変更した場合
 
     if (
         selectedPlayerId !== null &&
@@ -88,16 +81,9 @@ function searchPlayers() {
     }
 
 
-
-    // 一度候補を消す
     suggestions.innerHTML =
         "";
 
-
-
-    // ====================================
-    // 空欄
-    // ====================================
 
     if (
         keyword === ""
@@ -109,7 +95,6 @@ function searchPlayers() {
         return;
 
     }
-
 
 
     // ====================================
@@ -151,7 +136,6 @@ function searchPlayers() {
                 ).toLowerCase();
 
 
-
             if (
 
                 name.includes(
@@ -183,7 +167,6 @@ function searchPlayers() {
         }
 
     );
-
 
 
     // ====================================
@@ -222,7 +205,6 @@ function searchPlayers() {
     }
 
 
-
     // ====================================
     // 最大10件
     // ====================================
@@ -232,7 +214,6 @@ function searchPlayers() {
             0,
             MAX_SUGGESTIONS
         );
-
 
 
     // ====================================
@@ -314,12 +295,10 @@ function selectSearchCandidate(
         player.name;
 
 
-
     document.getElementById(
         "clearSearchButton"
     ).style.display =
         "flex";
-
 
 
     const suggestions =
@@ -335,9 +314,6 @@ function selectSearchCandidate(
     suggestions.style.display =
         "none";
 
-
-
-    // 3ボタンを直接表示
 
     showPlayerActions(
         playerId,
@@ -438,7 +414,7 @@ function showPlayerActions(
             }
 
 
-            downloadFile(
+            shareFile(
                 player.midiZip
             );
 
@@ -481,7 +457,7 @@ function showPlayerActions(
             }
 
 
-            downloadFile(
+            shareFile(
                 player.garageBandZip
             );
 
@@ -588,14 +564,13 @@ function clearSearch() {
 
 
 // ========================================
-// ファイルダウンロード
+// ファイルを共有
 //
-// 変更点：
-// ファイルへ直接移動せず
-// JavaScriptで取得してから保存する
+// iPhoneではダウンロード画面ではなく
+// 共有画面を使用する
 // ========================================
 
-async function downloadFile(
+async function shareFile(
     filePath
 ) {
 
@@ -624,7 +599,7 @@ async function downloadFile(
 
 
         // ====================================
-        // Blobデータに変換
+        // Blobに変換
         // ====================================
 
         const blob =
@@ -633,18 +608,7 @@ async function downloadFile(
 
 
         // ====================================
-        // 一時的なダウンロードURLを作る
-        // ====================================
-
-        const blobUrl =
-            URL.createObjectURL(
-                blob
-            );
-
-
-
-        // ====================================
-        // 元のファイル名を取得
+        // ファイル名を取得
         // ====================================
 
         const fileName =
@@ -657,64 +621,69 @@ async function downloadFile(
 
 
         // ====================================
-        // ダウンロード用リンクを作成
+        // Fileオブジェクトを作成
         // ====================================
 
-        const link =
-            document.createElement(
-                "a"
+        const file =
+            new File(
+
+                [blob],
+
+                fileName,
+
+                {
+                    type:
+                        blob.type ||
+                        "application/zip"
+                }
+
             );
 
 
-        link.href =
-            blobUrl;
+
+        // ====================================
+        // この端末がファイル共有に対応しているか
+        // ====================================
+
+        if (
+
+            navigator.share &&
+
+            navigator.canShare &&
+
+            navigator.canShare({
+
+                files: [file]
+
+            })
+
+        ) {
+
+            // =================================
+            // iPhoneの共有画面を表示
+            // =================================
+
+            await navigator.share({
+
+                files: [file]
+
+            });
 
 
-        link.download =
-            fileName;
+            return;
 
-
-        // 別画面へ移動させない
-
-        link.style.display =
-            "none";
-
-
-        document.body.appendChild(
-            link
-        );
+        }
 
 
 
         // ====================================
-        // ダウンロード開始
+        // ファイル共有に対応していない場合
+        // 従来のダウンロードに切り替える
         // ====================================
 
-        link.click();
-
-
-
-        // ====================================
-        // 後片付け
-        // ====================================
-
-        document.body.removeChild(
-            link
-        );
-
-
-        setTimeout(
-
-            function() {
-
-                URL.revokeObjectURL(
-                    blobUrl
-                );
-
-            },
-
-            3000
-
+        fallbackDownload(
+            blob,
+            fileName
         );
 
     }
@@ -723,17 +692,96 @@ async function downloadFile(
         error
     ) {
 
+        // ユーザーが共有画面で
+        // 「キャンセル」を押した場合は
+        // エラー表示しない
+
+        if (
+            error.name ===
+            "AbortError"
+        ) {
+
+            return;
+
+        }
+
+
         console.error(
-            "ダウンロードエラー:",
+            "ファイル共有エラー:",
             error
         );
 
 
         alert(
-            "ファイルをダウンロードできませんでした"
+            "ファイルを開けませんでした"
         );
 
     }
+
+}
+
+
+
+// ========================================
+// 共有非対応端末用
+// 通常ダウンロード
+// ========================================
+
+function fallbackDownload(
+    blob,
+    fileName
+) {
+
+    const blobUrl =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        blobUrl;
+
+
+    link.download =
+        fileName;
+
+
+    link.style.display =
+        "none";
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    document.body.removeChild(
+        link
+    );
+
+
+    setTimeout(
+
+        function() {
+
+            URL.revokeObjectURL(
+                blobUrl
+            );
+
+        },
+
+        3000
+
+    );
 
 }
 
