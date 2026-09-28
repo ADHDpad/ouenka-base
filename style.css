@@ -2,132 +2,298 @@
    サイト全体
 ======================================== */
 
+* {
+    box-sizing: border-box;
+}
+
+
 body {
     background-color: #ffffff;
+
     color: #0B2F55;
 
-    font-family: Arial, "Yu Gothic", sans-serif;
-
-    text-align: center;
+    font-family:
+        Arial,
+        "Yu Gothic",
+        sans-serif;
 
     margin: 0;
-    padding: 40px 20px;
+
+    padding: 0;
+
+    text-align: center;
 }
+
+
+
+/* ========================================
+   上部メニュー
+======================================== */
+
+.top-menu {
+
+    width: 100%;
+
+    min-height: 65px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 10px 20px;
+
+    background-color: #0B2F55;
+
+}
+
+
+.top-menu-button {
+
+    width: auto;
+
+    min-width: 130px;
+
+    margin: 0;
+
+    padding: 11px 20px;
+
+    border: 2px solid #ffffff;
+
+    border-radius: 12px;
+
+    background-color: #0B2F55;
+
+    color: #ffffff;
+
+    font-family:
+        Arial,
+        "Yu Gothic",
+        sans-serif;
+
+    font-size: 15px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+}
+
+
+.top-menu-button:hover {
+
+    background-color: #ffffff;
+
+    color: #0B2F55;
+
+}
+
 
 
 /* ========================================
    サイトタイトル
 ======================================== */
 
+.site-header {
+
+    width: 100%;
+
+    max-width: 900px;
+
+    margin: 35px auto 20px;
+
+    padding: 0 20px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 20px;
+
+}
+
+
+
+/* アイコン */
+
+.site-icon {
+
+    width: 75px;
+
+    height: 75px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    border-radius: 20px;
+
+    background-color: #0B2F55;
+
+    color: #ffffff;
+
+    font-size: 42px;
+
+    font-weight: bold;
+
+}
+
+
+
+/* タイトル */
+
+.site-title-area {
+
+    text-align: left;
+
+}
+
+
 h1 {
+
+    margin: 0;
+
     color: #0B2F55;
 
     font-size: 40px;
 
-    margin-top: 0;
-    margin-bottom: 10px;
 }
 
-
-/* タイトル下の説明 */
 
 .subtitle {
+
+    margin-top: 7px;
+
+    margin-bottom: 0;
+
     color: #0B2F55;
 
-    margin-bottom: 35px;
-
     font-size: 16px;
+
 }
+
 
 
 /* ========================================
-   選手エリア
+   メイン
 ======================================== */
 
-.player {
-    background-color: #0B2F55;
-    color: #ffffff;
+main {
 
-    width: 350px;
-    max-width: 90%;
+    width: 100%;
 
-    margin: 0 auto;
+    padding: 10px 20px 60px;
+
+}
+
+
+
+/* ========================================
+   選手検索エリア
+======================================== */
+
+.search-section {
+
+    width: 100%;
+
+    max-width: 600px;
+
+    margin: 20px auto 45px;
+
     padding: 30px;
+
+    background-color: #0B2F55;
+
+    color: #ffffff;
 
     border-radius: 25px;
 
     box-shadow:
         0 10px 30px
-        rgba(0, 0, 0, 0.25);
+        rgba(0, 0, 0, 0.18);
+
 }
 
 
-/* 選手検索タイトル */
-
-.player h2 {
-    color: #ffffff;
+.search-section h2 {
 
     margin-top: 0;
+
     margin-bottom: 20px;
+
+    color: #ffffff;
+
 }
 
-
-/* ========================================
-   検索エリア
-======================================== */
-
-.search-area {
-    position: relative;
-
-    width: 100%;
-    max-width: 400px;
-
-    margin: 0 auto;
-}
 
 
 /* ========================================
    検索ボックス
 ======================================== */
 
-#searchInput {
+.search-area {
+
     width: 100%;
 
-    box-sizing: border-box;
+    max-width: 500px;
 
-    padding: 14px 15px;
+    margin: 0 auto;
 
-    margin-top: 5px;
-    margin-bottom: 20px;
+}
+
+
+#searchInput {
+
+    width: 100%;
+
+    padding: 16px 20px;
 
     border: none;
-    border-radius: 12px;
 
-    background-color: #ffffff;
-    color: #0B2F55;
-
-    font-size: 17px;
+    border-radius: 15px;
 
     outline: none;
 
+    background-color: #ffffff;
+
+    color: #0B2F55;
+
+    font-family:
+        Arial,
+        "Yu Gothic",
+        sans-serif;
+
+    font-size: 17px;
+
     text-align: center;
+
 }
 
-
-/* 検索ボックスの説明文字 */
 
 #searchInput::placeholder {
+
     color: #888888;
+
 }
 
 
-/* 検索ボックスを選択した時 */
-
 #searchInput:focus {
+
     box-shadow:
         0 0 0 3px
         rgba(255, 255, 255, 0.25);
+
 }
+
 
 
 /* ========================================
@@ -135,22 +301,94 @@ h1 {
 ======================================== */
 
 #searchSuggestions {
+
     display: none;
 
     width: 100%;
 
-    box-sizing: border-box;
+    margin-top: 10px;
+
+    padding: 0;
 
     background-color: #0B2F55;
 
-    padding: 0 0 10px 0;
-
     border: none;
 
-    border-radius: 0 0 18px 18px;
-
     text-align: left;
+
 }
+
+
+
+/* ========================================
+   検索候補1件
+======================================== */
+
+.search-candidate {
+
+    width: 100%;
+
+    margin: 10px 0;
+
+    padding: 15px 18px;
+
+    background-color: #ffffff;
+
+    color: #0B2F55;
+
+    border: 1px solid #d8dde6;
+
+    border-radius: 15px;
+
+    font-family:
+        Arial,
+        "Yu Gothic",
+        sans-serif;
+
+    font-size: 17px;
+
+    font-weight: normal;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 2px 6px
+        rgba(0, 0, 0, 0.08);
+
+    transition: 0.15s;
+
+}
+
+
+.search-candidate:hover {
+
+    background-color: #e8eef5;
+
+    transform: scale(1.01);
+
+}
+
+
+
+/* 候補なし */
+
+.no-search-result {
+
+    padding: 15px;
+
+    color: #ffffff;
+
+    text-align: center;
+
+    font-family:
+        Arial,
+        "Yu Gothic",
+        sans-serif;
+
+    font-size: 16px;
+
+}
+
 
 
 /* ========================================
@@ -158,147 +396,160 @@ h1 {
 ======================================== */
 
 #playerButtons {
+
     width: 100%;
+
+    max-width: 500px;
+
+    margin: 20px auto 0;
+
 }
 
-
-/* 選手1人分 */
 
 .search-player {
+
     width: 100%;
 
-    margin-bottom: 15px;
 }
+
 
 
 /* ========================================
-   ボタン共通
+   通常ボタン
 ======================================== */
 
-button {
+.search-player button,
+.player-menu button {
+
     display: block;
 
     width: 100%;
-
-    box-sizing: border-box;
 
     margin: 12px 0;
 
     padding: 16px;
 
     border: none;
+
     border-radius: 15px;
 
     background-color: #ffffff;
 
     color: #0B2F55;
 
-    font-size: 18px;
+    font-family:
+        Arial,
+        "Yu Gothic",
+        sans-serif;
+
+    font-size: 17px;
+
     font-weight: bold;
 
     cursor: pointer;
 
     transition: 0.15s;
+
 }
 
 
-/* マウスを乗せた時 */
+.search-player button:hover,
+.player-menu button:hover {
 
-button:hover {
     background-color: #e8eef5;
 
-    color: #0B2F55;
-
     transform: scale(1.02);
+
 }
 
 
-/* ボタンを押した瞬間 */
+.search-player button:active,
+.player-menu button:active {
 
-button:active {
     transform: scale(0.98);
+
 }
+
 
 
 /* ========================================
-   選手を押した後の3ボタン
+   選手メニュー
 ======================================== */
 
 .player-menu {
+
     width: 100%;
 
     margin-top: 10px;
 
-    padding-top: 5px;
 }
 
-
-/* 3つの機能ボタン */
-
-.player-menu button {
-    font-size: 16px;
-
-    padding: 14px;
-
-    margin: 10px 0;
-}
 
 
 /* ========================================
-   再生中表示
+   再生中
 ======================================== */
 
 #nowPlaying {
-    margin-top: 30px;
+
+    width: 100%;
+
+    max-width: 500px;
+
+    margin: 30px auto 0;
 
     padding-top: 20px;
 
-    border-top: 1px solid
+    border-top:
+        1px solid
         rgba(255, 255, 255, 0.35);
 
     color: #ffffff;
 
     font-size: 16px;
+
     font-weight: bold;
 
     min-height: 25px;
 
-    text-align: center;
 }
 
-
-/* ========================================
-   歌詞エリア
-======================================== */
-
-#lyricsArea {
-    width: 100%;
-
-    margin-top: 25px;
-
-    text-align: center;
-}
-
-
-/* 「天野浩一 応援歌」などのタイトル */
-
-#lyricsTitle {
-    color: #ffffff;
-
-    margin-top: 20px;
-    margin-bottom: 15px;
-
-    text-align: center;
-
-    font-size: 19px;
-}
 
 
 /* ========================================
    歌詞
 ======================================== */
 
+#lyricsArea {
+
+    width: 100%;
+
+    max-width: 500px;
+
+    margin: 25px auto 0;
+
+}
+
+
+#lyricsTitle {
+
+    margin-top: 20px;
+
+    margin-bottom: 15px;
+
+    color: #ffffff;
+
+    font-size: 19px;
+
+}
+
+
 #lyrics {
+
+    width: 100%;
+
+    margin: 0 auto;
+
     color: #ffffff;
 
     white-space: pre-wrap;
@@ -309,50 +560,267 @@ button:active {
 
     font-size: 16px;
 
-    width: 100%;
-
-    box-sizing: border-box;
-
-    margin: 0 auto;
-
-    padding: 0;
 }
 
 
+
 /* ========================================
-   スマホ表示
+   球団エリア
 ======================================== */
 
-@media screen and (max-width: 500px) {
+.team-section {
 
-    body {
-        padding: 25px 12px;
+    width: 100%;
+
+    margin: 0 auto;
+
+    padding-top: 10px;
+
+}
+
+
+.team-section h2 {
+
+    margin-bottom: 25px;
+
+    color: #0B2F55;
+
+}
+
+
+
+/* ========================================
+   12球団ボタン
+======================================== */
+
+.team-grid {
+
+    width: 100%;
+
+    max-width: 620px;
+
+    margin: 0 auto;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 15px;
+
+}
+
+
+
+/* 球団ボタン */
+
+.team-button {
+
+    width: 100%;
+
+    min-height: 65px;
+
+    margin: 0;
+
+    padding: 12px 15px;
+
+    border: none;
+
+    border-radius: 15px;
+
+    background-color: #0B2F55;
+
+    color: #ffffff;
+
+    font-family:
+        Arial,
+        "Yu Gothic",
+        sans-serif;
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    line-height: 1.4;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 12px
+        rgba(0, 0, 0, 0.15);
+
+    transition: 0.15s;
+
+}
+
+
+.team-button:hover {
+
+    background-color: #164a7c;
+
+    transform:
+        translateY(-2px);
+
+}
+
+
+.team-button:active {
+
+    transform:
+        translateY(0);
+
+}
+
+
+
+/* ========================================
+   スマホ
+======================================== */
+
+@media screen and (max-width: 600px) {
+
+
+    .top-menu {
+
+        padding:
+            10px 12px;
+
+        gap: 8px;
+
+    }
+
+
+    .top-menu-button {
+
+        min-width: 0;
+
+        flex: 1;
+
+        padding:
+            10px 8px;
+
+        font-size: 14px;
+
+    }
+
+
+
+    .site-header {
+
+        margin-top: 25px;
+
+        gap: 13px;
+
+    }
+
+
+    .site-icon {
+
+        width: 60px;
+
+        height: 60px;
+
+        border-radius: 16px;
+
+        font-size: 34px;
+
     }
 
 
     h1 {
-        font-size: 32px;
+
+        font-size: 30px;
+
     }
 
 
-    .player {
-        width: auto;
+    .subtitle {
+
+        font-size: 14px;
+
+    }
+
+
+
+    main {
+
+        padding:
+            5px
+            12px
+            45px;
+
+    }
+
+
+
+    .search-section {
+
+        margin-top: 15px;
+
+        margin-bottom: 40px;
+
+        padding:
+            24px
+            18px;
+
+        border-radius: 22px;
+
+    }
+
+
+
+    #searchInput {
+
+        font-size: 16px;
+
+        padding:
+            15px
+            12px;
+
+    }
+
+
+
+    .search-candidate {
+
+        font-size: 16px;
+
+        padding:
+            14px
+            16px;
+
+    }
+
+
+
+    .team-grid {
 
         max-width: 100%;
 
-        padding: 22px;
+        gap: 10px;
+
     }
 
 
-    button {
-        font-size: 17px;
+
+    .team-button {
+
+        min-height: 65px;
+
+        padding:
+            10px
+            8px;
+
+        font-size: 14px;
+
     }
+
 
 
     #lyrics {
+
         font-size: 15px;
 
-        line-height: 1.9;
     }
 
 }

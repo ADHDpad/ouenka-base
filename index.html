@@ -10,7 +10,10 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <meta name="theme-color" content="#ffffff">
+    <meta
+        name="theme-color"
+        content="#ffffff"
+    >
 
     <link
         rel="manifest"
@@ -31,107 +34,246 @@
 
 
     <!-- =====================================
-         サイトタイトル
+         上部メニュー
     ====================================== -->
 
-    <h1>応援歌BASE</h1>
+    <header class="top-menu">
 
-    <p class="subtitle">
-        選手を検索して応援歌を再生
-    </p>
+        <button
+            type="button"
+            class="top-menu-button"
+            onclick="updateApp()"
+        >
+            🔄 更新
+        </button>
+
+
+        <button
+            type="button"
+            class="top-menu-button"
+            onclick="showComingSoon()"
+        >
+            メドレー作成
+        </button>
+
+    </header>
 
 
 
     <!-- =====================================
-         選手検索エリア
+         サイトタイトル
     ====================================== -->
 
-    <div class="player">
+    <section class="site-header">
 
-        <h2>選手検索</h2>
-
-
-        <!-- 検索ボックス全体 -->
-        <div
-            class="search-area"
-            style="
-                position: relative;
-                width: 100%;
-                max-width: 400px;
-                margin: 0 auto;
-            "
-        >
-
-            <!-- 検索入力 -->
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="選手名を検索"
-                oninput="searchPlayers()"
-                autocomplete="off"
-            >
+        <div class="site-icon">
+            ♪
+        </div>
 
 
-            <!-- 検索候補 -->
+        <div class="site-title-area">
+
+            <h1>
+                応援歌BASE
+            </h1>
+
+            <p class="subtitle">
+                選手を検索して応援歌を再生
+            </p>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================================
+         選手検索
+    ====================================== -->
+
+    <main>
+
+
+        <section class="search-section">
+
+            <h2>
+                選手検索
+            </h2>
+
+
+            <div class="search-area">
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="選手名を検索"
+                    oninput="searchPlayers()"
+                    autocomplete="off"
+                >
+
+
+                <div
+                    id="searchSuggestions"
+                ></div>
+
+            </div>
+
+
+            <!-- 選択した選手 -->
+
             <div
-                id="searchSuggestions"
-                style="
-                    display: none;
-                    position: absolute;
-                    top: 100%;
-                    left: 0;
-                    right: 0;
-                    background: white;
-                    border: 1px solid #cccccc;
-                    border-radius: 0 0 10px 10px;
-                    overflow: hidden;
-                    z-index: 1000;
-                    text-align: left;
-                "
+                id="playerButtons"
             ></div>
 
-        </div>
 
 
-        <!-- 選択された選手 -->
-        <div id="playerButtons"></div>
+            <!-- 再生中 -->
+
+            <div
+                id="nowPlaying"
+            >
+                選手を検索してください
+            </div>
 
 
-        <div id="nowPlaying">
-            選手を検索してください
-        </div>
+
+            <!-- 歌詞 -->
+
+            <div
+                id="lyricsArea"
+            >
+
+                <h3
+                    id="lyricsTitle"
+                ></h3>
 
 
-        <div id="lyricsArea">
+                <div
+                    id="lyrics"
+                ></div>
 
-            <h3 id="lyricsTitle"></h3>
+            </div>
 
-            <div id="lyrics"></div>
-
-        </div>
+        </section>
 
 
 
         <!-- =================================
-             更新ボタン
+             球団から探す
         ================================== -->
 
-        <button
-            type="button"
-            onclick="updateApp()"
-            style="
-                margin-top:30px;
-                padding:10px 20px;
-                border:none;
-                border-radius:10px;
-                cursor:pointer;
-            "
-        >
-            🔄 最新版に更新
-        </button>
+        <section class="team-section">
+
+            <h2>
+                球団から探す
+            </h2>
 
 
-    </div>
+            <div class="team-grid">
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    広島東洋カープ
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    阪神タイガース
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    横浜DeNAベイスターズ
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    読売ジャイアンツ
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    東京ヤクルトスワローズ
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    中日ドラゴンズ
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    福岡ソフトバンクホークス
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    北海道日本ハムファイターズ
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    オリックス・バファローズ
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    東北楽天ゴールデンイーグルス
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    埼玉西武ライオンズ
+                </button>
+
+
+                <button
+                    type="button"
+                    class="team-button"
+                >
+                    千葉ロッテマリーンズ
+                </button>
+
+
+            </div>
+
+        </section>
+
+
+    </main>
 
 
 
@@ -148,12 +290,15 @@
 
 
     <!-- =====================================
-         Service Worker
+         Service Worker / 更新処理
     ====================================== -->
 
     <script>
 
-        if ("serviceWorker" in navigator) {
+        if (
+            "serviceWorker"
+            in navigator
+        ) {
 
             window.addEventListener(
                 "load",
@@ -169,7 +314,8 @@
                                 );
 
 
-                        await registration.update();
+                        await registration
+                            .update();
 
 
                         console.log(
@@ -278,6 +424,20 @@
                 window.location.reload();
 
             }
+
+        }
+
+
+
+        // ====================================
+        // 今後追加する機能
+        // ====================================
+
+        function showComingSoon() {
+
+            alert(
+                "メドレー作成功能は今後追加予定です"
+            );
 
         }
 
