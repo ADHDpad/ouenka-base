@@ -2,225 +2,296 @@
 <html lang="ja">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="theme-color"
-        content="#071d33"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#071d33">
 
     <title>応援歌データ登録 | OUENKA BASE</title>
 
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
-    ></script>
-
-
     <style>
-
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
-
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: #f2f4f7;
             color: #111;
         }
 
-
-        /* =====================================
-           上部
-        ====================================== */
-
         .top-menu {
             background: #071d33;
             color: white;
-
             padding: 16px 20px;
-
             display: flex;
             justify-content: space-between;
             align-items: center;
-
-            gap: 15px;
         }
 
-
-        .top-brand-main {
+        .brand-main {
             font-size: 18px;
-            font-weight: 800;
-            letter-spacing: 1px;
+            font-weight: bold;
         }
 
-
-        .top-brand-sub {
+        .brand-sub {
+            margin-top: 3px;
             font-size: 10px;
             opacity: 0.7;
             letter-spacing: 1px;
-            margin-top: 2px;
         }
 
-
         .back-button {
-            border: 1px solid rgba(255,255,255,0.35);
-            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: transparent;
             color: white;
-
             padding: 10px 14px;
-
             border-radius: 6px;
-
             font-weight: bold;
             cursor: pointer;
         }
 
-
-        /* =====================================
-           メイン
-        ====================================== */
-
         main {
             max-width: 680px;
             margin: 30px auto;
-            padding: 0 16px 50px;
+            padding: 0 16px;
         }
-
 
         .page-label {
             font-size: 11px;
+            font-weight: bold;
             letter-spacing: 2px;
             color: #607080;
-            font-weight: bold;
         }
 
-
         h1 {
-            margin: 5px 0 8px;
+            margin: 6px 0 8px;
             font-size: 28px;
         }
 
-
         .description {
-            margin-bottom: 25px;
-            color: #5a6470;
+            color: #5f6973;
             line-height: 1.6;
+            margin-bottom: 25px;
         }
-
-
-        /* =====================================
-           カード
-        ====================================== */
 
         .card {
             background: white;
-
             border-radius: 12px;
-
             padding: 22px;
             margin-bottom: 18px;
-
-            box-shadow:
-                0 2px 10px
-                rgba(0,0,0,0.07);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
         }
-
 
         .card-title {
-            font-size: 13px;
-            color: #607080;
-            letter-spacing: 1px;
-            font-weight: bold;
             margin-bottom: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #607080;
         }
 
-
-        /* =====================================
-           ファイル選択
-        ====================================== */
-
         #zipFile {
-            display: block;
-
             width: 100%;
-
             padding: 14px;
-
-            border:
-                2px dashed #9ba6b0;
-
+            border: 2px dashed #9ba6b0;
             border-radius: 8px;
-
             background: #f7f8fa;
-
             font-size: 16px;
         }
 
-
         .selected-box {
-            margin-top: 16px;
-
-            padding: 15px;
-
+            margin-top: 18px;
+            padding: 16px;
             border-radius: 8px;
-
             background: #eef1f4;
         }
 
-
         .selected-label {
             font-size: 11px;
-
-            color: #66717c;
-
             font-weight: bold;
-
+            color: #68727d;
             letter-spacing: 1px;
         }
 
-
         #selectedFileName {
-            margin-top: 6px;
-
-            font-size: 17px;
-
+            margin-top: 7px;
+            font-size: 18px;
             font-weight: bold;
-
             word-break: break-all;
         }
 
-
-        /* =====================================
-           選手名
-        ====================================== */
-
-        .player-name {
-            font-size: 26px;
-            font-weight: 800;
+        #result {
+            display: none;
         }
 
+        .success {
+            color: #137333;
+            font-weight: bold;
+        }
 
-        /* =====================================
-           データ
-        ====================================== */
+        @media (max-width: 520px) {
+            .brand-sub {
+                display: none;
+            }
 
-        .data-row {
-            display: flex;
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
 
-            align-items: center;
+<body>
 
-            justify-content:
-               
+    <header class="top-menu">
+
+        <div>
+            <div class="brand-main">
+                OUENKA BASE
+            </div>
+
+            <div class="brand-sub">
+                DATA REGISTER SYSTEM
+            </div>
+        </div>
+
+        <button
+            type="button"
+            class="back-button"
+            onclick="backToBase()"
+        >
+            ← BASEに戻る
+        </button>
+
+    </header>
+
+
+    <main>
+
+        <div class="page-label">
+            OUENKA BASE /// DATA REGISTER
+        </div>
+
+        <h1>
+            応援歌データ登録
+        </h1>
+
+        <div class="description">
+            登録する選手のZIPファイルを選択してください。
+        </div>
+
+
+        <section class="card">
+
+            <div class="card-title">
+                01 /// SELECT ZIP
+            </div>
+
+            <input
+                type="file"
+                id="zipFile"
+                accept=".zip,application/zip"
+            >
+
+            <div class="selected-box">
+
+                <div class="selected-label">
+                    SELECTED FILE
+                </div>
+
+                <div id="selectedFileName">
+                    ZIPが選択されていません
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section
+            class="card"
+            id="result"
+        >
+
+            <div class="card-title">
+                02 /// FILE CHECK
+            </div>
+
+            <div
+                id="resultText"
+                class="success"
+            >
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        const zipFile =
+            document.getElementById("zipFile");
+
+        const selectedFileName =
+            document.getElementById("selectedFileName");
+
+        const result =
+            document.getElementById("result");
+
+        const resultText =
+            document.getElementById("resultText");
+
+
+        zipFile.addEventListener(
+            "change",
+            function () {
+
+                if (
+                    !zipFile.files ||
+                    zipFile.files.length === 0
+                ) {
+
+                    selectedFileName.textContent =
+                        "ZIPが選択されていません";
+
+                    result.style.display =
+                        "none";
+
+                    return;
+                }
+
+
+                const file =
+                    zipFile.files[0];
+
+
+                selectedFileName.textContent =
+                    file.name;
+
+
+                result.style.display =
+                    "block";
+
+
+                resultText.textContent =
+                    "✓ ZIPを選択できました：" +
+                    file.name;
+
+            }
+        );
+
+
+        function backToBase() {
+
+            window.location.href =
+                "./index.html";
+
+        }
+
+    </script>
+
+</body>
+
+</html>
