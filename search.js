@@ -352,7 +352,33 @@ function showPlayerActions(
 
 
     // ====================================
-    // ② MIDI
+    // ② MIDIをその場で再生
+    // ====================================
+
+    const midiPlayButton =
+        document.createElement(
+            "button"
+        );
+
+    midiPlayButton.textContent =
+        "▶ MIDIを再生";
+
+    midiPlayButton.onclick =
+        function() {
+
+            playPlayerMidi(
+                playerId
+            );
+
+        };
+
+    menu.appendChild(
+        midiPlayButton
+    );
+
+
+    // ====================================
+    // ③ MIDIファイル出力
     // ====================================
 
     const midiButton =
@@ -392,7 +418,7 @@ function showPlayerActions(
 
 
     // ====================================
-    // ③ GarageBand
+    // ④ GarageBand
     // ====================================
 
     const garageButton =
