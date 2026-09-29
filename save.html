@@ -1,0 +1,629 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>応援歌データ保存</title>
+
+    <!-- ZIPを展開するためのJSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background: #f2f4f7;
+        }
+
+        header {
+            background: #071d41;
+            color: white;
+            padding: 18px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .player-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .file-list {
+            background: #f6f7f9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .file-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .ok {
+            color: #16803c;
+            font-weight: bold;
+        }
+
+        .ng {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 25px;
+
+            border: none;
+            border-radius: 10px;
+
+            background: #071d41;
+            color: white;
+
+            font-size: 18px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: #aaa;
+            cursor: default;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<header>
+    応援歌データ登録
+</header>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>ZIPファイルを選択</h2>
+
+        <input
+            type="file"
+            id="zipFile"
+            accept=".zip"
+        >
+
+
+        <div
+            id="playerName"
+            class="player-name">
+        </div>
+
+
+        <div
+            id="fileList"
+            class="file-list"
+            style="display:none;">
+        </div>
+
+
+        <button
+            id="saveButton"
+            disabled>
+            保存する
+        </button>
+
+
+        <div id="message"></div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+// ========================================
+// 保存対象
+// ========================================
+
+let saveData = null;
+
+
+// ========================================
+// ZIP選択
+// ========================================
+
+document
+.getElementById("zipFile")
+.addEventListener(
+    "change",
+    async function(event) {
+
+        const file =
+            event.target.files[0];
+
+
+        if (!file) {
+            return;
+        }
+
+
+        document.getElementById(
+            "message"
+        ).textContent =
+            "ZIPを解析しています…";
+
+
+        try {
+
+            // ========================================
+            // ZIPを開く
+            // ========================================
+
+            const zip =
+                await JSZip.loadAsync(file);
+
+
+            // ========================================
+            // 選手名
+            // ZIPファイル名から取得
+            // ========================================
+
+            let playerName =
+                file.name.replace(/\.zip$/i, "");
+
+
+            // (1) や (2) が付いていた場合は削除
+            playerName =
+                playerName.replace(
+                    /\(\d+\)$/,
+                    ""
+                );
+
+
+            document.getElementById(
+                "playerName"
+            ).textContent =
+                playerName;
+
+
+            // ========================================
+            // ファイル検索
+            // ========================================
+
+            let melodyFile = null;
+            let chordFile = null;
+            let bassFile = null;
+            let garageBandFile = null;
+
+
+            zip.forEach(
+                function(relativePath, zipEntry) {
+
+                    if (zipEntry.dir) {
+                        return;
+                    }
+
+
+                    const name =
+                        relativePath
+                        .split("/")
+                        .pop();
+
+
+                    // ------------------------
+                    // メロディー
+                    // ------------------------
+
+                    if (
+                        name.toLowerCase()
+                            .endsWith(".mid")
+                        &&
+                        name.includes("メロディ")
+                    ) {
+
+                        melodyFile =
+                            zipEntry;
+                    }
+
+
+                    // ------------------------
+                    // コード進行
+                    // ------------------------
+
+                    if (
+                        name.toLowerCase()
+                            .endsWith(".mid")
+                        &&
+                        name.includes("コード")
+                    ) {
+
+                        chordFile =
+                            zipEntry;
+                    }
+
+
+                    // ------------------------
+                    // ベース
+                    // ------------------------
+
+                    if (
+                        name.toLowerCase()
+                            .endsWith(".mid")
+                        &&
+                        name.includes("ベース")
+                    ) {
+
+                        bassFile =
+                            zipEntry;
+                    }
+
+
+                    // ------------------------
+                    // GarageBand ZIP
+                    // ------------------------
+
+                    if (
+                        name.toLowerCase()
+                            .endsWith(".zip")
+                        &&
+                        !name.includes("_MIDI")
+                    ) {
+
+                        garageBandFile =
+                            zipEntry;
+                    }
+
+                }
+            );
+
+
+            // ========================================
+            // Blobへ変換
+            // ========================================
+
+            const melodyBlob =
+                melodyFile
+                ? await melodyFile.async("blob")
+                : null;
+
+
+            const chordBlob =
+                chordFile
+                ? await chordFile.async("blob")
+                : null;
+
+
+            const bassBlob =
+                bassFile
+                ? await bassFile.async("blob")
+                : null;
+
+
+            const garageBandBlob =
+                garageBandFile
+                ? await garageBandFile.async("blob")
+                : null;
+
+
+            // ========================================
+            // 保存データ
+            // ========================================
+
+            saveData = {
+
+                playerName:
+                    playerName,
+
+                originalZip:
+                    file,
+
+                melody:
+                    melodyBlob,
+
+                chord:
+                    chordBlob,
+
+                bass:
+                    bassBlob,
+
+                garageBand:
+                    garageBandBlob,
+
+                savedAt:
+                    new Date()
+
+            };
+
+
+            // ========================================
+            // 結果表示
+            // ========================================
+
+            const fileList =
+                document.getElementById(
+                    "fileList"
+                );
+
+
+            fileList.style.display =
+                "block";
+
+
+            fileList.innerHTML = `
+
+                <div class="file-item">
+                    ${garageBandBlob
+                        ? '<span class="ok">✓</span>'
+                        : '<span class="ng">×</span>'
+                    }
+                    GarageBand ZIP
+                </div>
+
+                <div class="file-item">
+                    ${melodyBlob
+                        ? '<span class="ok">✓</span>'
+                        : '<span class="ng">×</span>'
+                    }
+                    メロディー MIDI
+                </div>
+
+                <div class="file-item">
+                    ${bassBlob
+                        ? '<span class="ok">✓</span>'
+                        : '<span class="ng">×</span>'
+                    }
+                    ベース MIDI
+                </div>
+
+                <div class="file-item">
+                    ${chordBlob
+                        ? '<span class="ok">✓</span>'
+                        : '<span class="ng">×</span>'
+                    }
+                    コード進行 MIDI
+                </div>
+
+            `;
+
+
+            // ========================================
+            // 4種類そろっているか
+            // ========================================
+
+            const complete =
+                garageBandBlob &&
+                melodyBlob &&
+                bassBlob &&
+                chordBlob;
+
+
+            document.getElementById(
+                "saveButton"
+            ).disabled =
+                !complete;
+
+
+            if (complete) {
+
+                document.getElementById(
+                    "message"
+                ).textContent =
+                    "✓ 必要なデータがすべて見つかりました";
+
+            } else {
+
+                document.getElementById(
+                    "message"
+                ).textContent =
+                    "必要なファイルが不足しています";
+
+            }
+
+        }
+
+        catch(error) {
+
+            console.error(error);
+
+            document.getElementById(
+                "message"
+            ).textContent =
+                "ZIPの読み込みに失敗しました";
+
+        }
+
+    }
+);
+
+
+// ========================================
+// IndexedDB
+// ========================================
+
+function openDatabase() {
+
+    return new Promise(
+        function(resolve, reject) {
+
+            const request =
+                indexedDB.open(
+                    "OuenkaBaseDB",
+                    1
+                );
+
+
+            request.onupgradeneeded =
+                function(event) {
+
+                    const db =
+                        event.target.result;
+
+
+                    if (
+                        !db.objectStoreNames
+                        .contains("songs")
+                    ) {
+
+                        db.createObjectStore(
+                            "songs",
+                            {
+                                keyPath:
+                                    "playerName"
+                            }
+                        );
+
+                    }
+
+                };
+
+
+            request.onsuccess =
+                function(event) {
+
+                    resolve(
+                        event.target.result
+                    );
+
+                };
+
+
+            request.onerror =
+                function() {
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ========================================
+// 保存
+// ========================================
+
+document
+.getElementById("saveButton")
+.addEventListener(
+    "click",
+    async function() {
+
+        if (!saveData) {
+            return;
+        }
+
+
+        try {
+
+            const db =
+                await openDatabase();
+
+
+            const transaction =
+                db.transaction(
+                    "songs",
+                    "readwrite"
+                );
+
+
+            const store =
+                transaction.objectStore(
+                    "songs"
+                );
+
+
+            store.put(
+                saveData
+            );
+
+
+            transaction.oncomplete =
+                function() {
+
+                    document.getElementById(
+                        "message"
+                    ).textContent =
+                        "✓ 保存しました！";
+
+                };
+
+
+            transaction.onerror =
+                function() {
+
+                    document.getElementById(
+                        "message"
+                    ).textContent =
+                        "保存に失敗しました";
+
+                };
+
+        }
+
+        catch(error) {
+
+            console.error(error);
+
+            document.getElementById(
+                "message"
+            ).textContent =
+                "データベースを開けませんでした";
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+
+</html>
+```
