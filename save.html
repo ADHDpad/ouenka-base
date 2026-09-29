@@ -3,111 +3,491 @@
 <html lang="ja">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>応援歌データ保存</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <!-- ZIPを展開するためのJSZip -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <meta
+        name="theme-color"
+        content="#071d33"
+    >
+
+    <title>応援歌データ登録 | OUENKA BASE</title>
+
+
+    <!-- ZIP展開 -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+    ></script>
+
 
     <style>
 
+        * {
+            box-sizing: border-box;
+        }
+
+
         body {
             margin: 0;
-            font-family: sans-serif;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
             background: #f2f4f7;
+
+            color: #111;
         }
 
-        header {
-            background: #071d41;
+
+        /* =====================================
+           上部バー
+        ====================================== */
+
+        .top-menu {
+
+            background: #071d33;
+
             color: white;
-            padding: 18px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
+
+            padding:
+                16px 20px;
+
+            display: flex;
+
+            justify-content:
+                space-between;
+
+            align-items:
+                center;
+
+            gap: 15px;
+
         }
 
-        .container {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-        }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 14px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            margin-top: 0;
-        }
-
-        input[type="file"] {
-            width: 100%;
-            margin: 15px 0;
-        }
-
-        .player-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-
-        .file-list {
-            background: #f6f7f9;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-
-        .file-item {
-            padding: 8px 0;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .file-item:last-child {
-            border-bottom: none;
-        }
-
-        .ok {
-            color: #16803c;
-            font-weight: bold;
-        }
-
-        .ng {
-            color: #c62828;
-            font-weight: bold;
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            margin-top: 25px;
-
-            border: none;
-            border-radius: 10px;
-
-            background: #071d41;
-            color: white;
+        .top-brand-main {
 
             font-size: 18px;
+
+            font-weight: 800;
+
+            letter-spacing: 1px;
+
+        }
+
+
+        .top-brand-sub {
+
+            font-size: 10px;
+
+            opacity: 0.7;
+
+            letter-spacing: 1px;
+
+            margin-top: 2px;
+
+        }
+
+
+        .back-button {
+
+            border: 1px solid
+                rgba(255,255,255,0.35);
+
+            background:
+                rgba(255,255,255,0.08);
+
+            color: white;
+
+            padding:
+                10px 14px;
+
+            border-radius: 6px;
+
             font-weight: bold;
 
             cursor: pointer;
+
         }
 
-        button:disabled {
-            background: #aaa;
-            cursor: default;
+
+
+        /* =====================================
+           メイン
+        ====================================== */
+
+        main {
+
+            max-width: 680px;
+
+            margin:
+                30px auto;
+
+            padding:
+                0 16px 50px;
+
         }
+
+
+        .page-label {
+
+            font-size: 11px;
+
+            letter-spacing: 2px;
+
+            color: #607080;
+
+            font-weight: bold;
+
+        }
+
+
+        h1 {
+
+            margin:
+                5px 0 8px;
+
+            font-size: 28px;
+
+        }
+
+
+        .description {
+
+            margin-bottom: 25px;
+
+            color: #5a6470;
+
+            line-height: 1.6;
+
+        }
+
+
+
+        /* =====================================
+           カード
+        ====================================== */
+
+        .card {
+
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 22px;
+
+            margin-bottom: 18px;
+
+            box-shadow:
+                0 2px 10px
+                rgba(0,0,0,0.07);
+
+        }
+
+
+        .card-title {
+
+            font-size: 13px;
+
+            color: #607080;
+
+            letter-spacing: 1px;
+
+            font-weight: bold;
+
+            margin-bottom: 15px;
+
+        }
+
+
+
+        /* =====================================
+           ZIP選択
+        ====================================== */
+
+        .file-label {
+
+            display: block;
+
+            background: #071d33;
+
+            color: white;
+
+            text-align: center;
+
+            padding: 16px;
+
+            border-radius: 8px;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+        }
+
+
+        #zipFile {
+
+            display: none;
+
+        }
+
+
+        #selectedFileName {
+
+            margin-top: 14px;
+
+            text-align: center;
+
+            color: #555;
+
+            word-break: break-all;
+
+        }
+
+
+
+        /* =====================================
+           選手名
+        ====================================== */
+
+        .player-name {
+
+            font-size: 26px;
+
+            font-weight: 800;
+
+            margin-top: 8px;
+
+        }
+
+
+
+        /* =====================================
+           ファイル確認
+        ====================================== */
+
+        .data-row {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content:
+                space-between;
+
+            padding:
+                14px 0;
+
+            border-bottom:
+                1px solid #e5e8eb;
+
+            gap: 15px;
+
+        }
+
+
+        .data-row:last-child {
+
+            border-bottom: none;
+
+        }
+
+
+        .data-name {
+
+            font-weight: 700;
+
+        }
+
+
+        .data-file {
+
+            font-size: 12px;
+
+            color: #68727d;
+
+            margin-top: 4px;
+
+            word-break: break-all;
+
+        }
+
+
+        .status {
+
+            min-width: 34px;
+
+            text-align: center;
+
+            font-size: 20px;
+
+            font-weight: bold;
+
+        }
+
+
+        .status.ok {
+
+            color: #16803c;
+
+        }
+
+
+        .status.ng {
+
+            color: #c62828;
+
+        }
+
+
+
+        /* =====================================
+           保存
+        ====================================== */
+
+        #saveButton {
+
+            width: 100%;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background: #071d33;
+
+            color: white;
+
+            padding: 17px;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+        }
+
+
+        #saveButton:disabled {
+
+            background: #aeb4ba;
+
+            cursor: default;
+
+        }
+
+
+
+        /* =====================================
+           メッセージ
+        ====================================== */
 
         #message {
-            margin-top: 20px;
-            font-weight: bold;
+
+            margin-top: 18px;
+
+            padding: 14px;
+
+            border-radius: 8px;
+
+            background: #eef1f4;
+
             text-align: center;
+
+            font-weight: bold;
+
+            line-height: 1.5;
+
+        }
+
+
+        .success-message {
+
+            background:
+                #e6f5eb !important;
+
+            color: #126b32;
+
+        }
+
+
+        .error-message {
+
+            background:
+                #fdecec !important;
+
+            color: #a51f1f;
+
+        }
+
+
+
+        /* =====================================
+           デバッグ
+        ====================================== */
+
+        #debugArea {
+
+            display: none;
+
+        }
+
+
+        .debug-list {
+
+            font-family: monospace;
+
+            font-size: 12px;
+
+            line-height: 1.6;
+
+            background: #111b24;
+
+            color: #d7e0e7;
+
+            padding: 15px;
+
+            border-radius: 8px;
+
+            overflow-x: auto;
+
+            white-space: pre-wrap;
+
+            word-break: break-all;
+
+        }
+
+
+
+        @media (
+            max-width: 520px
+        ) {
+
+            .top-brand-sub {
+                display: none;
+            }
+
+
+            h1 {
+                font-size: 24px;
+            }
+
+
+            .card {
+                padding: 18px;
+            }
+
         }
 
     </style>
@@ -115,515 +495,147 @@
 </head>
 
 
+
 <body>
 
-<header>
-    応援歌データ登録
-</header>
+
+    <!-- =====================================
+         上部メニュー
+    ====================================== -->
+
+    <header class="top-menu">
 
 
-<div class="container">
+        <div>
 
-    <div class="card">
+            <div class="top-brand-main">
+                OUENKA BASE
+            </div>
 
-        <h2>ZIPファイルを選択</h2>
+            <div class="top-brand-sub">
+                DATA REGISTER SYSTEM
+            </div>
 
-        <input
-            type="file"
-            id="zipFile"
-            accept=".zip"
-        >
-
-
-        <div
-            id="playerName"
-            class="player-name">
-        </div>
-
-
-        <div
-            id="fileList"
-            class="file-list"
-            style="display:none;">
         </div>
 
 
         <button
-            id="saveButton"
-            disabled>
-            保存する
+            type="button"
+            class="back-button"
+            onclick="backToBase()"
+        >
+            ← BASEに戻る
         </button>
 
 
-        <div id="message"></div>
+    </header>
 
-    </div>
 
-</div>
 
+    <!-- =====================================
+         メイン
+    ====================================== -->
 
-<script>
+    <main>
 
-// ========================================
-// 保存対象
-// ========================================
 
-let saveData = null;
+        <div class="page-label">
+            OUENKA BASE /// DATA REGISTER
+        </div>
 
 
-// ========================================
-// ZIP選択
-// ========================================
+        <h1>
+            応援歌データ登録
+        </h1>
 
-document
-.getElementById("zipFile")
-.addEventListener(
-    "change",
-    async function(event) {
 
-        const file =
-            event.target.files[0];
+        <div class="description">
 
+            応援歌データのZIPファイルを選択してください。
 
-        if (!file) {
-            return;
-        }
+            <br>
 
+            ZIP内からGarageBand・メロディー・
+            ベース・コード進行を自動判定します。
 
-        document.getElementById(
-            "message"
-        ).textContent =
-            "ZIPを解析しています…";
+        </div>
 
 
-        try {
 
-            // ========================================
-            // ZIPを開く
-            // ========================================
+        <!-- =================================
+             ZIP選択
+        ================================== -->
 
-            const zip =
-                await JSZip.loadAsync(file);
+        <section class="card">
 
 
-            // ========================================
-            // 選手名
-            // ZIPファイル名から取得
-            // ========================================
+            <div class="card-title">
+                01 /// SELECT ZIP
+            </div>
 
-            let playerName =
-                file.name.replace(/\.zip$/i, "");
 
+            <label
+                for="zipFile"
+                class="file-label"
+            >
+                ZIPファイルを選択
+            </label>
 
-            // (1) や (2) が付いていた場合は削除
-            playerName =
-                playerName.replace(
-                    /\(\d+\)$/,
-                    ""
-                );
 
+            <input
+                type="file"
+                id="zipFile"
+                accept=".zip,application/zip"
+            >
 
-            document.getElementById(
-                "playerName"
-            ).textContent =
-                playerName;
 
+            <div
+                id="selectedFileName"
+            >
+                ZIPが選択されていません
+            </div>
 
-            // ========================================
-            // ファイル検索
-            // ========================================
 
-            let melodyFile = null;
-            let chordFile = null;
-            let bassFile = null;
-            let garageBandFile = null;
+        </section>
 
 
-            zip.forEach(
-                function(relativePath, zipEntry) {
 
-                    if (zipEntry.dir) {
-                        return;
-                    }
+        <!-- =================================
+             選手
+        ================================== -->
 
+        <section
+            class="card"
+            id="playerCard"
+            style="display:none;"
+        >
 
-                    const name =
-                        relativePath
-                        .split("/")
-                        .pop();
 
+            <div class="card-title">
+                02 /// PLAYER
+            </div>
 
-                    // ------------------------
-                    // メロディー
-                    // ------------------------
 
-                    if (
-                        name.toLowerCase()
-                            .endsWith(".mid")
-                        &&
-                        name.includes("メロディ")
-                    ) {
+            <div
+                id="playerName"
+                class="player-name"
+            ></div>
 
-                        melodyFile =
-                            zipEntry;
-                    }
 
+        </section>
 
-                    // ------------------------
-                    // コード進行
-                    // ------------------------
 
-                    if (
-                        name.toLowerCase()
-                            .endsWith(".mid")
-                        &&
-                        name.includes("コード")
-                    ) {
 
-                        chordFile =
-                            zipEntry;
-                    }
+        <!-- =================================
+             解析結果
+        ================================== -->
 
+        <section
+            class="card"
+            id="resultCard"
+            style="display:none;"
+        >
 
-                    // ------------------------
-                    // ベース
-                    // ------------------------
 
-                    if (
-                        name.toLowerCase()
-                            .endsWith(".mid")
-                        &&
-                        name.includes("ベース")
-                    ) {
-
-                        bassFile =
-                            zipEntry;
-                    }
-
-
-                    // ------------------------
-                    // GarageBand ZIP
-                    // ------------------------
-
-                    if (
-                        name.toLowerCase()
-                            .endsWith(".zip")
-                        &&
-                        !name.includes("_MIDI")
-                    ) {
-
-                        garageBandFile =
-                            zipEntry;
-                    }
-
-                }
-            );
-
-
-            // ========================================
-            // Blobへ変換
-            // ========================================
-
-            const melodyBlob =
-                melodyFile
-                ? await melodyFile.async("blob")
-                : null;
-
-
-            const chordBlob =
-                chordFile
-                ? await chordFile.async("blob")
-                : null;
-
-
-            const bassBlob =
-                bassFile
-                ? await bassFile.async("blob")
-                : null;
-
-
-            const garageBandBlob =
-                garageBandFile
-                ? await garageBandFile.async("blob")
-                : null;
-
-
-            // ========================================
-            // 保存データ
-            // ========================================
-
-            saveData = {
-
-                playerName:
-                    playerName,
-
-                originalZip:
-                    file,
-
-                melody:
-                    melodyBlob,
-
-                chord:
-                    chordBlob,
-
-                bass:
-                    bassBlob,
-
-                garageBand:
-                    garageBandBlob,
-
-                savedAt:
-                    new Date()
-
-            };
-
-
-            // ========================================
-            // 結果表示
-            // ========================================
-
-            const fileList =
-                document.getElementById(
-                    "fileList"
-                );
-
-
-            fileList.style.display =
-                "block";
-
-
-            fileList.innerHTML = `
-
-                <div class="file-item">
-                    ${garageBandBlob
-                        ? '<span class="ok">✓</span>'
-                        : '<span class="ng">×</span>'
-                    }
-                    GarageBand ZIP
-                </div>
-
-                <div class="file-item">
-                    ${melodyBlob
-                        ? '<span class="ok">✓</span>'
-                        : '<span class="ng">×</span>'
-                    }
-                    メロディー MIDI
-                </div>
-
-                <div class="file-item">
-                    ${bassBlob
-                        ? '<span class="ok">✓</span>'
-                        : '<span class="ng">×</span>'
-                    }
-                    ベース MIDI
-                </div>
-
-                <div class="file-item">
-                    ${chordBlob
-                        ? '<span class="ok">✓</span>'
-                        : '<span class="ng">×</span>'
-                    }
-                    コード進行 MIDI
-                </div>
-
-            `;
-
-
-            // ========================================
-            // 4種類そろっているか
-            // ========================================
-
-            const complete =
-                garageBandBlob &&
-                melodyBlob &&
-                bassBlob &&
-                chordBlob;
-
-
-            document.getElementById(
-                "saveButton"
-            ).disabled =
-                !complete;
-
-
-            if (complete) {
-
-                document.getElementById(
-                    "message"
-                ).textContent =
-                    "✓ 必要なデータがすべて見つかりました";
-
-            } else {
-
-                document.getElementById(
-                    "message"
-                ).textContent =
-                    "必要なファイルが不足しています";
-
-            }
-
-        }
-
-        catch(error) {
-
-            console.error(error);
-
-            document.getElementById(
-                "message"
-            ).textContent =
-                "ZIPの読み込みに失敗しました";
-
-        }
-
-    }
-);
-
-
-// ========================================
-// IndexedDB
-// ========================================
-
-function openDatabase() {
-
-    return new Promise(
-        function(resolve, reject) {
-
-            const request =
-                indexedDB.open(
-                    "OuenkaBaseDB",
-                    1
-                );
-
-
-            request.onupgradeneeded =
-                function(event) {
-
-                    const db =
-                        event.target.result;
-
-
-                    if (
-                        !db.objectStoreNames
-                        .contains("songs")
-                    ) {
-
-                        db.createObjectStore(
-                            "songs",
-                            {
-                                keyPath:
-                                    "playerName"
-                            }
-                        );
-
-                    }
-
-                };
-
-
-            request.onsuccess =
-                function(event) {
-
-                    resolve(
-                        event.target.result
-                    );
-
-                };
-
-
-            request.onerror =
-                function() {
-
-                    reject(
-                        request.error
-                    );
-
-                };
-
-        }
-    );
-
-}
-
-
-// ========================================
-// 保存
-// ========================================
-
-document
-.getElementById("saveButton")
-.addEventListener(
-    "click",
-    async function() {
-
-        if (!saveData) {
-            return;
-        }
-
-
-        try {
-
-            const db =
-                await openDatabase();
-
-
-            const transaction =
-                db.transaction(
-                    "songs",
-                    "readwrite"
-                );
-
-
-            const store =
-                transaction.objectStore(
-                    "songs"
-                );
-
-
-            store.put(
-                saveData
-            );
-
-
-            transaction.oncomplete =
-                function() {
-
-                    document.getElementById(
-                        "message"
-                    ).textContent =
-                        "✓ 保存しました！";
-
-                };
-
-
-            transaction.onerror =
-                function() {
-
-                    document.getElementById(
-                        "message"
-                    ).textContent =
-                        "保存に失敗しました";
-
-                };
-
-        }
-
-        catch(error) {
-
-            console.error(error);
-
-            document.getElementById(
-                "message"
-            ).textContent =
-                "データベースを開けませんでした";
-
-        }
-
-    }
-);
-
-</script>
-
-</body>
-
-</html>
-```
+            <div class="card-title">
+                
