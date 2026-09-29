@@ -31,7 +31,7 @@
 
         .brand-main {
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 800;
         }
 
         .brand-sub {
@@ -42,7 +42,7 @@
         }
 
         .back-button {
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255,255,255,0.4);
             background: transparent;
             color: white;
             padding: 10px 14px;
@@ -54,7 +54,7 @@
         main {
             max-width: 680px;
             margin: 30px auto;
-            padding: 0 16px;
+            padding: 0 16px 60px;
         }
 
         .page-label {
@@ -80,11 +80,11 @@
             border-radius: 12px;
             padding: 22px;
             margin-bottom: 18px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
         }
 
         .card-title {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             font-size: 12px;
             font-weight: bold;
             letter-spacing: 1px;
@@ -121,13 +121,160 @@
             word-break: break-all;
         }
 
-        #result {
+        #fileResult {
+            display: none;
+            margin-top: 14px;
+            color: #137333;
+            font-weight: bold;
+        }
+
+        #registerArea {
             display: none;
         }
 
-        .success {
-            color: #137333;
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .required {
+            color: #b42318;
+            margin-left: 4px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid #cbd2d9;
+            border-radius: 7px;
+            padding: 13px;
+            background: white;
+            font-size: 16px;
+            color: #111;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid #8ba2b8;
+            border-color: #071d33;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .radio-box {
+            display: flex;
+            gap: 12px;
+        }
+
+        .radio-item {
+            flex: 1;
+        }
+
+        .radio-item input {
+            display: none;
+        }
+
+        .radio-item label {
+            display: block;
+            border: 1px solid #cbd2d9;
+            border-radius: 7px;
+            padding: 13px;
+            text-align: center;
             font-weight: bold;
+            cursor: pointer;
+            background: #fff;
+        }
+
+        .radio-item input:checked + label {
+            background: #071d33;
+            color: white;
+            border-color: #071d33;
+        }
+
+        .music-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid #e5e8eb;
+        }
+
+        .music-row:last-child {
+            border-bottom: none;
+        }
+
+        .music-name {
+            font-weight: 700;
+        }
+
+        .music-detail {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #68727d;
+        }
+
+        .waiting {
+            font-size: 12px;
+            font-weight: bold;
+            color: #8a929a;
+        }
+
+        .register-button {
+            width: 100%;
+            border: none;
+            border-radius: 8px;
+            background: #071d33;
+            color: white;
+            padding: 17px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .register-button:active {
+            transform: scale(0.99);
+        }
+
+        #message {
+            display: none;
+            margin-top: 16px;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.5;
+        }
+
+        .message-success {
+            display: block !important;
+            background: #e6f5eb;
+            color: #126b32;
+        }
+
+        .message-error {
+            display: block !important;
+            background: #fdecec;
+            color: #a51f1f;
         }
 
         @media (max-width: 520px) {
@@ -138,159 +285,750 @@
             h1 {
                 font-size: 24px;
             }
+
+            .card {
+                padding: 18px;
+            }
+
+            .two-columns {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <header class="top-menu">
+<header class="top-menu">
 
-        <div>
-            <div class="brand-main">
-                OUENKA BASE
-            </div>
-
-            <div class="brand-sub">
-                DATA REGISTER SYSTEM
-            </div>
+    <div>
+        <div class="brand-main">
+            OUENKA BASE
         </div>
 
-        <button
-            type="button"
-            class="back-button"
-            onclick="backToBase()"
+        <div class="brand-sub">
+            DATA REGISTER SYSTEM
+        </div>
+    </div>
+
+    <button
+        type="button"
+        class="back-button"
+        onclick="backToBase()"
+    >
+        ← BASEに戻る
+    </button>
+
+</header>
+
+
+<main>
+
+    <div class="page-label">
+        OUENKA BASE /// DATA REGISTER
+    </div>
+
+    <h1>
+        応援歌データ登録
+    </h1>
+
+    <div class="description">
+        選手の応援歌データをOUENKA BASEに登録します。
+    </div>
+
+
+    <!-- ======================================
+         01 ZIP選択
+    ======================================= -->
+
+    <section class="card">
+
+        <div class="card-title">
+            01 /// SELECT ZIP
+        </div>
+
+        <input
+            type="file"
+            id="zipFile"
+            accept=".zip,application/zip"
         >
-            ← BASEに戻る
-        </button>
 
-    </header>
+        <div class="selected-box">
 
+            <div class="selected-label">
+                SELECTED FILE
+            </div>
 
-    <main>
+            <div id="selectedFileName">
+                ZIPが選択されていません
+            </div>
 
-        <div class="page-label">
-            OUENKA BASE /// DATA REGISTER
         </div>
 
-        <h1>
-            応援歌データ登録
-        </h1>
-
-        <div class="description">
-            登録する選手のZIPファイルを選択してください。
+        <div id="fileResult">
+            ✓ ZIPを選択できました
         </div>
 
+    </section>
+
+
+    <!-- ======================================
+         ZIP選択後に表示
+    ======================================= -->
+
+    <div id="registerArea">
+
+
+        <!-- ==================================
+             02 選手情報
+        =================================== -->
 
         <section class="card">
 
             <div class="card-title">
-                01 /// SELECT ZIP
+                02 /// PLAYER DATA
             </div>
 
-            <input
-                type="file"
-                id="zipFile"
-                accept=".zip,application/zip"
-            >
 
-            <div class="selected-box">
+            <div class="form-group">
 
-                <div class="selected-label">
-                    SELECTED FILE
+                <label
+                    class="form-label"
+                    for="playerName"
+                >
+                    選手名
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="playerName"
+                    placeholder="例：細川凌平"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label
+                    class="form-label"
+                    for="reading"
+                >
+                    読み仮名
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="reading"
+                    placeholder="例：ほそかわりょうへい"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label
+                    class="form-label"
+                    for="team"
+                >
+                    球団
+                    <span class="required">*</span>
+                </label>
+
+                <select id="team">
+
+                    <option value="">
+                        球団を選択
+                    </option>
+
+                    <optgroup label="セ・リーグ">
+
+                        <option value="阪神タイガース">
+                            阪神タイガース
+                        </option>
+
+                        <option value="横浜DeNAベイスターズ">
+                            横浜DeNAベイスターズ
+                        </option>
+
+                        <option value="読売ジャイアンツ">
+                            読売ジャイアンツ
+                        </option>
+
+                        <option value="中日ドラゴンズ">
+                            中日ドラゴンズ
+                        </option>
+
+                        <option value="広島東洋カープ">
+                            広島東洋カープ
+                        </option>
+
+                        <option value="東京ヤクルトスワローズ">
+                            東京ヤクルトスワローズ
+                        </option>
+
+                    </optgroup>
+
+
+                    <optgroup label="パ・リーグ">
+
+                        <option value="福岡ソフトバンクホークス">
+                            福岡ソフトバンクホークス
+                        </option>
+
+                        <option value="北海道日本ハムファイターズ">
+                            北海道日本ハムファイターズ
+                        </option>
+
+                        <option value="オリックス・バファローズ">
+                            オリックス・バファローズ
+                        </option>
+
+                        <option value="東北楽天ゴールデンイーグルス">
+                            東北楽天ゴールデンイーグルス
+                        </option>
+
+                        <option value="埼玉西武ライオンズ">
+                            埼玉西武ライオンズ
+                        </option>
+
+                        <option value="千葉ロッテマリーンズ">
+                            千葉ロッテマリーンズ
+                        </option>
+
+                    </optgroup>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <div class="form-label">
+                    区分
+                    <span class="required">*</span>
                 </div>
 
-                <div id="selectedFileName">
-                    ZIPが選択されていません
+                <div class="radio-box">
+
+                    <div class="radio-item">
+
+                        <input
+                            type="radio"
+                            name="playerType"
+                            id="activePlayer"
+                            value="現役"
+                            checked
+                        >
+
+                        <label for="activePlayer">
+                            現役
+                        </label>
+
+                    </div>
+
+
+                    <div class="radio-item">
+
+                        <input
+                            type="radio"
+                            name="playerType"
+                            id="obPlayer"
+                            value="OB"
+                        >
+
+                        <label for="obPlayer">
+                            OB
+                        </label>
+
+                    </div>
+
                 </div>
+
+            </div>
+
+
+            <div class="two-columns">
+
+                <div class="form-group">
+
+                    <label
+                        class="form-label"
+                        for="number"
+                    >
+                        背番号
+                    </label>
+
+                    <input
+                        type="number"
+                        id="number"
+                        inputmode="numeric"
+                        placeholder="例：40"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label
+                        class="form-label"
+                        for="productionNumber"
+                    >
+                        制作番号
+                    </label>
+
+                    <input
+                        type="number"
+                        id="productionNumber"
+                        inputmode="numeric"
+                        placeholder="例：13"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label
+                    class="form-label"
+                    for="lyrics"
+                >
+                    歌詞
+                </label>
+
+                <textarea
+                    id="lyrics"
+                    placeholder="応援歌の歌詞を入力"
+                ></textarea>
 
             </div>
 
         </section>
 
 
-        <section
-            class="card"
-            id="result"
-        >
+        <!-- ==================================
+             03 音楽データ
+        =================================== -->
+
+        <section class="card">
 
             <div class="card-title">
-                02 /// FILE CHECK
+                03 /// MUSIC DATA
             </div>
 
-            <div
-                id="resultText"
-                class="success"
-            >
+
+            <div class="music-row">
+
+                <div>
+                    <div class="music-name">
+                        メロディー MIDI
+                    </div>
+
+                    <div class="music-detail">
+                        ZIPから自動取得
+                    </div>
+                </div>
+
+                <div class="waiting">
+                    次の段階で解析
+                </div>
+
+            </div>
+
+
+            <div class="music-row">
+
+                <div>
+                    <div class="music-name">
+                        コード進行 MIDI
+                    </div>
+
+                    <div class="music-detail">
+                        ZIPから自動取得
+                    </div>
+                </div>
+
+                <div class="waiting">
+                    次の段階で解析
+                </div>
+
+            </div>
+
+
+            <div class="music-row">
+
+                <div>
+                    <div class="music-name">
+                        ベース MIDI
+                    </div>
+
+                    <div class="music-detail">
+                        ZIPから自動取得
+                    </div>
+                </div>
+
+                <div class="waiting">
+                    次の段階で解析
+                </div>
+
+            </div>
+
+
+            <div class="music-row">
+
+                <div>
+                    <div class="music-name">
+                        GarageBand ZIP
+                    </div>
+
+                    <div class="music-detail">
+                        ZIPから自動取得
+                    </div>
+                </div>
+
+                <div class="waiting">
+                    次の段階で解析
+                </div>
+
             </div>
 
         </section>
 
-    </main>
+
+        <!-- ==================================
+             04 登録
+        =================================== -->
+
+        <section class="card">
+
+            <div class="card-title">
+                04 /// REGISTER
+            </div>
+
+            <button
+                type="button"
+                class="register-button"
+                onclick="registerPlayer()"
+            >
+                この選手を登録
+            </button>
+
+            <div id="message"></div>
+
+        </section>
+
+    </div>
+
+</main>
 
 
-    <script>
+<script>
 
-        const zipFile =
-            document.getElementById("zipFile");
+    // ========================================
+    // 要素取得
+    // ========================================
 
-        const selectedFileName =
-            document.getElementById("selectedFileName");
+    const zipFile =
+        document.getElementById("zipFile");
 
-        const result =
-            document.getElementById("result");
+    const selectedFileName =
+        document.getElementById("selectedFileName");
 
-        const resultText =
-            document.getElementById("resultText");
+    const fileResult =
+        document.getElementById("fileResult");
 
+    const registerArea =
+        document.getElementById("registerArea");
 
-        zipFile.addEventListener(
-            "change",
-            function () {
+    const playerName =
+        document.getElementById("playerName");
 
-                if (
-                    !zipFile.files ||
-                    zipFile.files.length === 0
-                ) {
-
-                    selectedFileName.textContent =
-                        "ZIPが選択されていません";
-
-                    result.style.display =
-                        "none";
-
-                    return;
-                }
+    const message =
+        document.getElementById("message");
 
 
-                const file =
-                    zipFile.files[0];
+    // ========================================
+    // ZIP選択
+    // ========================================
 
+    zipFile.addEventListener(
+        "change",
+        function () {
+
+            if (
+                !zipFile.files ||
+                zipFile.files.length === 0
+            ) {
+
+                selectedFileName.textContent =
+                    "ZIPが選択されていません";
+
+                fileResult.style.display =
+                    "none";
+
+                registerArea.style.display =
+                    "none";
+
+                return;
+            }
+
+
+            const file =
+                zipFile.files[0];
+
+
+            // --------------------------------
+            // ZIPファイル確認
+            // --------------------------------
+
+            if (
+                !file.name
+                    .toLowerCase()
+                    .endsWith(".zip")
+            ) {
 
                 selectedFileName.textContent =
                     file.name;
 
-
-                result.style.display =
+                fileResult.style.display =
                     "block";
 
+                fileResult.style.color =
+                    "#a51f1f";
 
-                resultText.textContent =
-                    "✓ ZIPを選択できました：" +
-                    file.name;
+                fileResult.textContent =
+                    "× ZIPファイルではありません";
 
+                registerArea.style.display =
+                    "none";
+
+                return;
             }
+
+
+            // --------------------------------
+            // ファイル名表示
+            // --------------------------------
+
+            selectedFileName.textContent =
+                file.name;
+
+
+            fileResult.style.display =
+                "block";
+
+            fileResult.style.color =
+                "#137333";
+
+            fileResult.textContent =
+                "✓ ZIPを選択できました：" +
+                file.name;
+
+
+            // --------------------------------
+            // 選手登録画面を表示
+            // --------------------------------
+
+            registerArea.style.display =
+                "block";
+
+
+            // --------------------------------
+            // ZIP名から選手名を自動入力
+            // --------------------------------
+
+            let autoPlayerName =
+                file.name
+                    .replace(/\.zip$/i, "")
+                    .replace(/\s*\(\d+\)\s*$/i, "")
+                    .trim();
+
+
+            playerName.value =
+                autoPlayerName;
+
+
+            // --------------------------------
+            // メッセージ初期化
+            // --------------------------------
+
+            message.className =
+                "";
+
+            message.style.display =
+                "none";
+
+            message.textContent =
+                "";
+
+        }
+    );
+
+
+    // ========================================
+    // 登録ボタン
+    // ========================================
+
+    function registerPlayer() {
+
+        const name =
+            document
+                .getElementById("playerName")
+                .value
+                .trim();
+
+
+        const reading =
+            document
+                .getElementById("reading")
+                .value
+                .trim();
+
+
+        const team =
+            document
+                .getElementById("team")
+                .value;
+
+
+        const type =
+            document.querySelector(
+                'input[name="playerType"]:checked'
+            ).value;
+
+
+        const number =
+            document
+                .getElementById("number")
+                .value;
+
+
+        const productionNumber =
+            document
+                .getElementById("productionNumber")
+                .value;
+
+
+        const lyrics =
+            document
+                .getElementById("lyrics")
+                .value
+                .trim();
+
+
+        // ====================================
+        // 必須項目確認
+        // ====================================
+
+        if (!name) {
+
+            showError(
+                "選手名を入力してください"
+            );
+
+            return;
+        }
+
+
+        if (!reading) {
+
+            showError(
+                "読み仮名を入力してください"
+            );
+
+            return;
+        }
+
+
+        if (!team) {
+
+            showError(
+                "球団を選択してください"
+            );
+
+            return;
+        }
+
+
+        // ====================================
+        // 今回は登録内容の確認まで
+        // ====================================
+
+        const playerData = {
+
+            name: name,
+
+            reading: reading,
+
+            team: team,
+
+            type: type,
+
+            number: number,
+
+            productionNumber:
+                productionNumber,
+
+            lyrics: lyrics,
+
+            zipFileName:
+                zipFile.files[0].name
+
+        };
+
+
+        console.log(
+            "登録データ",
+            playerData
         );
 
 
-        function backToBase() {
+        message.className =
+            "message-success";
 
-            window.location.href =
-                "./index.html";
 
-        }
+        message.textContent =
+            "✓ 登録内容を確認できました：" +
+            name;
 
-    </script>
+    }
+
+
+    // ========================================
+    // エラー表示
+    // ========================================
+
+    function showError(text) {
+
+        message.className =
+            "message-error";
+
+        message.textContent =
+            text;
+
+    }
+
+
+    // ========================================
+    // BASEへ戻る
+    // ========================================
+
+    function backToBase() {
+
+        window.location.href =
+            "./index.html";
+
+    }
+
+</script>
 
 </body>
 
