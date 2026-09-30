@@ -2,6 +2,7 @@
 <html lang="ja">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -16,68 +17,109 @@
 
     <title>実験 | 応援歌BASE</title>
 
+
+    <!-- ZIP展開 -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+    ></script>
+
+
+    <!-- MIDI解析 -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/build/Midi.js"
+    ></script>
+
+
     <style>
 
         * {
             box-sizing: border-box;
         }
 
+
         body {
+
             margin: 0;
+
             min-height: 100vh;
+
             background: #071d33;
-            color: #ffffff;
+
+            color: white;
+
             font-family:
                 -apple-system,
                 BlinkMacSystemFont,
                 "Segoe UI",
                 sans-serif;
+
         }
 
+
         .top-bar {
+
             display: flex;
+
             align-items: center;
+
             gap: 15px;
 
             padding: 18px 20px;
 
             border-bottom:
-                1px solid rgba(255,255,255,0.15);
+                1px solid
+                rgba(255,255,255,0.15);
+
         }
 
+
         .back-button {
+
             padding: 10px 14px;
 
             border:
-                1px solid rgba(255,255,255,0.3);
+                1px solid
+                rgba(255,255,255,0.3);
 
             border-radius: 6px;
 
             background: transparent;
+
             color: white;
 
             cursor: pointer;
+
         }
+
 
         .top-title {
+
             font-size: 18px;
+
             font-weight: bold;
+
         }
 
+
         .top-title small {
+
             display: block;
 
             margin-top: 3px;
 
             font-size: 10px;
+
             font-weight: normal;
 
             letter-spacing: 2px;
 
             opacity: 0.55;
+
         }
 
+
         main {
+
             width:
                 min(
                     720px,
@@ -86,11 +128,13 @@
 
             margin: 0 auto;
 
-            padding:
-                50px 0;
+            padding: 50px 0;
+
         }
 
+
         .section-number {
+
             margin-bottom: 8px;
 
             color: #79bfff;
@@ -98,31 +142,42 @@
             font-size: 12px;
 
             letter-spacing: 2px;
+
         }
+
 
         h1 {
-            margin:
-                0 0 8px;
+
+            margin: 0 0 8px;
 
             font-size: 28px;
+
         }
 
+
         .description {
-            margin:
-                0 0 30px;
+
+            margin: 0 0 30px;
 
             color:
                 rgba(255,255,255,0.6);
 
             font-size: 14px;
+
         }
+
 
         .search-wrapper {
+
             position: relative;
+
         }
 
+
         #testSearchInput {
+
             width: 100%;
+
             height: 58px;
 
             padding:
@@ -142,21 +197,31 @@
             color: white;
 
             font-size: 18px;
+
         }
+
 
         #testSearchInput:focus {
+
             border-color: #79bfff;
+
         }
+
 
         #testSearchInput::placeholder {
+
             color:
                 rgba(255,255,255,0.4);
+
         }
 
+
         .clear-button {
+
             position: absolute;
 
             right: 12px;
+
             top: 50%;
 
             transform:
@@ -165,6 +230,7 @@
             display: none;
 
             width: 34px;
+
             height: 34px;
 
             border: 0;
@@ -177,19 +243,24 @@
             font-size: 24px;
 
             cursor: pointer;
+
         }
 
+
         #testSuggestions {
+
             display: none;
 
             margin-top: 12px;
+
         }
 
+
         .search-candidate {
+
             margin-bottom: 8px;
 
-            padding:
-                15px 16px;
+            padding: 15px 16px;
 
             border:
                 1px solid
@@ -204,20 +275,29 @@
             font-size: 16px;
 
             cursor: pointer;
+
         }
+
 
         .search-candidate:hover {
+
             border-color: #79bfff;
+
         }
 
+
         .no-search-result {
+
             padding: 15px;
 
             color:
                 rgba(255,255,255,0.6);
+
         }
 
+
         #selectedPlayer {
+
             display: none;
 
             margin-top: 30px;
@@ -232,9 +312,12 @@
 
             background:
                 rgba(255,255,255,0.04);
+
         }
 
+
         .selected-label {
+
             margin-bottom: 6px;
 
             color:
@@ -243,17 +326,23 @@
             font-size: 11px;
 
             letter-spacing: 2px;
+
         }
 
+
         #selectedPlayerName {
+
             margin-bottom: 20px;
 
             font-size: 24px;
 
             font-weight: bold;
+
         }
 
+
         #midiPlayButton {
+
             width: 100%;
 
             min-height: 56px;
@@ -271,17 +360,59 @@
             font-weight: bold;
 
             cursor: pointer;
+
         }
 
+
+        #midiPlayButton:disabled {
+
+            opacity: 0.5;
+
+            cursor: default;
+
+        }
+
+
+        #stopButton {
+
+            display: none;
+
+            width: 100%;
+
+            min-height: 50px;
+
+            margin-top: 10px;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.3);
+
+            border-radius: 8px;
+
+            background: transparent;
+
+            color: white;
+
+            font-size: 15px;
+
+            cursor: pointer;
+
+        }
+
+
         #status {
+
             margin-top: 16px;
 
             min-height: 24px;
 
             color:
-                rgba(255,255,255,0.65);
+                rgba(255,255,255,0.7);
 
             font-size: 13px;
+
+            line-height: 1.7;
+
         }
 
     </style>
@@ -291,665 +422,1901 @@
 
 <body>
 
-    <header class="top-bar">
+
+<header class="top-bar">
+
+    <button
+        type="button"
+        class="back-button"
+        onclick="location.href='index.html'"
+    >
+        ← 戻る
+    </button>
+
+
+    <div class="top-title">
+
+        応援歌BASE 実験
+
+        <small>
+            EXPERIMENTAL MIDI PLAYER
+        </small>
+
+    </div>
+
+</header>
+
+
+<main>
+
+
+    <div class="section-number">
+        EXPERIMENT 01
+    </div>
+
+
+    <h1>
+        対象者検索
+    </h1>
+
+
+    <p class="description">
+        MIDI再生を行う対象者を選択してください。
+    </p>
+
+
+    <div class="search-wrapper">
+
+
+        <input
+            type="text"
+            id="testSearchInput"
+            placeholder="選手名・よみがな・球団"
+            autocomplete="off"
+        >
+
 
         <button
             type="button"
-            class="back-button"
-            onclick="location.href='index.html'"
+            id="testClearButton"
+            class="clear-button"
         >
-            ← 戻る
+            ×
         </button>
 
 
-        <div class="top-title">
-
-            応援歌BASE 実験
-
-            <small>
-                EXPERIMENTAL MIDI PLAYER
-            </small>
-
-        </div>
-
-    </header>
+    </div>
 
 
-    <main>
-
-        <div class="section-number">
-            EXPERIMENT 01
-        </div>
+    <div
+        id="testSuggestions"
+    ></div>
 
 
-        <h1>
-            対象者検索
-        </h1>
+    <section
+        id="selectedPlayer"
+    >
 
 
-        <p class="description">
-            MIDI再生を行う対象者を選択してください。
-        </p>
-
-
-        <div class="search-wrapper">
-
-            <input
-                type="text"
-                id="testSearchInput"
-                placeholder="選手名・よみがな・球団"
-                autocomplete="off"
-            >
-
-
-            <button
-                type="button"
-                id="testClearButton"
-                class="clear-button"
-            >
-                ×
-            </button>
-
+        <div class="selected-label">
+            SELECTED PLAYER
         </div>
 
 
         <div
-            id="testSuggestions"
+            id="selectedPlayerName"
         ></div>
 
 
-        <section
-            id="selectedPlayer"
+        <button
+            type="button"
+            id="midiPlayButton"
         >
-
-            <div class="selected-label">
-                SELECTED PLAYER
-            </div>
+            ▶ MIDI再生
+        </button>
 
 
-            <div
-                id="selectedPlayerName"
-            ></div>
+        <button
+            type="button"
+            id="stopButton"
+        >
+            ■ 停止
+        </button>
 
 
-            <button
-                type="button"
-                id="midiPlayButton"
-            >
-                ▶ MIDI再生
-            </button>
+        <div
+            id="status"
+        >
+            MIDI再生待機中
+        </div>
 
 
-            <div
-                id="status"
-            >
-                MIDI再生待機中
-            </div>
-
-        </section>
-
-    </main>
+    </section>
 
 
-    <!--
-        本番と同じ選手データ
-    -->
-    <script src="players.js"></script>
+</main>
 
 
-    <script>
-
-        const MAX_SUGGESTIONS =
-            10;
+<!-- 選手データ -->
+<script src="players.js"></script>
 
 
-        let selectedTestPlayerId =
-            null;
-
-        let selectedTestPlayer =
-            null;
+<script>
 
 
-        const searchInput =
-            document.getElementById(
-                "testSearchInput"
-            );
+// ========================================
+// 基本設定
+// ========================================
+
+const MAX_SUGGESTIONS = 10;
 
 
-        const suggestions =
-            document.getElementById(
-                "testSuggestions"
-            );
+/*
+ * 今日確定した再生設定
+ */
+
+const ATTACK_TIME =
+    0.015;
 
 
-        const clearButton =
-            document.getElementById(
-                "testClearButton"
-            );
+const RELEASE_TIME =
+    0.018;
 
 
-        const selectedArea =
-            document.getElementById(
-                "selectedPlayer"
-            );
+/*
+ * 各音源の先頭に残す時間
+ *
+ * 完全に発音位置ピッタリで切ると
+ * 音の頭を削る可能性があるため
+ * 約6ms残す。
+ */
+
+const SAMPLE_PREROLL =
+    0.006;
 
 
-        const selectedName =
-            document.getElementById(
-                "selectedPlayerName"
-            );
+// ========================================
+// 音源フォルダ
+// ========================================
+
+const SAMPLE_BASE_PATH =
+    "音源/音源2/メロディ/";
 
 
-        const midiPlayButton =
-            document.getElementById(
-                "midiPlayButton"
-            );
+// ========================================
+// MIDIノート番号 → 音源
+// ========================================
+
+const SAMPLE_FILES = {
+
+    60: "音源ド.m4a",
+
+    61: "音源ド#️⃣.m4a",
+
+    62: "音源レ.m4a",
+
+    63: "音源レ#️⃣.m4a",
+
+    64: "音源ミ.m4a",
+
+    65: "音源ファ.m4a",
+
+    66: "音源ファ#️⃣.m4a",
+
+    67: "音源ソ.m4a",
+
+    68: "音源ソ#️⃣.m4a",
+
+    69: "音源ラ.m4a",
+
+    70: "音源ラ#️⃣.m4a",
+
+    71: "音源シ.m4a",
+
+    72: "音源ド➕.m4a",
+
+    73: "音源ド#️⃣➕.m4a",
+
+    74: "音源レ➕.m4a",
+
+    75: "音源レ#️⃣➕.m4a",
+
+    76: "音源ミ➕.m4a",
+
+    77: "音源ファ➕.m4a",
+
+    78: "音源ファ#️⃣➕.m4a",
+
+    79: "音源ソ➕.m4a",
+
+    80: "音源ソ#️⃣➕.m4a",
+
+    81: "音源ラ➕.m4a",
+
+    82: "音源ラ#️⃣➕.m4a",
+
+    83: "音源シ➕.m4a"
+
+};
 
 
-        const status =
-            document.getElementById(
-                "status"
-            );
+// ========================================
+// 画面
+// ========================================
+
+const searchInput =
+    document.getElementById(
+        "testSearchInput"
+    );
 
 
-        // ========================================
-        // 検索
-        // ========================================
-
-        function searchTestPlayers() {
-
-            const keyword =
-                searchInput.value
-                    .trim()
-                    .toLowerCase();
+const suggestions =
+    document.getElementById(
+        "testSuggestions"
+    );
 
 
-            suggestions.innerHTML =
-                "";
+const clearButton =
+    document.getElementById(
+        "testClearButton"
+    );
 
 
-            if (
-                searchInput.value.length > 0
-            ) {
-
-                clearButton.style.display =
-                    "block";
-
-            }
-            else {
-
-                clearButton.style.display =
-                    "none";
-
-            }
+const selectedArea =
+    document.getElementById(
+        "selectedPlayer"
+    );
 
 
-            if (keyword === "") {
+const selectedName =
+    document.getElementById(
+        "selectedPlayerName"
+    );
 
-                suggestions.style.display =
-                    "none";
 
-                clearSelection();
+const midiPlayButton =
+    document.getElementById(
+        "midiPlayButton"
+    );
+
+
+const stopButton =
+    document.getElementById(
+        "stopButton"
+    );
+
+
+const status =
+    document.getElementById(
+        "status"
+    );
+
+
+// ========================================
+// 選択中
+// ========================================
+
+let selectedTestPlayerId =
+    null;
+
+
+let selectedTestPlayer =
+    null;
+
+
+// ========================================
+// Web Audio
+// ========================================
+
+let audioContext =
+    null;
+
+
+let sampleBuffers =
+    {};
+
+
+let activeSources =
+    [];
+
+
+let masterGain =
+    null;
+
+
+// ========================================
+// 検索
+// ========================================
+
+function searchTestPlayers() {
+
+
+    const keyword =
+        searchInput.value
+            .trim()
+            .toLowerCase();
+
+
+    suggestions.innerHTML =
+        "";
+
+
+    if (
+        searchInput.value.length > 0
+    ) {
+
+        clearButton.style.display =
+            "block";
+
+    }
+    else {
+
+        clearButton.style.display =
+            "none";
+
+    }
+
+
+    if (keyword === "") {
+
+        suggestions.style.display =
+            "none";
+
+        clearSelection();
+
+        return;
+
+    }
+
+
+    if (
+        typeof players ===
+        "undefined"
+    ) {
+
+        suggestions.style.display =
+            "block";
+
+        suggestions.innerHTML =
+            '<div class="no-search-result">'
+            +
+            '選手データを読み込み中です'
+            +
+            '</div>';
+
+        return;
+
+    }
+
+
+    const matchedPlayers =
+        [];
+
+
+    Object.keys(players).forEach(
+
+        function(playerId) {
+
+
+            const player =
+                players[playerId];
+
+
+            if (!player) {
 
                 return;
 
             }
 
 
-            // players.jsがまだ読み込み中
+            const name =
+                (
+                    player.name ||
+                    ""
+                )
+                .toLowerCase();
+
+
+            const reading =
+                (
+                    player.reading ||
+                    ""
+                )
+                .toLowerCase();
+
+
+            const team =
+                (
+                    player.team ||
+                    ""
+                )
+                .toLowerCase();
+
 
             if (
-                typeof players ===
-                    "undefined"
+
+                name.includes(keyword)
+
+                ||
+
+                reading.includes(keyword)
+
+                ||
+
+                team.includes(keyword)
+
             ) {
 
-                suggestions.style.display =
-                    "block";
+                matchedPlayers.push({
 
-                suggestions.innerHTML =
-                    '<div class="no-search-result">'
-                    +
-                    '選手データを読み込み中です'
-                    +
-                    '</div>';
+                    playerId:
+                        playerId,
 
-                return;
+                    player:
+                        player
+
+                });
 
             }
 
+        }
 
-            const matchedPlayers =
-                [];
-
-
-            // ====================================
-            // 本番search.jsと同じ方式
-            // ====================================
-
-            Object.keys(players).forEach(
-
-                function(playerId) {
-
-                    const player =
-                        players[playerId];
+    );
 
 
-                    if (!player) {
-
-                        return;
-
-                    }
+    if (
+        matchedPlayers.length === 0
+    ) {
 
 
-                    const name =
-                        (
-                            player.name ||
-                            ""
-                        )
-                        .toLowerCase();
-
-
-                    const reading =
-                        (
-                            player.reading ||
-                            ""
-                        )
-                        .toLowerCase();
-
-
-                    const team =
-                        (
-                            player.team ||
-                            ""
-                        )
-                        .toLowerCase();
-
-
-                    if (
-
-                        name.includes(
-                            keyword
-                        )
-
-                        ||
-
-                        reading.includes(
-                            keyword
-                        )
-
-                        ||
-
-                        team.includes(
-                            keyword
-                        )
-
-                    ) {
-
-                        matchedPlayers.push({
-
-                            playerId:
-                                playerId,
-
-                            player:
-                                player
-
-                        });
-
-                    }
-
-                }
-
+        const noResult =
+            document.createElement(
+                "div"
             );
 
 
-            // ====================================
-            // 該当なし
-            // ====================================
+        noResult.className =
+            "no-search-result";
 
-            if (
-                matchedPlayers.length === 0
-            ) {
 
-                const noResult =
+        noResult.textContent =
+            "該当する選手はいません";
+
+
+        suggestions.appendChild(
+            noResult
+        );
+
+
+        suggestions.style.display =
+            "block";
+
+
+        return;
+
+    }
+
+
+    matchedPlayers
+
+        .slice(
+            0,
+            MAX_SUGGESTIONS
+        )
+
+        .forEach(
+
+            function(item) {
+
+
+                const candidate =
                     document.createElement(
                         "div"
                     );
 
 
-                noResult.className =
-                    "no-search-result";
+                candidate.className =
+                    "search-candidate";
 
 
-                noResult.textContent =
-                    "該当する選手はいません";
+                candidate.textContent =
+                    item.player.name;
+
+
+                candidate.onclick =
+                    function() {
+
+
+                        selectTestPlayer(
+
+                            item.playerId,
+
+                            item.player
+
+                        );
+
+
+                    };
 
 
                 suggestions.appendChild(
-                    noResult
+                    candidate
                 );
 
+            }
 
-                suggestions.style.display =
-                    "block";
+        );
 
+
+    suggestions.style.display =
+        "block";
+
+}
+
+
+// ========================================
+// 選手選択
+// ========================================
+
+function selectTestPlayer(
+    playerId,
+    player
+) {
+
+
+    stopMidiPlayback();
+
+
+    selectedTestPlayerId =
+        playerId;
+
+
+    selectedTestPlayer =
+        player;
+
+
+    searchInput.value =
+        player.name;
+
+
+    suggestions.innerHTML =
+        "";
+
+
+    suggestions.style.display =
+        "none";
+
+
+    clearButton.style.display =
+        "block";
+
+
+    selectedName.textContent =
+        player.name;
+
+
+    selectedArea.style.display =
+        "block";
+
+
+    status.textContent =
+        "MIDI再生待機中";
+
+}
+
+
+// ========================================
+// 選択解除
+// ========================================
+
+function clearSelection() {
+
+
+    stopMidiPlayback();
+
+
+    selectedTestPlayerId =
+        null;
+
+
+    selectedTestPlayer =
+        null;
+
+
+    selectedArea.style.display =
+        "none";
+
+}
+
+
+// ========================================
+// 検索削除
+// ========================================
+
+function clearSearch() {
+
+
+    searchInput.value =
+        "";
+
+
+    suggestions.innerHTML =
+        "";
+
+
+    suggestions.style.display =
+        "none";
+
+
+    clearButton.style.display =
+        "none";
+
+
+    clearSelection();
+
+
+    searchInput.focus();
+
+}
+
+
+// ========================================
+// AudioContext
+// ========================================
+
+async function prepareAudioContext() {
+
+
+    if (!audioContext) {
+
+
+        audioContext =
+            new (
+                window.AudioContext
+                ||
+                window.webkitAudioContext
+            )();
+
+
+    }
+
+
+    if (
+        audioContext.state ===
+        "suspended"
+    ) {
+
+
+        await audioContext.resume();
+
+
+    }
+
+
+    if (!masterGain) {
+
+
+        masterGain =
+            audioContext.createGain();
+
+
+        masterGain.gain.value =
+            0.80;
+
+
+        masterGain.connect(
+            audioContext.destination
+        );
+
+
+    }
+
+}
+
+
+// ========================================
+// 音源の先頭無音を検出
+// ========================================
+
+function detectSampleStart(
+    buffer
+) {
+
+
+    const data =
+        buffer.getChannelData(0);
+
+
+    let max =
+        0;
+
+
+    for (
+        let i = 0;
+        i < data.length;
+        i++
+    ) {
+
+
+        const value =
+            Math.abs(
+                data[i]
+            );
+
+
+        if (value > max) {
+
+            max = value;
+
+        }
+
+
+    }
+
+
+    const threshold =
+        Math.max(
+
+            0.0015,
+
+            max * 0.01
+
+        );
+
+
+    let first =
+        0;
+
+
+    for (
+        let i = 0;
+        i < data.length;
+        i++
+    ) {
+
+
+        if (
+            Math.abs(
+                data[i]
+            )
+            >
+            threshold
+        ) {
+
+
+            first = i;
+
+            break;
+
+        }
+
+
+    }
+
+
+    const firstSeconds =
+        first
+        /
+        buffer.sampleRate;
+
+
+    return Math.max(
+
+        0,
+
+        firstSeconds
+        -
+        SAMPLE_PREROLL
+
+    );
+
+}
+
+
+// ========================================
+// 1音源読み込み
+// ========================================
+
+async function loadSample(
+    midiNote
+) {
+
+
+    if (
+        sampleBuffers[midiNote]
+    ) {
+
+        return;
+
+    }
+
+
+    const fileName =
+        SAMPLE_FILES[midiNote];
+
+
+    if (!fileName) {
+
+        throw new Error(
+            "対応音源なし MIDI:"
+            +
+            midiNote
+        );
+
+    }
+
+
+    const url =
+        SAMPLE_BASE_PATH
+        +
+        encodeURIComponent(
+            fileName
+        );
+
+
+    const response =
+        await fetch(
+            url
+        );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "音源取得失敗: "
+            +
+            fileName
+        );
+
+    }
+
+
+    const arrayBuffer =
+        await response.arrayBuffer();
+
+
+    const buffer =
+        await audioContext
+            .decodeAudioData(
+                arrayBuffer
+            );
+
+
+    const startOffset =
+        detectSampleStart(
+            buffer
+        );
+
+
+    sampleBuffers[midiNote] = {
+
+        buffer:
+            buffer,
+
+        startOffset:
+            startOffset
+
+    };
+
+}
+
+
+// ========================================
+// MIDIで必要な音源だけ読み込む
+// ========================================
+
+async function loadRequiredSamples(
+    notes
+) {
+
+
+    const requiredNotes =
+        [
+            ...new Set(
+
+                notes.map(
+                    note =>
+                        note.midi
+                )
+
+            )
+        ];
+
+
+    for (
+        let i = 0;
+        i < requiredNotes.length;
+        i++
+    ) {
+
+
+        const midiNote =
+            requiredNotes[i];
+
+
+        status.textContent =
+
+            "音源を準備しています… "
+            +
+            (i + 1)
+            +
+            "/"
+            +
+            requiredNotes.length;
+
+
+        await loadSample(
+            midiNote
+        );
+
+    }
+
+}
+
+
+// ========================================
+// MIDI ZIP取得
+// ========================================
+
+async function loadMelodyMidi(
+    player
+) {
+
+
+    if (!player.midiZip) {
+
+
+        throw new Error(
+            "MIDIファイルが登録されていません"
+        );
+
+
+    }
+
+
+    status.textContent =
+        "MIDIデータを取得しています…";
+
+
+    const response =
+        await fetch(
+            player.midiZip
+        );
+
+
+    if (!response.ok) {
+
+
+        throw new Error(
+            "MIDI ZIPを取得できません"
+        );
+
+
+    }
+
+
+    const zipBuffer =
+        await response.arrayBuffer();
+
+
+    const zip =
+        await JSZip.loadAsync(
+            zipBuffer
+        );
+
+
+    let melodyFile =
+        null;
+
+
+    // ====================================
+    // ZIP内からメロディーMIDIを探す
+    // ====================================
+
+    zip.forEach(
+
+        function(
+            relativePath,
+            zipEntry
+        ) {
+
+
+            if (
+                melodyFile
+            ) {
 
                 return;
 
             }
 
 
-            // ====================================
-            // 最大10件
-            // ====================================
+            if (
+                zipEntry.dir
+            ) {
 
-            const displayPlayers =
-                matchedPlayers.slice(
-                    0,
-                    MAX_SUGGESTIONS
+                return;
+
+            }
+
+
+            const name =
+                relativePath
+                    .toLowerCase();
+
+
+            const isMidi =
+
+                name.endsWith(
+                    ".mid"
+                )
+
+                ||
+
+                name.endsWith(
+                    ".midi"
                 );
 
 
-            // ====================================
-            // 候補作成
-            // ====================================
+            if (!isMidi) {
 
-            displayPlayers.forEach(
+                return;
 
-                function(item) {
-
-                    const candidate =
-                        document.createElement(
-                            "div"
-                        );
+            }
 
 
-                    candidate.className =
-                        "search-candidate";
+            /*
+             * 優先:
+             *
+             * ①MIDIメロディー
+             * MIDIメロディー
+             * メロディー
+             */
+
+            if (
+
+                relativePath.includes(
+                    "メロディ"
+                )
+
+            ) {
 
 
-                    candidate.textContent =
-                        item.player.name;
+                melodyFile =
+                    zipEntry;
+
+            }
 
 
-                    candidate.onclick =
-                        function() {
+        }
 
-                            selectTestPlayer(
-
-                                item.playerId,
-
-                                item.player
-
-                            );
-
-                        };
+    );
 
 
-                    suggestions.appendChild(
-                        candidate
+    // ====================================
+    // 名前で判定できなかった場合
+    // MIDIが1個だけならそれを使用
+    // ====================================
+
+    if (!melodyFile) {
+
+
+        const midiFiles =
+            [];
+
+
+        zip.forEach(
+
+            function(
+                relativePath,
+                zipEntry
+            ) {
+
+
+                if (
+                    zipEntry.dir
+                ) {
+
+                    return;
+
+                }
+
+
+                const name =
+                    relativePath
+                        .toLowerCase();
+
+
+                if (
+
+                    name.endsWith(
+                        ".mid"
+                    )
+
+                    ||
+
+                    name.endsWith(
+                        ".midi"
+                    )
+
+                ) {
+
+
+                    midiFiles.push(
+                        zipEntry
                     );
+
+
+                }
+
+            }
+
+        );
+
+
+        if (
+            midiFiles.length === 1
+        ) {
+
+
+            melodyFile =
+                midiFiles[0];
+
+
+        }
+
+    }
+
+
+    if (!melodyFile) {
+
+
+        throw new Error(
+            "メロディーMIDIをZIP内から見つけられません"
+        );
+
+
+    }
+
+
+    status.textContent =
+        "メロディーMIDIを解析しています…";
+
+
+    const midiArrayBuffer =
+        await melodyFile.async(
+            "arraybuffer"
+        );
+
+
+    return new Midi(
+        midiArrayBuffer
+    );
+
+}
+
+
+// ========================================
+// MIDIノート取得
+// ========================================
+
+function getMelodyNotes(
+    midi
+) {
+
+
+    let notes =
+        [];
+
+
+    /*
+     * MIDI内の全トラックを見る。
+     *
+     * ZIPからすでに
+     * 「メロディーMIDI」を選んでいるため、
+     * このファイル内のノートを使用。
+     */
+
+    midi.tracks.forEach(
+
+        function(track) {
+
+
+            track.notes.forEach(
+
+                function(note) {
+
+
+                    notes.push(
+                        note
+                    );
+
 
                 }
 
             );
 
 
-            suggestions.style.display =
-                "block";
+        }
+
+    );
+
+
+    notes.sort(
+
+        function(a, b) {
+
+            return a.time
+                -
+                b.time;
 
         }
 
+    );
 
-        // ========================================
-        // 選手選択
-        // ========================================
 
-        function selectTestPlayer(
-            playerId,
-            player
+    if (
+        notes.length === 0
+    ) {
+
+
+        throw new Error(
+            "MIDIに音符がありません"
+        );
+
+
+    }
+
+
+    return notes;
+
+}
+
+
+// ========================================
+// 残響
+// ========================================
+
+function connectWithReverb(
+    sourceGain
+) {
+
+
+    /*
+     * 今日完成した残響を
+     * Web Audioで再現。
+     *
+     * 90ms  0.34
+     * 220ms 0.27
+     * 420ms 0.21
+     * 680ms 0.16
+     * 950ms 0.12
+     * 1250ms 0.085
+     * 1550ms 0.055
+     */
+
+
+    sourceGain.connect(
+        masterGain
+    );
+
+
+    const reflections = [
+
+        [0.09, 0.34],
+
+        [0.22, 0.27],
+
+        [0.42, 0.21],
+
+        [0.68, 0.16],
+
+        [0.95, 0.12],
+
+        [1.25, 0.085],
+
+        [1.55, 0.055]
+
+    ];
+
+
+    reflections.forEach(
+
+        function(
+            reflection
         ) {
 
-            selectedTestPlayerId =
-                playerId;
+
+            const delay =
+                audioContext
+                    .createDelay(
+                        2.0
+                    );
 
 
-            selectedTestPlayer =
-                player;
+            const gain =
+                audioContext
+                    .createGain();
 
 
-            searchInput.value =
-                player.name;
+            delay.delayTime.value =
+                reflection[0];
 
 
-            suggestions.innerHTML =
-                "";
+            gain.gain.value =
+                reflection[1];
 
 
-            suggestions.style.display =
-                "none";
-
-
-            clearButton.style.display =
-                "block";
-
-
-            selectedName.textContent =
-                player.name;
-
-
-            selectedArea.style.display =
-                "block";
-
-
-            status.textContent =
-                "MIDI再生待機中";
-
-
-            console.log(
-                "選択:",
-                playerId,
-                player
+            sourceGain.connect(
+                delay
             );
 
-        }
+
+            delay.connect(
+                gain
+            );
 
 
-        // ========================================
-        // 選択解除
-        // ========================================
+            gain.connect(
+                masterGain
+            );
 
-        function clearSelection() {
-
-            selectedTestPlayerId =
-                null;
-
-
-            selectedTestPlayer =
-                null;
-
-
-            selectedArea.style.display =
-                "none";
-
-
-            status.textContent =
-                "MIDI再生待機中";
 
         }
 
+    );
 
-        // ========================================
-        // ×ボタン
-        // ========================================
-
-        function clearSearch() {
-
-            searchInput.value =
-                "";
+}
 
 
-            suggestions.innerHTML =
-                "";
+// ========================================
+// MIDIを実際に再生
+// ========================================
+
+function scheduleMidi(
+    notes
+) {
 
 
-            suggestions.style.display =
-                "none";
+    stopMidiPlayback();
 
 
-            clearButton.style.display =
-                "none";
+    const now =
+        audioContext.currentTime
+        +
+        0.08;
 
 
-            clearSelection();
+    /*
+     * MIDI冒頭に空白があっても
+     * 単曲試聴では最初の音を0秒にする。
+     */
+
+    const firstNoteTime =
+        notes[0].time;
 
 
-            searchInput.focus();
+    notes.forEach(
 
-        }
+        function(note) {
 
 
-        // ========================================
-        // MIDI再生
-        // ========================================
+            const sample =
+                sampleBuffers[
+                    note.midi
+                ];
 
-        function playTestMidi() {
 
-            if (!selectedTestPlayer) {
+            if (!sample) {
+
+                console.warn(
+                    "音源なし:",
+                    note.midi
+                );
 
                 return;
 
             }
 
 
-            console.log(
-                "MIDI再生対象:",
+            const source =
+                audioContext
+                    .createBufferSource();
+
+
+            source.buffer =
+                sample.buffer;
+
+
+            const noteGain =
+                audioContext
+                    .createGain();
+
+
+            /*
+             * Velocityは
+             * MIDI値に関係なく最大。
+             */
+
+            const MAX_VELOCITY_GAIN =
+                1.0;
+
+
+            const startTime =
+
+                now
+                +
+                (
+                    note.time
+                    -
+                    firstNoteTime
+                );
+
+
+            const noteDuration =
+                Math.max(
+                    0.03,
+                    note.duration
+                );
+
+
+            const releaseEnd =
+
+                startTime
+                +
+                noteDuration
+                +
+                RELEASE_TIME;
+
+
+            /*
+             * 15ms立ち上がり
+             */
+
+            noteGain.gain
+                .setValueAtTime(
+                    0,
+                    startTime
+                );
+
+
+            noteGain.gain
+                .linearRampToValueAtTime(
+
+                    MAX_VELOCITY_GAIN,
+
+                    startTime
+                    +
+                    ATTACK_TIME
+
+                );
+
+
+            /*
+             * MIDIの長さを維持
+             */
+
+            noteGain.gain
+                .setValueAtTime(
+
+                    MAX_VELOCITY_GAIN,
+
+                    startTime
+                    +
+                    noteDuration
+
+                );
+
+
+            /*
+             * 18msで自然に終了
+             */
+
+            noteGain.gain
+                .linearRampToValueAtTime(
+
+                    0,
+
+                    releaseEnd
+
+                );
+
+
+            source.connect(
+                noteGain
+            );
+
+
+            connectWithReverb(
+                noteGain
+            );
+
+
+            /*
+             * 音源自体は
+             * 発音開始位置から再生。
+             */
+
+            source.start(
+
+                startTime,
+
+                sample.startOffset
+
+            );
+
+
+            /*
+             * MIDIノート終了後
+             * 18msだけ余韻を残して停止。
+             */
+
+            const availableDuration =
+
+                sample.buffer.duration
+                -
+                sample.startOffset;
+
+
+            const requestedDuration =
+
+                noteDuration
+                +
+                RELEASE_TIME
+                +
+                0.03;
+
+
+            const stopAfter =
+
+                Math.min(
+
+                    availableDuration,
+
+                    requestedDuration
+
+                );
+
+
+            source.stop(
+
+                startTime
+                +
+                stopAfter
+
+            );
+
+
+            activeSources.push(
+                source
+            );
+
+
+        }
+
+    );
+
+
+    const lastNote =
+        notes[
+            notes.length - 1
+        ];
+
+
+    const totalDuration =
+
+        (
+            lastNote.time
+            -
+            firstNoteTime
+        )
+
+        +
+        lastNote.duration
+        +
+        1.55;
+
+
+    status.textContent =
+        selectedTestPlayer.name
+        +
+        " MIDI再生中";
+
+
+    midiPlayButton.textContent =
+        "▶ 最初から再生";
+
+
+    stopButton.style.display =
+        "block";
+
+
+    setTimeout(
+
+        function() {
+
+
+            if (
+                activeSources.length > 0
+            ) {
+
+
+                status.textContent =
+                    "再生終了";
+
+
+                stopButton.style.display =
+                    "none";
+
+
+                activeSources =
+                    [];
+
+
+            }
+
+
+        },
+
+        totalDuration
+        *
+        1000
+        +
+        300
+
+    );
+
+}
+
+
+// ========================================
+// 停止
+// ========================================
+
+function stopMidiPlayback() {
+
+
+    activeSources.forEach(
+
+        function(source) {
+
+
+            try {
+
+
+                source.stop();
+
+
+            }
+            catch (error) {
+
+
+                // すでに停止済みなら無視
+
+
+            }
+
+
+        }
+
+    );
+
+
+    activeSources =
+        [];
+
+
+    if (stopButton) {
+
+        stopButton.style.display =
+            "none";
+
+    }
+
+}
+
+
+// ========================================
+// MIDI再生ボタン
+// ========================================
+
+async function playTestMidi() {
+
+
+    if (!selectedTestPlayer) {
+
+        return;
+
+    }
+
+
+    try {
+
+
+        midiPlayButton.disabled =
+            true;
+
+
+        stopMidiPlayback();
+
+
+        await prepareAudioContext();
+
+
+        // MIDI ZIP
+        const midi =
+            await loadMelodyMidi(
                 selectedTestPlayer
             );
 
 
-            console.log(
-                "登録MIDI:",
-                selectedTestPlayer.midiZip
+        // ノート取得
+        const notes =
+            getMelodyNotes(
+                midi
             );
 
 
-            if (
-                !selectedTestPlayer.midiZip
-            ) {
-
-                status.textContent =
-                    "MIDIデータが登録されていません";
-
-                return;
-
-            }
+        console.log(
+            "MIDIノート数:",
+            notes.length
+        );
 
 
-            status.textContent =
-                selectedTestPlayer.name
-                +
-                " のMIDIを確認しました";
+        console.log(
+            "MIDI範囲:",
+            Math.min(
+                ...notes.map(
+                    note =>
+                        note.midi
+                )
+            ),
+            "～",
+            Math.max(
+                ...notes.map(
+                    note =>
+                        note.midi
+                )
+            )
+        );
 
 
-            /*
-             *
-             * ★ 次の工程 ★
-             *
-             * selectedTestPlayer.midiZip
-             *
-             * からMIDI ZIPを取得
-             *
-             * ↓
-             *
-             * ZIP内の
-             * メロディーMIDIを読み込む
-             *
-             * ↓
-             *
-             * 音源/音源2/メロディ/
-             *
-             * の24音源で再生
-             *
-             * Velocity = 127
-             *
-             * Fade In = 15ms
-             *
-             * Release = 18ms
-             *
-             * ↓
-             *
-             * Web Audio API
-             *
-             */
+        // 必要音源
+        await loadRequiredSamples(
+            notes
+        );
+
+
+        status.textContent =
+            "再生準備完了";
+
+
+        // 再生
+        scheduleMidi(
+            notes
+        );
+
+
+    }
+    catch (error) {
+
+
+        console.error(
+            "MIDI再生エラー:",
+            error
+        );
+
+
+        status.textContent =
+            "エラー："
+            +
+            error.message;
+
+
+        alert(
+            "MIDIを再生できませんでした。\n\n"
+            +
+            error.message
+        );
+
+
+    }
+    finally {
+
+
+        midiPlayButton.disabled =
+            false;
+
+
+    }
+
+}
+
+
+// ========================================
+// イベント
+// ========================================
+
+searchInput.addEventListener(
+
+    "input",
+
+    searchTestPlayers
+
+);
+
+
+clearButton.addEventListener(
+
+    "click",
+
+    clearSearch
+
+);
+
+
+midiPlayButton.addEventListener(
+
+    "click",
+
+    playTestMidi
+
+);
+
+
+stopButton.addEventListener(
+
+    "click",
+
+    function() {
+
+
+        stopMidiPlayback();
+
+
+        status.textContent =
+            "停止しました";
+
+
+    }
+
+);
+
+
+// ========================================
+// players.js読み込み完了
+// ========================================
+
+window.addEventListener(
+
+    "playersLoaded",
+
+    function() {
+
+
+        console.log(
+            "実験ページ：選手データ準備完了"
+        );
+
+
+        if (
+            searchInput.value.trim()
+            !== ""
+        ) {
+
+
+            searchTestPlayers();
+
 
         }
 
 
-        // ========================================
-        // イベント
-        // ========================================
+    }
 
-        searchInput.addEventListener(
-
-            "input",
-
-            searchTestPlayers
-
-        );
+);
 
 
-        clearButton.addEventListener(
+</script>
 
-            "click",
-
-            clearSearch
-
-        );
-
-
-        midiPlayButton.addEventListener(
-
-            "click",
-
-            playTestMidi
-
-        );
-
-
-        // ========================================
-        // players.js読み込み完了
-        // ========================================
-
-        window.addEventListener(
-
-            "playersLoaded",
-
-            function() {
-
-                console.log(
-                    "実験ページ：選手データ準備完了"
-                );
-
-
-                /*
-                 * 入力済みなら
-                 * 読み込み完了後に再検索
-                 */
-
-                if (
-                    searchInput.value.trim()
-                    !== ""
-                ) {
-
-                    searchTestPlayers();
-
-                }
-
-            }
-
-        );
-
-    </script>
 
 </body>
 
