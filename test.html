@@ -441,6 +441,7 @@
 
 <header class="top-bar">
 
+
     <button
         type="button"
         class="back-button"
@@ -460,6 +461,7 @@
 
     </div>
 
+
 </header>
 
 
@@ -477,7 +479,7 @@
 
 
     <p class="description">
-        対象者を選択してMIDI ZIPを取り込んでください。
+        対象者を選択してメロディーMIDIのZIPを取り込んでください。
     </p>
 
 
@@ -504,14 +506,10 @@
     </div>
 
 
-    <div
-        id="testSuggestions"
-    ></div>
+    <div id="testSuggestions"></div>
 
 
-    <section
-        id="selectedPlayer"
-    >
+    <section id="selectedPlayer">
 
 
         <div class="selected-label">
@@ -519,15 +517,9 @@
         </div>
 
 
-        <div
-            id="selectedPlayerName"
-        ></div>
+        <div id="selectedPlayerName"></div>
 
 
-        <!--
-            本物のfile inputは非表示。
-            ボタンを押した時だけ開く。
-        -->
         <input
             type="file"
             id="zipInput"
@@ -545,9 +537,7 @@
         </button>
 
 
-        <div
-            id="selectedZipName"
-        ></div>
+        <div id="selectedZipName"></div>
 
 
         <button
@@ -567,9 +557,7 @@
         </button>
 
 
-        <div
-            id="status"
-        >
+        <div id="status">
             ZIPを選択してください
         </div>
 
@@ -580,37 +568,61 @@
 </main>
 
 
+<!-- 本番と同じ選手データ -->
 <script src="players.js"></script>
 
 
 <script>
 
 
-// ========================================
+// ============================================================
 // 基本設定
-// ========================================
+// ============================================================
 
 const MAX_SUGGESTIONS = 10;
+
+
+/*
+    今日確定したメロディー再生設定
+
+    Velocity = 127固定
+    Attack   = 15ms
+    Release  = 18ms
+*/
 
 const ATTACK_TIME = 0.015;
 
 const RELEASE_TIME = 0.018;
 
+
+/*
+    各音源には先頭無音があるため
+    発音位置を検出する。
+
+    発音直前を削りすぎないよう
+    約6msだけ残す。
+*/
+
 const SAMPLE_PREROLL = 0.006;
 
+
+// ============================================================
+// 音源保存場所
+// ============================================================
 
 const SAMPLE_BASE_PATH =
     "音源/音源2/メロディ/";
 
 
-// ========================================
-// MIDI番号 → 音源
-// ========================================
+// ============================================================
+// MIDI番号 → 24音源
+// ============================================================
 
 const SAMPLE_FILES = {
 
     60: "音源ド.m4a",
     61: "音源ド#️⃣.m4a",
+
     62: "音源レ.m4a",
     63: "音源レ#️⃣.m4a",
 
@@ -649,9 +661,9 @@ const SAMPLE_FILES = {
 };
 
 
-// ========================================
+// ============================================================
 // DOM
-// ========================================
+// ============================================================
 
 const searchInput =
     document.getElementById(
@@ -719,35 +731,49 @@ const status =
     );
 
 
-// ========================================
+// ============================================================
 // 状態
-// ========================================
+// ============================================================
 
-let selectedTestPlayerId = null;
-
-let selectedTestPlayer = null;
-
-let loadedMidi = null;
-
-let loadedNotes = null;
+let selectedTestPlayerId =
+    null;
 
 
-// ========================================
+let selectedTestPlayer =
+    null;
+
+
+let loadedMidi =
+    null;
+
+
+let loadedNotes =
+    null;
+
+
+// ============================================================
 // Web Audio
-// ========================================
+// ============================================================
 
-let audioContext = null;
-
-let masterGain = null;
-
-let sampleBuffers = {};
-
-let activeSources = [];
+let audioContext =
+    null;
 
 
-// ========================================
+let masterGain =
+    null;
+
+
+let sampleBuffers =
+    {};
+
+
+let activeSources =
+    [];
+
+
+// ============================================================
 // 検索
-// ========================================
+// ============================================================
 
 function searchTestPlayers() {
 
@@ -780,10 +806,13 @@ function searchTestPlayers() {
 
     if (keyword === "") {
 
+
         suggestions.style.display =
             "none";
 
+
         clearSelection();
+
 
         return;
 
@@ -795,8 +824,10 @@ function searchTestPlayers() {
         "undefined"
     ) {
 
+
         suggestions.style.display =
             "block";
+
 
         suggestions.innerHTML =
             '<div class="no-search-result">'
@@ -805,12 +836,14 @@ function searchTestPlayers() {
             +
             '</div>';
 
+
         return;
 
     }
 
 
-    const matchedPlayers = [];
+    const matchedPlayers =
+        [];
 
 
     Object.keys(players).forEach(
@@ -868,7 +901,6 @@ function searchTestPlayers() {
                         player
 
                 });
-
 
             }
 
@@ -948,7 +980,6 @@ function searchTestPlayers() {
 
                         );
 
-
                     };
 
 
@@ -967,9 +998,9 @@ function searchTestPlayers() {
 }
 
 
-// ========================================
+// ============================================================
 // 選手選択
-// ========================================
+// ============================================================
 
 function selectTestPlayer(
     playerId,
@@ -1042,9 +1073,9 @@ function selectTestPlayer(
 }
 
 
-// ========================================
+// ============================================================
 // 選択解除
-// ========================================
+// ============================================================
 
 function clearSelection() {
 
@@ -1074,9 +1105,9 @@ function clearSelection() {
 }
 
 
-// ========================================
-// ×
-// ========================================
+// ============================================================
+// 検索クリア
+// ============================================================
 
 function clearSearch() {
 
@@ -1105,11 +1136,21 @@ function clearSearch() {
 }
 
 
-// ========================================
-// ZIP選択
-// ========================================
+// ============================================================
+// ZIP選択画面
+// ============================================================
 
 function openZipPicker() {
+
+
+    /*
+        同じZIPをもう一度選択しても
+        changeイベントが発生するよう
+        一旦valueを空にする。
+    */
+
+    zipInput.value =
+        "";
 
 
     zipInput.click();
@@ -1117,9 +1158,9 @@ function openZipPicker() {
 }
 
 
-// ========================================
+// ============================================================
 // ZIP読み込み
-// ========================================
+// ============================================================
 
 async function handleZipFile(
     file
@@ -1159,6 +1200,10 @@ async function handleZipFile(
             "ZIPを解析しています…";
 
 
+        // ----------------------------------------------------
+        // ZIPを読み込む
+        // ----------------------------------------------------
+
         const zipBuffer =
             await file.arrayBuffer();
 
@@ -1169,17 +1214,22 @@ async function handleZipFile(
             );
 
 
-        let melodyFile =
-            null;
+        // ----------------------------------------------------
+        // ZIP内の本物のMIDIだけ取得
+        //
+        // 日本語ファイル名が文字化けしても
+        // ファイル名の「メロディー」は見ない。
+        //
+        // __MACOSX
+        // ._xxxxx.mid
+        // .DS_Store
+        //
+        // は除外。
+        // ----------------------------------------------------
 
-
-        const allMidiFiles =
+        const midiFiles =
             [];
 
-
-        // ====================================
-        // ZIP内を検索
-        // ====================================
 
         zip.forEach(
 
@@ -1198,20 +1248,69 @@ async function handleZipFile(
                 }
 
 
-                const lowerName =
+                const path =
                     relativePath
-                        .toLowerCase();
+                        .replace(
+                            /\\/g,
+                            "/"
+                        );
 
 
+                const lowerPath =
+                    path.toLowerCase();
+
+
+                // Macの管理フォルダ
+                if (
+                    lowerPath.includes(
+                        "__macosx/"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const fileName =
+                    path
+                        .split("/")
+                        .pop();
+
+
+                // Macの管理ファイル
+                if (
+                    fileName.startsWith(
+                        "._"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    fileName.toLowerCase()
+                    ===
+                    ".ds_store"
+                ) {
+
+                    return;
+
+                }
+
+
+                // MIDI拡張子だけ対象
                 const isMidi =
 
-                    lowerName.endsWith(
+                    lowerPath.endsWith(
                         ".mid"
                     )
 
                     ||
 
-                    lowerName.endsWith(
+                    lowerPath.endsWith(
                         ".midi"
                     );
 
@@ -1223,108 +1322,82 @@ async function handleZipFile(
                 }
 
 
-                allMidiFiles.push(
-                    zipEntry
-                );
+                midiFiles.push({
 
+                    path:
+                        relativePath,
 
-                /*
-                 * メロディーという名前を
-                 * 最優先。
-                 */
+                    entry:
+                        zipEntry
 
-                if (
-
-                    !melodyFile
-
-                    &&
-
-                    (
-                        relativePath.includes(
-                            "メロディ"
-                        )
-
-                        ||
-
-                        lowerName.includes(
-                            "melody"
-                        )
-                    )
-
-                ) {
-
-
-                    melodyFile =
-                        zipEntry;
-
-
-                }
-
+                });
 
             }
 
         );
 
 
-        // ====================================
-        // MIDIが1個だけなら自動採用
-        // ====================================
+        // ----------------------------------------------------
+        // MIDIなし
+        // ----------------------------------------------------
 
         if (
-
-            !melodyFile
-
-            &&
-
-            allMidiFiles.length === 1
-
+            midiFiles.length === 0
         ) {
 
 
-            melodyFile =
-                allMidiFiles[0];
-
-
-        }
-
-
-        // ====================================
-        // 見つからない
-        // ====================================
-
-        if (!melodyFile) {
-
-
-            if (
-                allMidiFiles.length === 0
-            ) {
-
-
-                throw new Error(
-                    "ZIP内にMIDIファイルがありません"
-                );
-
-
-            }
-
-
             throw new Error(
-                "メロディーMIDIを特定できませんでした"
+                "ZIP内にMIDIファイルがありません"
             );
 
-
         }
+
+
+        // ----------------------------------------------------
+        // 実験版では
+        // 「メロディーMIDI ZIP」を選択する前提。
+        //
+        // そのため本物のMIDIの1個目を採用。
+        // ----------------------------------------------------
+
+        const selectedMidi =
+            midiFiles[0];
+
+
+        console.log(
+            "ZIP内のMIDI:",
+            midiFiles.map(
+                item =>
+                    item.path
+            )
+        );
+
+
+        console.log(
+            "使用するMIDI:",
+            selectedMidi.path
+        );
 
 
         status.textContent =
-            "メロディーMIDIを解析しています…";
+            "MIDIを解析しています…";
 
+
+        // ----------------------------------------------------
+        // MIDIデータ取得
+        // ----------------------------------------------------
 
         const midiArrayBuffer =
-            await melodyFile.async(
-                "arraybuffer"
-            );
+            await selectedMidi
+                .entry
+                .async(
+                    "arraybuffer"
+                );
 
+
+        // ----------------------------------------------------
+        // MIDI解析
+        // ----------------------------------------------------
 
         loadedMidi =
             new Midi(
@@ -1338,17 +1411,89 @@ async function handleZipFile(
             );
 
 
+        // ----------------------------------------------------
+        // MIDI範囲確認
+        // ----------------------------------------------------
+
+        const midiNumbers =
+            loadedNotes.map(
+                note =>
+                    note.midi
+            );
+
+
+        const minMidi =
+            Math.min(
+                ...midiNumbers
+            );
+
+
+        const maxMidi =
+            Math.max(
+                ...midiNumbers
+            );
+
+
+        console.log(
+            "ノート数:",
+            loadedNotes.length
+        );
+
+
+        console.log(
+            "MIDI範囲:",
+            minMidi,
+            "～",
+            maxMidi
+        );
+
+
+        // ----------------------------------------------------
+        // 24音源の範囲外チェック
+        // ----------------------------------------------------
+
+        const unsupported =
+            [
+                ...new Set(
+
+                    midiNumbers.filter(
+
+                        midiNumber =>
+
+                            !SAMPLE_FILES[
+                                midiNumber
+                            ]
+
+                    )
+
+                )
+            ];
+
+
+        if (
+            unsupported.length > 0
+        ) {
+
+
+            throw new Error(
+
+                "対応音源がないMIDI番号があります："
+
+                +
+
+                unsupported.join(", ")
+
+            );
+
+        }
+
+
+        // ----------------------------------------------------
+        // 成功
+        // ----------------------------------------------------
+
         selectedZipName.textContent =
-
-            file.name
-
-            +
-
-            "\nメロディーMIDI検出："
-
-            +
-
-            melodyFile.name;
+            file.name;
 
 
         status.textContent =
@@ -1361,7 +1506,19 @@ async function handleZipFile(
 
             +
 
-            "音";
+            "音 / MIDI "
+
+            +
+
+            minMidi
+
+            +
+
+            "～"
+
+            +
+
+            maxMidi;
 
 
         playButton.style.display =
@@ -1397,27 +1554,31 @@ async function handleZipFile(
 
 
         alert(
-            "ZIPを読み込めませんでした。\n\n"
-            +
-            error.message
-        );
 
+            "ZIPを読み込めませんでした。\n\n"
+
+            +
+
+            error.message
+
+        );
 
     }
 
 }
 
 
-// ========================================
+// ============================================================
 // MIDIノート取得
-// ========================================
+// ============================================================
 
 function getMelodyNotes(
     midi
 ) {
 
 
-    const notes = [];
+    const notes =
+        [];
 
 
     midi.tracks.forEach(
@@ -1434,11 +1595,9 @@ function getMelodyNotes(
                         note
                     );
 
-
                 }
 
             );
-
 
         }
 
@@ -1454,7 +1613,6 @@ function getMelodyNotes(
                 -
                 b.time;
 
-
         }
 
     );
@@ -1469,7 +1627,6 @@ function getMelodyNotes(
             "MIDIに音符がありません"
         );
 
-
     }
 
 
@@ -1478,9 +1635,9 @@ function getMelodyNotes(
 }
 
 
-// ========================================
-// AudioContext準備
-// ========================================
+// ============================================================
+// AudioContext
+// ============================================================
 
 async function prepareAudioContext() {
 
@@ -1495,18 +1652,17 @@ async function prepareAudioContext() {
                 window.webkitAudioContext
             )();
 
-
     }
 
 
     if (
-        audioContext.state ===
+        audioContext.state
+        ===
         "suspended"
     ) {
 
 
         await audioContext.resume();
-
 
     }
 
@@ -1526,15 +1682,14 @@ async function prepareAudioContext() {
             audioContext.destination
         );
 
-
     }
 
 }
 
 
-// ========================================
-// 音源先頭の無音検出
-// ========================================
+// ============================================================
+// 音源の発音開始位置検出
+// ============================================================
 
 function detectSampleStart(
     buffer
@@ -1545,7 +1700,8 @@ function detectSampleStart(
         buffer.getChannelData(0);
 
 
-    let max = 0;
+    let max =
+        0;
 
 
     for (
@@ -1569,11 +1725,17 @@ function detectSampleStart(
             max =
                 value;
 
-
         }
 
     }
 
+
+    /*
+        Pythonでうまくいった基準に合わせる
+
+        最大振幅の1%
+        または0.0015
+    */
 
     const threshold =
         Math.max(
@@ -1612,6 +1774,7 @@ function detectSampleStart(
             first =
                 i;
 
+
             break;
 
         }
@@ -1619,18 +1782,21 @@ function detectSampleStart(
     }
 
 
+    const firstSeconds =
+
+        first
+
+        /
+
+        buffer.sampleRate;
+
+
     return Math.max(
 
         0,
 
-        (
-            first
-            /
-            buffer.sampleRate
-        )
-
+        firstSeconds
         -
-
         SAMPLE_PREROLL
 
     );
@@ -1638,9 +1804,9 @@ function detectSampleStart(
 }
 
 
-// ========================================
-// 音源読み込み
-// ========================================
+// ============================================================
+// 1音読み込み
+// ============================================================
 
 async function loadSample(
     midiNote
@@ -1651,13 +1817,16 @@ async function loadSample(
         sampleBuffers[midiNote]
     ) {
 
+
         return;
 
     }
 
 
     const fileName =
-        SAMPLE_FILES[midiNote];
+        SAMPLE_FILES[
+            midiNote
+        ];
 
 
     if (!fileName) {
@@ -1673,9 +1842,13 @@ async function loadSample(
 
         );
 
-
     }
 
+
+    /*
+        encodeURIComponentで
+        # や日本語をURLとして安全にする。
+    */
 
     const url =
 
@@ -1707,7 +1880,6 @@ async function loadSample(
 
         );
 
-
     }
 
 
@@ -1722,24 +1894,28 @@ async function loadSample(
             );
 
 
+    const startOffset =
+        detectSampleStart(
+            buffer
+        );
+
+
     sampleBuffers[midiNote] = {
 
         buffer:
             buffer,
 
         startOffset:
-            detectSampleStart(
-                buffer
-            )
+            startOffset
 
     };
 
 }
 
 
-// ========================================
-// 必要な音源だけ準備
-// ========================================
+// ============================================================
+// MIDIで使用する音源だけロード
+// ============================================================
 
 async function loadRequiredSamples(
     notes
@@ -1787,25 +1963,37 @@ async function loadRequiredSamples(
             requiredNotes[i]
         );
 
-
     }
 
 }
 
 
-// ========================================
-// 残響
-// ========================================
+// ============================================================
+// 現在の残響
+// ============================================================
 
 function connectWithReverb(
     noteGain
 ) {
 
 
+    // 原音
     noteGain.connect(
         masterGain
     );
 
+
+    /*
+        現在採用している残響
+
+        90ms   0.34
+        220ms  0.27
+        420ms  0.21
+        680ms  0.16
+        950ms  0.12
+        1250ms 0.085
+        1550ms 0.055
+    */
 
     const reflections = [
 
@@ -1832,20 +2020,22 @@ function connectWithReverb(
 
 
             const delay =
-                audioContext.createDelay(
-                    2
-                );
+                audioContext
+                    .createDelay(
+                        2
+                    );
 
 
-            const gain =
-                audioContext.createGain();
+            const delayGain =
+                audioContext
+                    .createGain();
 
 
             delay.delayTime.value =
                 item[0];
 
 
-            gain.gain.value =
+            delayGain.gain.value =
                 item[1];
 
 
@@ -1855,14 +2045,13 @@ function connectWithReverb(
 
 
             delay.connect(
-                gain
+                delayGain
             );
 
 
-            gain.connect(
+            delayGain.connect(
                 masterGain
             );
-
 
         }
 
@@ -1871,9 +2060,9 @@ function connectWithReverb(
 }
 
 
-// ========================================
-// 再生
-// ========================================
+// ============================================================
+// MIDI再生
+// ============================================================
 
 function scheduleMidi(
     notes
@@ -1883,16 +2072,23 @@ function scheduleMidi(
     stopMidiPlayback();
 
 
-    const now =
+    /*
+        ボタン押下から80ms後に開始。
+    */
+
+    const baseTime =
+
         audioContext.currentTime
+
         +
+
         0.08;
 
 
     /*
-     * 単曲実験なので
-     * MIDI先頭の空白は詰める。
-     */
+        実験版の単曲再生では
+        MIDIの最初の音を0秒扱いにする。
+    */
 
     const firstNoteTime =
         notes[0].time;
@@ -1911,6 +2107,13 @@ function scheduleMidi(
 
             if (!sample) {
 
+
+                console.warn(
+                    "音源なし:",
+                    note.midi
+                );
+
+
                 return;
 
             }
@@ -1925,14 +2128,18 @@ function scheduleMidi(
                 sample.buffer;
 
 
-            const gain =
+            const noteGain =
                 audioContext
                     .createGain();
 
 
+            /*
+                MIDI本来の開始タイミングを維持
+            */
+
             const startTime =
 
-                now
+                baseTime
 
                 +
 
@@ -1942,6 +2149,10 @@ function scheduleMidi(
                     firstNoteTime
                 );
 
+
+            /*
+                MIDI本来の音の長さを使用
+            */
 
             const noteDuration =
                 Math.max(
@@ -1967,70 +2178,91 @@ function scheduleMidi(
 
 
             /*
-             * Velocity 127固定
-             *
-             * Web Audio上では
-             * gain 1.0として扱う。
-             */
+                ==============================
+                Velocity 127固定
+                ==============================
 
+                元MIDIのvelocityは使用しない。
+            */
 
-            gain.gain.setValueAtTime(
-
-                0,
-
-                startTime
-
-            );
+            const velocityGain =
+                1.0;
 
 
             /*
-             * 15ms立ち上がり
-             */
+                ==============================
+                15ms Attack
+                ==============================
+            */
 
-            gain.gain.linearRampToValueAtTime(
+            noteGain.gain
+                .setValueAtTime(
 
-                1.0,
+                    0,
 
-                startTime
-                +
-                ATTACK_TIME
+                    startTime
 
-            );
+                );
 
 
-            gain.gain.setValueAtTime(
+            noteGain.gain
+                .linearRampToValueAtTime(
 
-                1.0,
+                    velocityGain,
 
-                startTime
-                +
-                noteDuration
+                    startTime
+                    +
+                    ATTACK_TIME
 
-            );
+                );
 
 
             /*
-             * 18msリリース
-             */
+                MIDIノート終了までは最大値
+            */
 
-            gain.gain.linearRampToValueAtTime(
+            noteGain.gain
+                .setValueAtTime(
 
-                0,
+                    velocityGain,
 
-                releaseEnd
+                    startTime
+                    +
+                    noteDuration
 
-            );
+                );
+
+
+            /*
+                ==============================
+                18ms Release
+                ==============================
+            */
+
+            noteGain.gain
+                .linearRampToValueAtTime(
+
+                    0,
+
+                    releaseEnd
+
+                );
 
 
             source.connect(
-                gain
+                noteGain
             );
 
 
             connectWithReverb(
-                gain
+                noteGain
             );
 
+
+            /*
+                先頭無音を飛ばして
+                サンプル再生開始。
+            */
 
             source.start(
 
@@ -2041,7 +2273,12 @@ function scheduleMidi(
             );
 
 
-            const available =
+            /*
+                サンプルが途中で足りなくならない範囲で
+                MIDI長 + Release分を再生。
+            */
+
+            const availableDuration =
 
                 sample.buffer.duration
 
@@ -2050,7 +2287,7 @@ function scheduleMidi(
                 sample.startOffset;
 
 
-            const wanted =
+            const requestedDuration =
 
                 noteDuration
 
@@ -2063,16 +2300,24 @@ function scheduleMidi(
                 0.03;
 
 
+            const actualDuration =
+
+                Math.min(
+
+                    availableDuration,
+
+                    requestedDuration
+
+                );
+
+
             source.stop(
 
                 startTime
 
                 +
 
-                Math.min(
-                    available,
-                    wanted
-                )
+                actualDuration
 
             );
 
@@ -2080,7 +2325,6 @@ function scheduleMidi(
             activeSources.push(
                 source
             );
-
 
         }
 
@@ -2096,23 +2340,31 @@ function scheduleMidi(
         " MIDI再生中";
 
 
+    playButton.textContent =
+        "▶ 最初から再生";
+
+
     stopButton.style.display =
         "block";
 
 }
 
 
-// ========================================
-// MIDI再生ボタン
-// ========================================
+// ============================================================
+// 再生ボタン
+// ============================================================
 
 async function playLoadedMidi() {
 
 
     if (
+
         !loadedNotes
+
         ||
+
         loadedNotes.length === 0
+
     ) {
 
 
@@ -2131,8 +2383,16 @@ async function playLoadedMidi() {
         stopMidiPlayback();
 
 
+        status.textContent =
+            "再生準備中…";
+
+
         await prepareAudioContext();
 
+
+        /*
+            MIDIで必要な音階だけロードする。
+        */
 
         await loadRequiredSamples(
             loadedNotes
@@ -2177,7 +2437,6 @@ async function playLoadedMidi() {
 
         );
 
-
     }
     finally {
 
@@ -2185,15 +2444,14 @@ async function playLoadedMidi() {
         playButton.disabled =
             false;
 
-
     }
 
 }
 
 
-// ========================================
+// ============================================================
 // 停止
-// ========================================
+// ============================================================
 
 function stopMidiPlayback() {
 
@@ -2205,15 +2463,19 @@ function stopMidiPlayback() {
 
             try {
 
+
                 source.stop();
+
 
             }
             catch (error) {
 
-                // 無視
+
+                /*
+                    すでに停止済みなら無視
+                */
 
             }
-
 
         }
 
@@ -2230,9 +2492,9 @@ function stopMidiPlayback() {
 }
 
 
-// ========================================
+// ============================================================
 // イベント
-// ========================================
+// ============================================================
 
 searchInput.addEventListener(
 
@@ -2272,10 +2534,14 @@ zipInput.addEventListener(
             zipInput.files[0];
 
 
-        handleZipFile(
-            file
-        );
+        if (file) {
 
+
+            handleZipFile(
+                file
+            );
+
+        }
 
     }
 
@@ -2304,11 +2570,14 @@ stopButton.addEventListener(
         status.textContent =
             "停止しました";
 
-
     }
 
 );
 
+
+// ============================================================
+// players.js読み込み完了
+// ============================================================
 
 window.addEventListener(
 
@@ -2330,9 +2599,7 @@ window.addEventListener(
 
             searchTestPlayers();
 
-
         }
-
 
     }
 
