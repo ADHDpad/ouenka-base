@@ -1,219 +1,2424 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#071d33">
+
 <title>応援歌データ登録 | OUENKA BASE</title>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f2f4f7;color:#111}
-.top-menu{background:#071d33;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
-.brand-main{font-size:18px;font-weight:800}.brand-sub{margin-top:3px;font-size:10px;opacity:.7;letter-spacing:1px}
-.back-button{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;padding:10px 14px;border-radius:6px;font-weight:bold}
-main{max-width:680px;margin:30px auto;padding:0 16px 60px}.page-label{font-size:11px;font-weight:bold;letter-spacing:2px;color:#607080}
-h1{margin:6px 0 8px;font-size:28px}.description{color:#5f6973;line-height:1.6;margin-bottom:25px}
-.card{background:#fff;border-radius:12px;padding:22px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
-.card-title{margin-bottom:18px;font-size:12px;font-weight:bold;letter-spacing:1px;color:#607080}
-#zipFile{width:100%;padding:14px;border:2px dashed #9ba6b0;border-radius:8px;background:#f7f8fa;font-size:16px}
-.selected-box{margin-top:18px;padding:16px;border-radius:8px;background:#eef1f4}.selected-label{font-size:11px;font-weight:bold;color:#68727d;letter-spacing:1px}
-#selectedFileName{margin-top:7px;font-size:18px;font-weight:bold;word-break:break-all}#fileResult{display:none;margin-top:14px;font-weight:bold}
-#registerArea{display:none}.form-group{margin-bottom:20px}.form-label{display:block;margin-bottom:7px;font-size:13px;font-weight:700}.required{color:#b42318;margin-left:4px}
-input[type=text],input[type=number],select,textarea{width:100%;border:1px solid #cbd2d9;border-radius:7px;padding:13px;background:#fff;font-size:16px;color:#111}
-input:focus,select:focus,textarea:focus{outline:2px solid #8ba2b8;border-color:#071d33}textarea{min-height:150px;resize:vertical;line-height:1.6}
-.two-columns{display:grid;grid-template-columns:1fr 1fr;gap:15px}.radio-box{display:flex;gap:12px}.radio-item{flex:1}.radio-item input{display:none}
-.radio-item label{display:block;border:1px solid #cbd2d9;border-radius:7px;padding:13px;text-align:center;font-weight:bold;cursor:pointer;background:#fff}
-.radio-item input:checked+label{background:#071d33;color:#fff;border-color:#071d33}
-.auto-number{padding:13px;border:1px solid #cbd2d9;border-radius:7px;background:#eef1f4;font-size:16px;font-weight:800}
-.auto-note{font-size:11px;color:#68727d;margin-top:5px}
-.music-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #e5e8eb}.music-row:last-child{border-bottom:none}
-.music-name{font-weight:700}.music-detail{margin-top:4px;font-size:12px;color:#68727d}.status{font-size:12px;font-weight:bold;color:#8a929a;text-align:right;max-width:48%;word-break:break-all}.status.ok{color:#137333}.status.ng{color:#a51f1f}
-.register-button{width:100%;border:none;border-radius:8px;background:#071d33;color:#fff;padding:17px;font-size:17px;font-weight:bold}.register-button:disabled{opacity:.45}
-#message{display:none;margin-top:16px;padding:14px;border-radius:8px;text-align:center;font-weight:bold;line-height:1.5}.message-success{display:block!important;background:#e6f5eb;color:#126b32}.message-error{display:block!important;background:#fdecec;color:#a51f1f}
-.saved-list{display:grid;gap:10px}.saved-item{border:1px solid #e0e5e9;border-radius:8px;padding:13px}.saved-title{font-weight:800}.saved-meta{font-size:12px;color:#68727d;margin-top:5px;line-height:1.6}.empty{color:#8a929a;font-size:13px}
-@media(max-width:520px){.brand-sub{display:none}h1{font-size:24px}.card{padding:18px}.two-columns{grid-template-columns:1fr;gap:0}}
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#f2f4f7;
+  color:#111;
+}
+
+.top-menu{
+  background:#071d33;
+  color:#fff;
+  padding:16px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.brand-main{
+  font-size:18px;
+  font-weight:800;
+}
+
+.brand-sub{
+  margin-top:3px;
+  font-size:10px;
+  opacity:.7;
+  letter-spacing:1px;
+}
+
+.back-button{
+  border:1px solid rgba(255,255,255,.4);
+  background:transparent;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:6px;
+  font-weight:bold;
+}
+
+main{
+  max-width:680px;
+  margin:30px auto;
+  padding:0 16px 60px;
+}
+
+.page-label{
+  font-size:11px;
+  font-weight:bold;
+  letter-spacing:2px;
+  color:#607080;
+}
+
+h1{
+  margin:6px 0 8px;
+  font-size:28px;
+}
+
+.description{
+  color:#5f6973;
+  line-height:1.6;
+  margin-bottom:25px;
+}
+
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:22px;
+  margin-bottom:18px;
+  box-shadow:0 2px 10px rgba(0,0,0,.07);
+}
+
+.card-title{
+  margin-bottom:18px;
+  font-size:12px;
+  font-weight:bold;
+  letter-spacing:1px;
+  color:#607080;
+}
+
+.file-input{
+  width:100%;
+  padding:14px;
+  border:2px dashed #9ba6b0;
+  border-radius:8px;
+  background:#f7f8fa;
+  font-size:16px;
+}
+
+.selected-box{
+  margin-top:18px;
+  padding:16px;
+  border-radius:8px;
+  background:#eef1f4;
+}
+
+.selected-label{
+  font-size:11px;
+  font-weight:bold;
+  color:#68727d;
+  letter-spacing:1px;
+}
+
+.selected-file-name{
+  margin-top:7px;
+  font-size:18px;
+  font-weight:bold;
+  word-break:break-all;
+}
+
+.file-result{
+  display:none;
+  margin-top:14px;
+  font-weight:bold;
+}
+
+#registerArea{
+  display:none;
+}
+
+.form-group{
+  margin-bottom:20px;
+}
+
+.form-label{
+  display:block;
+  margin-bottom:7px;
+  font-size:13px;
+  font-weight:700;
+}
+
+.required{
+  color:#b42318;
+  margin-left:4px;
+}
+
+input[type=text],
+input[type=number],
+select,
+textarea{
+  width:100%;
+  border:1px solid #cbd2d9;
+  border-radius:7px;
+  padding:13px;
+  background:#fff;
+  font-size:16px;
+  color:#111;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  outline:2px solid #8ba2b8;
+  border-color:#071d33;
+}
+
+textarea{
+  min-height:150px;
+  resize:vertical;
+  line-height:1.6;
+}
+
+.player-search-row{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+}
+
+.player-search-button{
+  border:none;
+  border-radius:7px;
+  background:#071d33;
+  color:#fff;
+  padding:0 18px;
+  font-weight:bold;
+  font-size:14px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.player-search-button:disabled{
+  opacity:.5;
+}
+
+.player-search-result{
+  display:none;
+  margin-top:10px;
+  padding:12px;
+  border-radius:7px;
+  font-size:13px;
+  font-weight:bold;
+  line-height:1.5;
+}
+
+.player-search-result.loading{
+  display:block;
+  background:#eef1f4;
+  color:#53606c;
+}
+
+.player-search-result.success{
+  display:block;
+  background:#e6f5eb;
+  color:#126b32;
+}
+
+.player-search-result.error{
+  display:block;
+  background:#fdecec;
+  color:#a51f1f;
+}
+
+.source-note{
+  margin-top:6px;
+  font-size:11px;
+  font-weight:normal;
+  opacity:.8;
+}
+
+.two-columns{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+.radio-box{
+  display:flex;
+  gap:12px;
+}
+
+.radio-item{
+  flex:1;
+}
+
+.radio-item input{
+  display:none;
+}
+
+.radio-item label{
+  display:block;
+  border:1px solid #cbd2d9;
+  border-radius:7px;
+  padding:13px;
+  text-align:center;
+  font-weight:bold;
+  cursor:pointer;
+  background:#fff;
+}
+
+.radio-item input:checked + label{
+  background:#071d33;
+  color:#fff;
+  border-color:#071d33;
+}
+
+.auto-number{
+  padding:13px;
+  border:1px solid #cbd2d9;
+  border-radius:7px;
+  background:#eef1f4;
+  font-size:16px;
+  font-weight:800;
+}
+
+.auto-note{
+  font-size:11px;
+  color:#68727d;
+  margin-top:5px;
+}
+
+.lyrics-note{
+  margin-top:7px;
+  padding:10px 12px;
+  border-radius:7px;
+  background:#fff7e6;
+  color:#7a5200;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.5;
+}
+
+.music-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:14px 0;
+  border-bottom:1px solid #e5e8eb;
+}
+
+.music-row:last-child{
+  border-bottom:none;
+}
+
+.music-name{
+  font-weight:700;
+}
+
+.music-detail{
+  margin-top:4px;
+  font-size:12px;
+  color:#68727d;
+}
+
+.status{
+  font-size:12px;
+  font-weight:bold;
+  color:#8a929a;
+  text-align:right;
+  max-width:48%;
+  word-break:break-all;
+}
+
+.status.ok{
+  color:#137333;
+}
+
+.status.ng{
+  color:#a51f1f;
+}
+
+.register-button{
+  width:100%;
+  border:none;
+  border-radius:8px;
+  background:#071d33;
+  color:#fff;
+  padding:17px;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.register-button:disabled{
+  opacity:.45;
+}
+
+#message{
+  display:none;
+  margin-top:16px;
+  padding:14px;
+  border-radius:8px;
+  text-align:center;
+  font-weight:bold;
+  line-height:1.5;
+}
+
+.message-success{
+  display:block!important;
+  background:#e6f5eb;
+  color:#126b32;
+}
+
+.message-error{
+  display:block!important;
+  background:#fdecec;
+  color:#a51f1f;
+}
+
+.saved-list{
+  display:grid;
+  gap:10px;
+}
+
+.saved-item{
+  border:1px solid #e0e5e9;
+  border-radius:8px;
+  padding:13px;
+}
+
+.saved-title{
+  font-weight:800;
+}
+
+.saved-meta{
+  font-size:12px;
+  color:#68727d;
+  margin-top:5px;
+  line-height:1.6;
+}
+
+.empty{
+  color:#8a929a;
+  font-size:13px;
+}
+
+@media(max-width:520px){
+
+  .brand-sub{
+    display:none;
+  }
+
+  h1{
+    font-size:24px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .two-columns{
+    grid-template-columns:1fr;
+    gap:0;
+  }
+
+  .player-search-row{
+    grid-template-columns:1fr;
+  }
+
+  .player-search-button{
+    padding:13px;
+  }
+}
 </style>
 </head>
+
 <body>
+
 <header class="top-menu">
-<div><div class="brand-main">OUENKA BASE</div><div class="brand-sub">DATA REGISTER SYSTEM</div></div>
-<button type="button" class="back-button" onclick="backToBase()">← BASEに戻る</button>
+
+<div>
+  <div class="brand-main">OUENKA BASE</div>
+  <div class="brand-sub">DATA REGISTER SYSTEM</div>
+</div>
+
+<button
+  type="button"
+  class="back-button"
+  onclick="backToBase()"
+>
+  ← BASEに戻る
+</button>
+
 </header>
+
 <main>
-<div class="page-label">OUENKA BASE /// DATA REGISTER</div>
+
+<div class="page-label">
+OUENKA BASE /// DATA REGISTER
+</div>
+
 <h1>応援歌データ登録</h1>
-<div class="description">ZIPを選択し、選手情報とMIDIデータをブラウザ内に登録します。</div>
+
+<div class="description">
+ZIPとm4aを選択し、選手情報・MIDI・音源をブラウザ内に登録します。
+</div>
+
+
+<!-- ============================== -->
+<!-- 01 ZIP -->
+<!-- ============================== -->
 
 <section class="card">
-<div class="card-title">01 /// SELECT ZIP</div>
-<input type="file" id="zipFile" accept=".zip,application/zip">
-<div class="selected-box"><div class="selected-label">SELECTED FILE</div><div id="selectedFileName">ZIPが選択されていません</div></div>
-<div id="fileResult"></div>
+
+<div class="card-title">
+01 /// SELECT ZIP
+</div>
+
+<input
+  type="file"
+  id="zipFile"
+  class="file-input"
+  accept=".zip,application/zip"
+>
+
+<div class="selected-box">
+
+<div class="selected-label">
+SELECTED ZIP
+</div>
+
+<div
+  id="selectedFileName"
+  class="selected-file-name"
+>
+ZIPが選択されていません
+</div>
+
+</div>
+
+<div
+  id="fileResult"
+  class="file-result"
+></div>
+
 </section>
+
 
 <div id="registerArea">
-<section class="card">
-<div class="card-title">02 /// PLAYER DATA</div>
-<div class="form-group"><label class="form-label" for="playerName">選手名<span class="required">*</span></label><input type="text" id="playerName" placeholder="例：矢野雅哉"></div>
-<div class="form-group"><label class="form-label" for="reading">読み仮名<span class="required">*</span></label><input type="text" id="reading" placeholder="例：やのまさや"></div>
-<div class="form-group"><label class="form-label" for="team">球団<span class="required">*</span></label>
-<select id="team"><option value="">球団を選択</option>
-<optgroup label="セ・リーグ"><option>阪神タイガース</option><option>横浜DeNAベイスターズ</option><option>読売ジャイアンツ</option><option>中日ドラゴンズ</option><option>広島東洋カープ</option><option>東京ヤクルトスワローズ</option></optgroup>
-<optgroup label="パ・リーグ"><option>福岡ソフトバンクホークス</option><option>北海道日本ハムファイターズ</option><option>オリックス・バファローズ</option><option>東北楽天ゴールデンイーグルス</option><option>埼玉西武ライオンズ</option><option>千葉ロッテマリーンズ</option></optgroup>
-</select></div>
 
-<div class="form-group"><div class="form-label">区分<span class="required">*</span></div>
+
+<!-- ============================== -->
+<!-- 02 PLAYER -->
+<!-- ============================== -->
+
+<section class="card">
+
+<div class="card-title">
+02 /// PLAYER DATA
+</div>
+
+
+<div class="form-group">
+
+<label
+  class="form-label"
+  for="playerName"
+>
+選手名
+<span class="required">*</span>
+</label>
+
+<div class="player-search-row">
+
+<input
+  type="text"
+  id="playerName"
+  placeholder="例：矢野雅哉"
+>
+
+<button
+  type="button"
+  id="playerSearchButton"
+  class="player-search-button"
+  onclick="searchPlayer()"
+>
+NPBから取得
+</button>
+
+</div>
+
+<div
+  id="playerSearchResult"
+  class="player-search-result"
+></div>
+
+</div>
+
+
+<div class="form-group">
+
+<label
+  class="form-label"
+  for="reading"
+>
+読み仮名
+<span class="required">*</span>
+</label>
+
+<input
+  type="text"
+  id="reading"
+  placeholder="例：やのまさや"
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label
+  class="form-label"
+  for="team"
+>
+球団
+<span class="required">*</span>
+</label>
+
+<select id="team">
+
+<option value="">
+球団を選択
+</option>
+
+<optgroup label="セ・リーグ">
+
+<option>阪神タイガース</option>
+<option>横浜DeNAベイスターズ</option>
+<option>読売ジャイアンツ</option>
+<option>中日ドラゴンズ</option>
+<option>広島東洋カープ</option>
+<option>東京ヤクルトスワローズ</option>
+
+</optgroup>
+
+<optgroup label="パ・リーグ">
+
+<option>福岡ソフトバンクホークス</option>
+<option>北海道日本ハムファイターズ</option>
+<option>オリックス・バファローズ</option>
+<option>東北楽天ゴールデンイーグルス</option>
+<option>埼玉西武ライオンズ</option>
+<option>千葉ロッテマリーンズ</option>
+
+</optgroup>
+
+</select>
+
+</div>
+
+
+<div class="form-group">
+
+<div class="form-label">
+区分
+<span class="required">*</span>
+</div>
+
 <div class="radio-box">
-<div class="radio-item"><input type="radio" name="playerType" id="inUse" value="現在使用" checked><label for="inUse">現在使用</label></div>
-<div class="radio-item"><input type="radio" name="playerType" id="notInUse" value="未使用"><label for="notInUse">未使用</label></div>
-</div></div>
+
+<div class="radio-item">
+
+<input
+  type="radio"
+  name="playerType"
+  id="inUse"
+  value="現在使用"
+  checked
+>
+
+<label for="inUse">
+現在使用
+</label>
+
+</div>
+
+
+<div class="radio-item">
+
+<input
+  type="radio"
+  name="playerType"
+  id="notInUse"
+  value="未使用"
+>
+
+<label for="notInUse">
+未使用
+</label>
+
+</div>
+
+</div>
+
+</div>
+
 
 <div class="two-columns">
-<div class="form-group"><label class="form-label" for="number">背番号</label><input type="number" id="number" inputmode="numeric" placeholder="例：61"></div>
-<div class="form-group"><div class="form-label">制作番号</div><div id="productionNumberDisplay" class="auto-number">1</div><div class="auto-note">同じ選手名の登録数から自動採番</div></div>
+
+<div class="form-group">
+
+<label
+  class="form-label"
+  for="number"
+>
+背番号
+</label>
+
+<input
+  type="number"
+  id="number"
+  inputmode="numeric"
+  placeholder="例：4"
+>
+
 </div>
-<div class="form-group"><label class="form-label" for="lyrics">歌詞</label><textarea id="lyrics" placeholder="応援歌の歌詞を入力"></textarea></div>
+
+
+<div class="form-group">
+
+<div class="form-label">
+制作番号
+</div>
+
+<div
+  id="productionNumberDisplay"
+  class="auto-number"
+>
+1
+</div>
+
+<div class="auto-note">
+同じ選手名の登録数から自動採番
+</div>
+
+</div>
+
+</div>
+
+
+<div class="form-group">
+
+<label
+  class="form-label"
+  for="lyrics"
+>
+歌詞
+</label>
+
+<textarea
+  id="lyrics"
+  placeholder="応援歌の歌詞を入力"
+></textarea>
+
+<div class="lyrics-note">
+歌詞はフレーズごとに改行してください。
+</div>
+
+</div>
+
 </section>
+
+
+<!-- ============================== -->
+<!-- 03 M4A -->
+<!-- ============================== -->
 
 <section class="card">
-<div class="card-title">03 /// MIDI DATA</div>
-<div class="music-row"><div><div class="music-name">トラック1　メロディー</div><div class="music-detail">ZIP内MIDIの1番目</div></div><div id="melodyStatus" class="status">解析待ち</div></div>
-<div class="music-row"><div><div class="music-name">トラック2　コード進行</div><div class="music-detail">ZIP内MIDIの2番目</div></div><div id="chordStatus" class="status">解析待ち</div></div>
-<div class="music-row"><div><div class="music-name">トラック3　ベース</div><div class="music-detail">ZIP内MIDIの3番目</div></div><div id="bassStatus" class="status">解析待ち</div></div>
-<div class="music-row"><div><div class="music-name">GarageBand / 元ZIP</div><div class="music-detail">選択したZIP本体も保存</div></div><div id="zipStatus" class="status">解析待ち</div></div>
-</section>
 
-<section class="card"><div class="card-title">04 /// REGISTER</div>
-<button type="button" id="registerButton" class="register-button" onclick="registerPlayer()">この選手を登録</button><div id="message"></div>
-</section>
+<div class="card-title">
+03 /// SELECT AUDIO
 </div>
 
-<section class="card"><div class="card-title">05 /// REGISTERED DATA</div><div id="savedList" class="saved-list"><div class="empty">登録データはありません</div></div></section>
+<div class="form-group">
+
+<label
+  class="form-label"
+  for="audioFile"
+>
+応援歌音源（m4a）
+<span class="required">*</span>
+</label>
+
+<input
+  type="file"
+  id="audioFile"
+  class="file-input"
+  accept=".m4a,audio/mp4,audio/x-m4a"
+>
+
+</div>
+
+<div class="selected-box">
+
+<div class="selected-label">
+SELECTED AUDIO
+</div>
+
+<div
+  id="selectedAudioName"
+  class="selected-file-name"
+>
+m4aが選択されていません
+</div>
+
+</div>
+
+<div
+  id="audioResult"
+  class="file-result"
+></div>
+
+</section>
+
+
+<!-- ============================== -->
+<!-- 04 MIDI -->
+<!-- ============================== -->
+
+<section class="card">
+
+<div class="card-title">
+04 /// MIDI DATA
+</div>
+
+
+<div class="music-row">
+
+<div>
+
+<div class="music-name">
+トラック1　メロディー
+</div>
+
+<div class="music-detail">
+ZIP内MIDIの1番目
+</div>
+
+</div>
+
+<div
+  id="melodyStatus"
+  class="status"
+>
+解析待ち
+</div>
+
+</div>
+
+
+<div class="music-row">
+
+<div>
+
+<div class="music-name">
+トラック2　コード進行
+</div>
+
+<div class="music-detail">
+ZIP内MIDIの2番目
+</div>
+
+</div>
+
+<div
+  id="chordStatus"
+  class="status"
+>
+解析待ち
+</div>
+
+</div>
+
+
+<div class="music-row">
+
+<div>
+
+<div class="music-name">
+トラック3　ベース
+</div>
+
+<div class="music-detail">
+ZIP内MIDIの3番目
+</div>
+
+</div>
+
+<div
+  id="bassStatus"
+  class="status"
+>
+解析待ち
+</div>
+
+</div>
+
+
+<div class="music-row">
+
+<div>
+
+<div class="music-name">
+GarageBand / 元ZIP
+</div>
+
+<div class="music-detail">
+選択したZIP本体も保存
+</div>
+
+</div>
+
+<div
+  id="zipStatus"
+  class="status"
+>
+解析待ち
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ============================== -->
+<!-- 05 REGISTER -->
+<!-- ============================== -->
+
+<section class="card">
+
+<div class="card-title">
+05 /// REGISTER
+</div>
+
+<button
+  type="button"
+  id="registerButton"
+  class="register-button"
+  onclick="registerPlayer()"
+>
+この選手を登録
+</button>
+
+<div id="message"></div>
+
+</section>
+
+</div>
+
+
+<!-- ============================== -->
+<!-- 06 SAVED -->
+<!-- ============================== -->
+
+<section class="card">
+
+<div class="card-title">
+06 /// REGISTERED DATA
+</div>
+
+<div
+  id="savedList"
+  class="saved-list"
+>
+
+<div class="empty">
+登録データはありません
+</div>
+
+</div>
+
+</section>
+
 </main>
 
+
 <script src="players.js"></script>
+
 <script>
-const DB_NAME="OuenkaBaseRegisterDB", DB_VERSION=1, STORE_NAME="registrations";
-let db=null, selectedZipFile=null, extractedMidi={melody:null,chord:null,bass:null};
-const $=id=>document.getElementById(id);
+
+/* =========================================
+   OUENKA BASE
+   DATA REGISTER
+========================================= */
+
+
+/*
+Cloudflare Worker
+*/
+const PLAYER_API =
+  "https://ouenka-base-search.ninzin5600.workers.dev";
+
+
+/*
+IndexedDB
+*/
+const DB_NAME =
+  "OuenkaBaseRegisterDB";
+
+const DB_VERSION =
+  1;
+
+const STORE_NAME =
+  "registrations";
+
+
+let db = null;
+
+let selectedZipFile = null;
+
+let selectedAudioFile = null;
+
+let extractedMidi = {
+  melody:null,
+  chord:null,
+  bass:null
+};
+
+
+const $ = id =>
+  document.getElementById(id);
+
+
+/* =========================================
+   IndexedDB
+========================================= */
 
 function openDB(){
- return new Promise((resolve,reject)=>{
-  const req=indexedDB.open(DB_NAME,DB_VERSION);
-  req.onupgradeneeded=e=>{
-   const d=e.target.result;
-   if(!d.objectStoreNames.contains(STORE_NAME)){
-    const s=d.createObjectStore(STORE_NAME,{keyPath:"id",autoIncrement:true});
-    s.createIndex("name","name",{unique:false});
-    s.createIndex("savedAt","savedAt",{unique:false});
-   }
-  };
-  req.onsuccess=()=>{db=req.result;resolve(db)};
-  req.onerror=()=>reject(req.error);
- });
-}
-function getAllSaved(){
- return new Promise((resolve,reject)=>{
-  const r=db.transaction(STORE_NAME,"readonly").objectStore(STORE_NAME).getAll();
-  r.onsuccess=()=>resolve(r.result||[]); r.onerror=()=>reject(r.error);
- });
-}
-function addSaved(data){
- return new Promise((resolve,reject)=>{
-  const r=db.transaction(STORE_NAME,"readwrite").objectStore(STORE_NAME).add(data);
-  r.onsuccess=()=>resolve(r.result); r.onerror=()=>reject(r.error);
- });
-}
-function publicSameNameCount(name){
- if(typeof players!=="object"||!players)return 0;
- return Object.values(players).filter(p=>String(p.name||"").trim()===name).length;
-}
-async function localSameNameCount(name){
- if(!db||!name)return 0;
- const all=await getAllSaved();
- return all.filter(p=>p.name===name).length;
-}
-async function updateProductionNumber(){
- const name=$("playerName").value.trim();
- if(!name){$("productionNumberDisplay").textContent="1";return 1}
- const n=publicSameNameCount(name)+await localSameNameCount(name)+1;
- $("productionNumberDisplay").textContent=String(n); return n;
-}
-$("playerName").addEventListener("input",updateProductionNumber);
-window.addEventListener("playersLoaded",updateProductionNumber);
 
-function setStatus(id,text,kind=""){
- const e=$(id);e.textContent=text;e.className="status"+(kind?" "+kind:"");
+  return new Promise(
+    (resolve,reject)=>{
+
+      const req =
+        indexedDB.open(
+          DB_NAME,
+          DB_VERSION
+        );
+
+      req.onupgradeneeded =
+        e => {
+
+          const d =
+            e.target.result;
+
+          if(
+            !d.objectStoreNames.contains(
+              STORE_NAME
+            )
+          ){
+
+            const s =
+              d.createObjectStore(
+                STORE_NAME,
+                {
+                  keyPath:"id",
+                  autoIncrement:true
+                }
+              );
+
+            s.createIndex(
+              "name",
+              "name",
+              {
+                unique:false
+              }
+            );
+
+            s.createIndex(
+              "savedAt",
+              "savedAt",
+              {
+                unique:false
+              }
+            );
+          }
+        };
+
+
+      req.onsuccess =
+        () => {
+
+          db =
+            req.result;
+
+          resolve(db);
+        };
+
+
+      req.onerror =
+        () =>
+          reject(req.error);
+    }
+  );
 }
-function resetMidi(){
- extractedMidi={melody:null,chord:null,bass:null};
- setStatus("melodyStatus","解析待ち");setStatus("chordStatus","解析待ち");setStatus("bassStatus","解析待ち");setStatus("zipStatus","解析待ち");
+
+
+/* =========================================
+   保存データ取得
+========================================= */
+
+function getAllSaved(){
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const r =
+        db
+          .transaction(
+            STORE_NAME,
+            "readonly"
+          )
+          .objectStore(
+            STORE_NAME
+          )
+          .getAll();
+
+
+      r.onsuccess =
+        () =>
+          resolve(
+            r.result || []
+          );
+
+
+      r.onerror =
+        () =>
+          reject(
+            r.error
+          );
+    }
+  );
 }
-function baseName(path){return decodeURIComponent(path.split("/").pop()||path)}
-async function analyzeZip(file){
- resetMidi();
- try{
-  const zip=await JSZip.loadAsync(file);
-  const midiEntries=Object.values(zip.files).filter(x=>!x.dir&&/\.(mid|midi)$/i.test(x.name))
-   .sort((a,b)=>a.name.localeCompare(b.name,"ja",{numeric:true,sensitivity:"base"}));
-  const slots=[["melody","melodyStatus","メロディー"],["chord","chordStatus","コード進行"],["bass","bassStatus","ベース"]];
-  for(let i=0;i<3;i++){
-   const [key,status]=slots[i], entry=midiEntries[i];
-   if(entry){
-    const blob=await entry.async("blob");
-    extractedMidi[key]=new File([blob],baseName(entry.name),{type:"audio/midi"});
-    setStatus(status,"✓ "+baseName(entry.name),"ok");
-   }else setStatus(status,"× MIDIが見つかりません","ng");
+
+
+/* =========================================
+   保存
+========================================= */
+
+function addSaved(data){
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const r =
+        db
+          .transaction(
+            STORE_NAME,
+            "readwrite"
+          )
+          .objectStore(
+            STORE_NAME
+          )
+          .add(data);
+
+
+      r.onsuccess =
+        () =>
+          resolve(
+            r.result
+          );
+
+
+      r.onerror =
+        () =>
+          reject(
+            r.error
+          );
+    }
+  );
+}
+
+
+/* =========================================
+   制作番号
+========================================= */
+
+function publicSameNameCount(name){
+
+  if(
+    typeof players !== "object" ||
+    !players
+  ){
+    return 0;
   }
-  setStatus("zipStatus","✓ "+file.name,"ok");
-  if(midiEntries.length<3) showError("ZIP内にMIDIファイルが3つ必要です。トラック1＝メロディー、2＝コード進行、3＝ベースの順で保存します。");
- }catch(e){console.error(e);showError("ZIPを解析できませんでした");setStatus("zipStatus","× 解析失敗","ng")}
+
+  return Object
+    .values(players)
+    .filter(
+      p =>
+        String(
+          p.name || ""
+        ).trim() === name
+    )
+    .length;
 }
-$("zipFile").addEventListener("change",async()=>{
- const f=$("zipFile").files?.[0];
- if(!f){selectedZipFile=null;$("selectedFileName").textContent="ZIPが選択されていません";$("fileResult").style.display="none";$("registerArea").style.display="none";return}
- if(!f.name.toLowerCase().endsWith(".zip")){selectedZipFile=null;$("selectedFileName").textContent=f.name;$("fileResult").style.display="block";$("fileResult").style.color="#a51f1f";$("fileResult").textContent="× ZIPファイルではありません";$("registerArea").style.display="none";return}
- selectedZipFile=f;$("selectedFileName").textContent=f.name;$("fileResult").style.display="block";$("fileResult").style.color="#137333";$("fileResult").textContent="✓ ZIPを選択できました："+f.name;$("registerArea").style.display="block";
- const auto=f.name.replace(/\.zip$/i,"").replace(/\s*\(\d+\)\s*$/i,"").trim();$("playerName").value=auto;clearMessage();await updateProductionNumber();await analyzeZip(f);
-});
+
+
+async function localSameNameCount(name){
+
+  if(
+    !db ||
+    !name
+  ){
+    return 0;
+  }
+
+  const all =
+    await getAllSaved();
+
+  return all.filter(
+    p =>
+      p.name === name
+  ).length;
+}
+
+
+async function updateProductionNumber(){
+
+  const name =
+    $("playerName")
+      .value
+      .trim();
+
+  if(!name){
+
+    $("productionNumberDisplay")
+      .textContent =
+      "1";
+
+    return 1;
+  }
+
+
+  const n =
+    publicSameNameCount(name) +
+    await localSameNameCount(name) +
+    1;
+
+
+  $("productionNumberDisplay")
+    .textContent =
+    String(n);
+
+
+  return n;
+}
+
+
+$("playerName")
+  .addEventListener(
+    "input",
+    updateProductionNumber
+  );
+
+
+window.addEventListener(
+  "playersLoaded",
+  updateProductionNumber
+);
+
+
+/* =========================================
+   NPB選手情報取得
+========================================= */
+
+async function searchPlayer(){
+
+  const name =
+    $("playerName")
+      .value
+      .trim();
+
+
+  const button =
+    $("playerSearchButton");
+
+
+  const result =
+    $("playerSearchResult");
+
+
+  if(!name){
+
+    result.className =
+      "player-search-result error";
+
+    result.textContent =
+      "選手名を入力してください。";
+
+    return;
+  }
+
+
+  button.disabled = true;
+
+  button.textContent =
+    "取得中...";
+
+
+  result.className =
+    "player-search-result loading";
+
+  result.textContent =
+    "NPB公式から選手情報を取得しています...";
+
+
+  try{
+
+    const response =
+      await fetch(
+        PLAYER_API +
+        "/player?name=" +
+        encodeURIComponent(name)
+      );
+
+
+    if(!response.ok){
+
+      throw new Error(
+        "HTTP " +
+        response.status
+      );
+    }
+
+
+    const data =
+      await response.json();
+
+
+    if(
+      !data.ok ||
+      !data.found ||
+      !data.player
+    ){
+
+      result.className =
+        "player-search-result error";
+
+      result.textContent =
+        "NPB公式で選手情報を取得できませんでした。入力内容を確認してください。";
+
+      return;
+    }
+
+
+    const player =
+      data.player;
+
+
+    /*
+    読み仮名
+    「・」「･」「空白」を削除
+    */
+    if(player.reading){
+
+      $("reading").value =
+        String(
+          player.reading
+        )
+        .replace(
+          /[・･\s　]/g,
+          ""
+        );
+    }
+
+
+    /*
+    球団
+    */
+    if(player.team){
+
+      const teamSelect =
+        $("team");
+
+
+      const exists =
+        Array
+          .from(
+            teamSelect.options
+          )
+          .some(
+            option =>
+              option.value ===
+              player.team
+          );
+
+
+      if(exists){
+
+        teamSelect.value =
+          player.team;
+      }
+    }
+
+
+    /*
+    背番号
+    */
+    if(
+      player.number !== undefined &&
+      player.number !== null
+    ){
+
+      $("number").value =
+        player.number;
+    }
+
+
+    await updateProductionNumber();
+
+
+    result.className =
+      "player-search-result success";
+
+
+    result.innerHTML =
+      "✓ NPB公式から取得しました" +
+      "<br>" +
+      "読み仮名：" +
+      escapeHtml(
+        $("reading").value ||
+        "取得なし"
+      ) +
+      "<br>" +
+      "球団：" +
+      escapeHtml(
+        player.team ||
+        "取得なし"
+      ) +
+      "<br>" +
+      "背番号：" +
+      escapeHtml(
+        String(
+          player.number || "取得なし"
+        )
+      ) +
+      '<div class="source-note">情報源：NPB公式</div>';
+
+
+  }catch(error){
+
+    console.error(error);
+
+
+    result.className =
+      "player-search-result error";
+
+
+    result.textContent =
+      "選手情報の取得に失敗しました。通信状態を確認して、もう一度お試しください。";
+
+  }finally{
+
+    button.disabled = false;
+
+    button.textContent =
+      "NPBから取得";
+  }
+}
+
+
+/* =========================================
+   Enterキーでも検索
+========================================= */
+
+$("playerName")
+  .addEventListener(
+    "keydown",
+    event => {
+
+      if(
+        event.key === "Enter"
+      ){
+
+        event.preventDefault();
+
+        searchPlayer();
+      }
+    }
+  );
+
+
+/* =========================================
+   MIDI表示
+========================================= */
+
+function setStatus(
+  id,
+  text,
+  kind=""
+){
+
+  const e =
+    $(id);
+
+  e.textContent =
+    text;
+
+  e.className =
+    "status" +
+    (
+      kind
+        ? " " + kind
+        : ""
+    );
+}
+
+
+function resetMidi(){
+
+  extractedMidi = {
+    melody:null,
+    chord:null,
+    bass:null
+  };
+
+
+  setStatus(
+    "melodyStatus",
+    "解析待ち"
+  );
+
+  setStatus(
+    "chordStatus",
+    "解析待ち"
+  );
+
+  setStatus(
+    "bassStatus",
+    "解析待ち"
+  );
+
+  setStatus(
+    "zipStatus",
+    "解析待ち"
+  );
+}
+
+
+function baseName(path){
+
+  try{
+
+    return decodeURIComponent(
+      path
+        .split("/")
+        .pop() ||
+      path
+    );
+
+  }catch{
+
+    return path
+      .split("/")
+      .pop() ||
+      path;
+  }
+}
+
+
+/* =========================================
+   ZIP解析
+========================================= */
+
+async function analyzeZip(file){
+
+  resetMidi();
+
+
+  try{
+
+    const zip =
+      await JSZip.loadAsync(
+        file
+      );
+
+
+    const midiEntries =
+      Object
+        .values(
+          zip.files
+        )
+        .filter(
+          x =>
+            !x.dir &&
+            /\.(mid|midi)$/i
+              .test(
+                x.name
+              )
+        )
+        .sort(
+          (a,b) =>
+            a.name.localeCompare(
+              b.name,
+              "ja",
+              {
+                numeric:true,
+                sensitivity:"base"
+              }
+            )
+        );
+
+
+    const slots = [
+
+      [
+        "melody",
+        "melodyStatus"
+      ],
+
+      [
+        "chord",
+        "chordStatus"
+      ],
+
+      [
+        "bass",
+        "bassStatus"
+      ]
+
+    ];
+
+
+    for(
+      let i = 0;
+      i < 3;
+      i++
+    ){
+
+      const [
+        key,
+        status
+      ] =
+        slots[i];
+
+
+      const entry =
+        midiEntries[i];
+
+
+      if(entry){
+
+        const blob =
+          await entry.async(
+            "blob"
+          );
+
+
+        extractedMidi[key] =
+          new File(
+            [blob],
+            baseName(
+              entry.name
+            ),
+            {
+              type:
+                "audio/midi"
+            }
+          );
+
+
+        setStatus(
+          status,
+          "✓ " +
+          baseName(
+            entry.name
+          ),
+          "ok"
+        );
+
+      }else{
+
+        setStatus(
+          status,
+          "× MIDIが見つかりません",
+          "ng"
+        );
+      }
+    }
+
+
+    setStatus(
+      "zipStatus",
+      "✓ " +
+      file.name,
+      "ok"
+    );
+
+
+    if(
+      midiEntries.length < 3
+    ){
+
+      showError(
+        "ZIP内にMIDIファイルが3つ必要です。トラック1＝メロディー、トラック2＝コード進行、トラック3＝ベースです。"
+      );
+    }
+
+
+  }catch(error){
+
+    console.error(
+      error
+    );
+
+
+    showError(
+      "ZIPを解析できませんでした。"
+    );
+
+
+    setStatus(
+      "zipStatus",
+      "× 解析失敗",
+      "ng"
+    );
+  }
+}
+
+
+/* =========================================
+   ZIP選択
+========================================= */
+
+$("zipFile")
+  .addEventListener(
+    "change",
+    async () => {
+
+      const f =
+        $("zipFile")
+          .files?.[0];
+
+
+      if(!f){
+
+        selectedZipFile =
+          null;
+
+
+        $("selectedFileName")
+          .textContent =
+          "ZIPが選択されていません";
+
+
+        $("fileResult")
+          .style
+          .display =
+          "none";
+
+
+        $("registerArea")
+          .style
+          .display =
+          "none";
+
+
+        return;
+      }
+
+
+      if(
+        !f.name
+          .toLowerCase()
+          .endsWith(
+            ".zip"
+          )
+      ){
+
+        selectedZipFile =
+          null;
+
+
+        $("selectedFileName")
+          .textContent =
+          f.name;
+
+
+        $("fileResult")
+          .style
+          .display =
+          "block";
+
+
+        $("fileResult")
+          .style
+          .color =
+          "#a51f1f";
+
+
+        $("fileResult")
+          .textContent =
+          "× ZIPファイルではありません";
+
+
+        $("registerArea")
+          .style
+          .display =
+          "none";
+
+
+        return;
+      }
+
+
+      selectedZipFile =
+        f;
+
+
+      $("selectedFileName")
+        .textContent =
+        f.name;
+
+
+      $("fileResult")
+        .style
+        .display =
+        "block";
+
+
+      $("fileResult")
+        .style
+        .color =
+        "#137333";
+
+
+      $("fileResult")
+        .textContent =
+        "✓ ZIPを選択できました：" +
+        f.name;
+
+
+      $("registerArea")
+        .style
+        .display =
+        "block";
+
+
+      /*
+      ZIP名から選手名を仮入力
+      */
+      const auto =
+        f.name
+          .replace(
+            /\.zip$/i,
+            ""
+          )
+          .replace(
+            /\s*\(\d+\)\s*$/i,
+            ""
+          )
+          .trim();
+
+
+      $("playerName")
+        .value =
+        auto;
+
+
+      /*
+      前の選手情報を消す
+      */
+      $("reading").value =
+        "";
+
+      $("team").value =
+        "";
+
+      $("number").value =
+        "";
+
+
+      $("playerSearchResult")
+        .className =
+        "player-search-result";
+
+
+      $("playerSearchResult")
+        .textContent =
+        "";
+
+
+      clearMessage();
+
+
+      await updateProductionNumber();
+
+      await analyzeZip(f);
+    }
+  );
+
+
+/* =========================================
+   m4a選択
+========================================= */
+
+$("audioFile")
+  .addEventListener(
+    "change",
+    () => {
+
+      const file =
+        $("audioFile")
+          .files?.[0];
+
+
+      const result =
+        $("audioResult");
+
+
+      if(!file){
+
+        selectedAudioFile =
+          null;
+
+
+        $("selectedAudioName")
+          .textContent =
+          "m4aが選択されていません";
+
+
+        result.style.display =
+          "none";
+
+
+        return;
+      }
+
+
+      if(
+        !file.name
+          .toLowerCase()
+          .endsWith(
+            ".m4a"
+          )
+      ){
+
+        selectedAudioFile =
+          null;
+
+
+        $("selectedAudioName")
+          .textContent =
+          file.name;
+
+
+        result.style.display =
+          "block";
+
+
+        result.style.color =
+          "#a51f1f";
+
+
+        result.textContent =
+          "× m4aファイルを選択してください";
+
+
+        return;
+      }
+
+
+      selectedAudioFile =
+        file;
+
+
+      $("selectedAudioName")
+        .textContent =
+        file.name;
+
+
+      result.style.display =
+        "block";
+
+
+      result.style.color =
+        "#137333";
+
+
+      result.textContent =
+        "✓ m4aを選択できました：" +
+        file.name;
+    }
+  );
+
+
+/* =========================================
+   登録
+========================================= */
+
 async function registerPlayer(){
- const name=$("playerName").value.trim(),reading=$("reading").value.trim(),team=$("team").value,type=document.querySelector('input[name="playerType"]:checked')?.value||"",number=$("number").value,lyrics=$("lyrics").value.trim();
- if(!selectedZipFile){showError("ZIPを選択してください");return}
- if(!name){showError("選手名を入力してください");return}
- if(!reading){showError("読み仮名を入力してください");return}
- if(!team){showError("球団を選択してください");return}
- if(!extractedMidi.melody||!extractedMidi.chord||!extractedMidi.bass){showError("MIDIを3つ確認できません。トラック1＝メロディー、2＝コード進行、3＝ベースが必要です。");return}
- const productionNumber=await updateProductionNumber();
- $("registerButton").disabled=true;
- try{
-  const data={name,reading,team,type,number,productionNumber,lyrics,
-   zipFileName:selectedZipFile.name,originalZip:selectedZipFile,
-   midi:{track1Name:"メロディー",track1:extractedMidi.melody,track2Name:"コード進行",track2:extractedMidi.chord,track3Name:"ベース",track3:extractedMidi.bass},
-   savedAt:new Date().toISOString()};
-  await addSaved(data);
-  showSuccess("✓ 登録しました："+name+"　制作番号 "+productionNumber);
-  await renderSavedList(); await updateProductionNumber();
- }catch(e){console.error(e);showError("登録に失敗しました。ブラウザの保存容量も確認してください。")}
- finally{$("registerButton").disabled=false}
+
+  const name =
+    $("playerName")
+      .value
+      .trim();
+
+
+  const reading =
+    $("reading")
+      .value
+      .trim()
+      .replace(
+        /[・･\s　]/g,
+        ""
+      );
+
+
+  const team =
+    $("team")
+      .value;
+
+
+  const type =
+    document
+      .querySelector(
+        'input[name="playerType"]:checked'
+      )
+      ?.value || "";
+
+
+  const number =
+    $("number")
+      .value;
+
+
+  const lyrics =
+    $("lyrics")
+      .value
+      .trim();
+
+
+  if(!selectedZipFile){
+
+    showError(
+      "ZIPを選択してください。"
+    );
+
+    return;
+  }
+
+
+  if(!name){
+
+    showError(
+      "選手名を入力してください。"
+    );
+
+    return;
+  }
+
+
+  if(!reading){
+
+    showError(
+      "読み仮名を入力してください。"
+    );
+
+    return;
+  }
+
+
+  if(!team){
+
+    showError(
+      "球団を選択してください。"
+    );
+
+    return;
+  }
+
+
+  if(!selectedAudioFile){
+
+    showError(
+      "応援歌のm4aファイルを選択してください。"
+    );
+
+    return;
+  }
+
+
+  if(
+    !extractedMidi.melody ||
+    !extractedMidi.chord ||
+    !extractedMidi.bass
+  ){
+
+    showError(
+      "MIDIを3つ確認できません。トラック1＝メロディー、トラック2＝コード進行、トラック3＝ベースが必要です。"
+    );
+
+    return;
+  }
+
+
+  const productionNumber =
+    await updateProductionNumber();
+
+
+  $("registerButton")
+    .disabled =
+    true;
+
+
+  try{
+
+    const data = {
+
+      name:
+        name,
+
+      reading:
+        reading,
+
+      team:
+        team,
+
+      type:
+        type,
+
+      number:
+        number,
+
+      productionNumber:
+        productionNumber,
+
+      lyrics:
+        lyrics,
+
+
+      /*
+      m4a
+      */
+      audioFileName:
+        selectedAudioFile.name,
+
+      audioFile:
+        selectedAudioFile,
+
+
+      /*
+      元ZIP
+      */
+      zipFileName:
+        selectedZipFile.name,
+
+      originalZip:
+        selectedZipFile,
+
+
+      /*
+      MIDI
+      */
+      midi:{
+
+        track1Name:
+          "メロディー",
+
+        track1:
+          extractedMidi.melody,
+
+
+        track2Name:
+          "コード進行",
+
+        track2:
+          extractedMidi.chord,
+
+
+        track3Name:
+          "ベース",
+
+        track3:
+          extractedMidi.bass
+      },
+
+
+      savedAt:
+        new Date()
+          .toISOString()
+    };
+
+
+    await addSaved(
+      data
+    );
+
+
+    showSuccess(
+      "✓ 登録しました：" +
+      name +
+      "　制作番号 " +
+      productionNumber
+    );
+
+
+    await renderSavedList();
+
+    await updateProductionNumber();
+
+
+  }catch(error){
+
+    console.error(
+      error
+    );
+
+
+    showError(
+      "登録に失敗しました。ブラウザの保存容量も確認してください。"
+    );
+
+
+  }finally{
+
+    $("registerButton")
+      .disabled =
+      false;
+  }
 }
+
+
+/* =========================================
+   登録済み一覧
+========================================= */
+
 async function renderSavedList(){
- const all=(await getAllSaved()).sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
- const area=$("savedList");area.innerHTML="";
- if(!all.length){area.innerHTML='<div class="empty">登録データはありません</div>';return}
- all.forEach(p=>{
-  const d=document.createElement("div");d.className="saved-item";
-  d.innerHTML='<div class="saved-title"></div><div class="saved-meta"></div>';
-  d.querySelector(".saved-title").textContent=p.name+"　制作番号 "+p.productionNumber;
-  d.querySelector(".saved-meta").textContent=p.team+" ／ "+p.type+(p.number?" ／ 背番号 "+p.number:"")+" ／ MIDI：メロディー・コード進行・ベース";
-  area.appendChild(d);
- });
+
+  const all =
+    (
+      await getAllSaved()
+    )
+    .sort(
+      (a,b) =>
+        new Date(
+          b.savedAt
+        ) -
+        new Date(
+          a.savedAt
+        )
+    );
+
+
+  const area =
+    $("savedList");
+
+
+  area.innerHTML =
+    "";
+
+
+  if(
+    !all.length
+  ){
+
+    area.innerHTML =
+      '<div class="empty">登録データはありません</div>';
+
+    return;
+  }
+
+
+  all.forEach(
+    p => {
+
+      const d =
+        document.createElement(
+          "div"
+        );
+
+
+      d.className =
+        "saved-item";
+
+
+      d.innerHTML =
+        '<div class="saved-title"></div>' +
+        '<div class="saved-meta"></div>';
+
+
+      d.querySelector(
+        ".saved-title"
+      )
+      .textContent =
+        p.name +
+        "　制作番号 " +
+        p.productionNumber;
+
+
+      let meta =
+        p.team +
+        " ／ " +
+        p.type;
+
+
+      if(
+        p.number
+      ){
+
+        meta +=
+          " ／ 背番号 " +
+          p.number;
+      }
+
+
+      if(
+        p.audioFileName
+      ){
+
+        meta +=
+          " ／ m4a：" +
+          p.audioFileName;
+      }
+
+
+      meta +=
+        " ／ MIDI：メロディー・コード進行・ベース";
+
+
+      d.querySelector(
+        ".saved-meta"
+      )
+      .textContent =
+        meta;
+
+
+      area.appendChild(
+        d
+      );
+    }
+  );
 }
-function showError(t){$("message").className="message-error";$("message").textContent=t}
-function showSuccess(t){$("message").className="message-success";$("message").textContent=t}
-function clearMessage(){$("message").className="";$("message").style.display="none";$("message").textContent=""}
-function backToBase(){window.location.href="./index.html"}
-(async()=>{try{await openDB();await renderSavedList();await updateProductionNumber()}catch(e){console.error(e);showError("ブラウザ内保存を開始できませんでした")}})();
+
+
+/* =========================================
+   メッセージ
+========================================= */
+
+function showError(text){
+
+  $("message")
+    .className =
+    "message-error";
+
+
+  $("message")
+    .textContent =
+    text;
+}
+
+
+function showSuccess(text){
+
+  $("message")
+    .className =
+    "message-success";
+
+
+  $("message")
+    .textContent =
+    text;
+}
+
+
+function clearMessage(){
+
+  $("message")
+    .className =
+    "";
+
+
+  $("message")
+    .style
+    .display =
+    "none";
+
+
+  $("message")
+    .textContent =
+    "";
+}
+
+
+/* =========================================
+   HTMLエスケープ
+========================================= */
+
+function escapeHtml(value){
+
+  return String(
+    value ?? ""
+  )
+  .replace(
+    /&/g,
+    "&amp;"
+  )
+  .replace(
+    /</g,
+    "&lt;"
+  )
+  .replace(
+    />/g,
+    "&gt;"
+  )
+  .replace(
+    /"/g,
+    "&quot;"
+  )
+  .replace(
+    /'/g,
+    "&#039;"
+  );
+}
+
+
+/* =========================================
+   BASEへ戻る
+========================================= */
+
+function backToBase(){
+
+  window.location.href =
+    "./index.html";
+}
+
+
+/* =========================================
+   起動
+========================================= */
+
+(async()=>{
+
+  try{
+
+    await openDB();
+
+    await renderSavedList();
+
+    await updateProductionNumber();
+
+
+  }catch(error){
+
+    console.error(
+      error
+    );
+
+
+    showError(
+      "ブラウザ内保存を開始できませんでした。"
+    );
+  }
+
+})();
+
 </script>
+
 </body>
 </html>
