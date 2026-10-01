@@ -125,7 +125,10 @@ h1{
 .file-result{
   display:none;
   margin-top:14px;
+  padding:12px;
+  border-radius:7px;
   font-weight:bold;
+  line-height:1.5;
 }
 
 #registerArea{
@@ -333,6 +336,10 @@ textarea{
   color:#a51f1f;
 }
 
+.status.loading{
+  color:#805b00;
+}
+
 .register-button{
   width:100%;
   border:none;
@@ -442,7 +449,7 @@ textarea{
   class="back-button"
   onclick="backToBase()"
 >
-  ← BASEに戻る
+← BASEに戻る
 </button>
 
 </header>
@@ -456,7 +463,8 @@ OUENKA BASE /// DATA REGISTER
 <h1>応援歌データ登録</h1>
 
 <div class="description">
-GarageBand元ZIP・MIDI抽出結果ZIP・m4aを選択し、選手情報・MIDI・音源をブラウザ内に登録します。
+GarageBand ZIPを選択すると、内部のMIDIデータを自動解析します。
+選手情報・MIDI・m4a・GarageBand ZIPをブラウザ内に登録します。
 </div>
 
 
@@ -497,12 +505,6 @@ ZIPが選択されていません
   class="file-result"
 ></div>
 
-<div style="margin-top:18px;">
-  <div class="selected-label">MIDI EXTRACT ZIP</div>
-  <input type="file" id="midiExtractZipFile" class="file-input" accept=".zip,application/zip">
-  <div id="midiExtractResult" class="file-result"></div>
-</div>
-
 </section>
 
 
@@ -518,7 +520,6 @@ ZIPが選択されていません
 <div class="card-title">
 02 /// PLAYER DATA
 </div>
-
 
 <div class="form-group">
 
@@ -588,30 +589,24 @@ NPBから取得
 
 <select id="team">
 
-<option value="">
-球団を選択
-</option>
+<option value="">球団を選択</option>
 
 <optgroup label="セ・リーグ">
-
 <option>阪神タイガース</option>
 <option>横浜DeNAベイスターズ</option>
 <option>読売ジャイアンツ</option>
 <option>中日ドラゴンズ</option>
 <option>広島東洋カープ</option>
 <option>東京ヤクルトスワローズ</option>
-
 </optgroup>
 
 <optgroup label="パ・リーグ">
-
 <option>福岡ソフトバンクホークス</option>
 <option>北海道日本ハムファイターズ</option>
 <option>オリックス・バファローズ</option>
 <option>東北楽天ゴールデンイーグルス</option>
 <option>埼玉西武ライオンズ</option>
 <option>千葉ロッテマリーンズ</option>
-
 </optgroup>
 
 </select>
@@ -629,7 +624,6 @@ NPBから取得
 <div class="radio-box">
 
 <div class="radio-item">
-
 <input
   type="radio"
   name="playerType"
@@ -637,27 +631,17 @@ NPBから取得
   value="現在使用"
   checked
 >
-
-<label for="inUse">
-現在使用
-</label>
-
+<label for="inUse">現在使用</label>
 </div>
 
-
 <div class="radio-item">
-
 <input
   type="radio"
   name="playerType"
   id="notInUse"
   value="未使用"
 >
-
-<label for="notInUse">
-未使用
-</label>
-
+<label for="notInUse">未使用</label>
 </div>
 
 </div>
@@ -684,7 +668,6 @@ NPBから取得
 >
 
 </div>
-
 
 <div class="form-group">
 
@@ -793,19 +776,15 @@ m4aが選択されていません
 04 /// MIDI DATA
 </div>
 
-
 <div class="music-row">
 
 <div>
-
 <div class="music-name">
 トラック1　メロディー
 </div>
-
 <div class="music-detail">
-抽出結果ZIP / tracks/1_ を使用
+GarageBand ZIPから自動抽出
 </div>
-
 </div>
 
 <div
@@ -821,15 +800,12 @@ m4aが選択されていません
 <div class="music-row">
 
 <div>
-
 <div class="music-name">
 トラック2　コード進行
 </div>
-
 <div class="music-detail">
-抽出結果ZIP / tracks/2_ を使用
+GarageBand ZIPから自動抽出
 </div>
-
 </div>
 
 <div
@@ -845,15 +821,12 @@ m4aが選択されていません
 <div class="music-row">
 
 <div>
-
 <div class="music-name">
 トラック3　ベース
 </div>
-
 <div class="music-detail">
-抽出結果ZIP / tracks/3_ を使用
+GarageBand ZIPから自動抽出
 </div>
-
 </div>
 
 <div
@@ -869,15 +842,12 @@ m4aが選択されていません
 <div class="music-row">
 
 <div>
-
 <div class="music-name">
 GarageBand / 元ZIP
 </div>
-
 <div class="music-detail">
 選択したZIP本体も保存
 </div>
-
 </div>
 
 <div
@@ -932,11 +902,9 @@ GarageBand / 元ZIP
   id="savedList"
   class="saved-list"
 >
-
 <div class="empty">
 登録データはありません
 </div>
-
 </div>
 
 </section>
@@ -949,21 +917,20 @@ GarageBand / 元ZIP
 <script>
 
 /* =========================================
-   OUENKA BASE
-   DATA REGISTER
+   API
 ========================================= */
 
-
-/*
-Cloudflare Worker
-*/
 const PLAYER_API =
   "https://ouenka-base-search.ninzin5600.workers.dev";
 
+const MIDI_EXTRACT_API =
+  "https://ouenka-base-midi.ninzin5600.workers.dev/extract";
 
-/*
-IndexedDB
-*/
+
+/* =========================================
+   IndexedDB
+========================================= */
+
 const DB_NAME =
   "OuenkaBaseRegisterDB";
 
@@ -972,7 +939,6 @@ const DB_VERSION =
 
 const STORE_NAME =
   "registrations";
-
 
 let db = null;
 
@@ -986,13 +952,12 @@ let extractedMidi = {
   bass:null
 };
 
-
 const $ = id =>
   document.getElementById(id);
 
 
 /* =========================================
-   IndexedDB
+   IndexedDB OPEN
 ========================================= */
 
 function openDB(){
@@ -1030,21 +995,16 @@ function openDB(){
             s.createIndex(
               "name",
               "name",
-              {
-                unique:false
-              }
+              {unique:false}
             );
 
             s.createIndex(
               "savedAt",
               "savedAt",
-              {
-                unique:false
-              }
+              {unique:false}
             );
           }
         };
-
 
       req.onsuccess =
         () => {
@@ -1054,7 +1014,6 @@ function openDB(){
 
           resolve(db);
         };
-
 
       req.onerror =
         () =>
@@ -1084,19 +1043,15 @@ function getAllSaved(){
           )
           .getAll();
 
-
       r.onsuccess =
         () =>
           resolve(
             r.result || []
           );
 
-
       r.onerror =
         () =>
-          reject(
-            r.error
-          );
+          reject(r.error);
     }
   );
 }
@@ -1122,19 +1077,13 @@ function addSaved(data){
           )
           .add(data);
 
-
       r.onsuccess =
         () =>
-          resolve(
-            r.result
-          );
-
+          resolve(r.result);
 
       r.onerror =
         () =>
-          reject(
-            r.error
-          );
+          reject(r.error);
     }
   );
 }
@@ -1200,17 +1149,14 @@ async function updateProductionNumber(){
     return 1;
   }
 
-
   const n =
     publicSameNameCount(name) +
     await localSameNameCount(name) +
     1;
 
-
   $("productionNumberDisplay")
     .textContent =
     String(n);
-
 
   return n;
 }
@@ -1221,7 +1167,6 @@ $("playerName")
     "input",
     updateProductionNumber
   );
-
 
 window.addEventListener(
   "playersLoaded",
@@ -1240,14 +1185,11 @@ async function searchPlayer(){
       .value
       .trim();
 
-
   const button =
     $("playerSearchButton");
 
-
   const result =
     $("playerSearchResult");
-
 
   if(!name){
 
@@ -1260,19 +1202,14 @@ async function searchPlayer(){
     return;
   }
 
-
   button.disabled = true;
-
-  button.textContent =
-    "取得中...";
-
+  button.textContent = "取得中...";
 
   result.className =
     "player-search-result loading";
 
   result.textContent =
     "NPB公式から選手情報を取得しています...";
-
 
   try{
 
@@ -1283,7 +1220,6 @@ async function searchPlayer(){
         encodeURIComponent(name)
       );
 
-
     if(!response.ok){
 
       throw new Error(
@@ -1292,10 +1228,8 @@ async function searchPlayer(){
       );
     }
 
-
     const data =
       await response.json();
-
 
     if(
       !data.ok ||
@@ -1307,20 +1241,14 @@ async function searchPlayer(){
         "player-search-result error";
 
       result.textContent =
-        "NPB公式で選手情報を取得できませんでした。入力内容を確認してください。";
+        "NPB公式で選手情報を取得できませんでした。";
 
       return;
     }
 
-
     const player =
       data.player;
 
-
-    /*
-    読み仮名
-    「・」「･」「空白」を削除
-    */
     if(player.reading){
 
       $("reading").value =
@@ -1333,15 +1261,10 @@ async function searchPlayer(){
         );
     }
 
-
-    /*
-    球団
-    */
     if(player.team){
 
       const teamSelect =
         $("team");
-
 
       const exists =
         Array
@@ -1354,7 +1277,6 @@ async function searchPlayer(){
               player.team
           );
 
-
       if(exists){
 
         teamSelect.value =
@@ -1362,10 +1284,6 @@ async function searchPlayer(){
       }
     }
 
-
-    /*
-    背番号
-    */
     if(
       player.number !== undefined &&
       player.number !== null
@@ -1375,13 +1293,10 @@ async function searchPlayer(){
         player.number;
     }
 
-
     await updateProductionNumber();
-
 
     result.className =
       "player-search-result success";
-
 
     result.innerHTML =
       "✓ NPB公式から取得しました" +
@@ -1401,23 +1316,21 @@ async function searchPlayer(){
       "背番号：" +
       escapeHtml(
         String(
-          player.number || "取得なし"
+          player.number ||
+          "取得なし"
         )
       ) +
       '<div class="source-note">情報源：NPB公式</div>';
-
 
   }catch(error){
 
     console.error(error);
 
-
     result.className =
       "player-search-result error";
 
-
     result.textContent =
-      "選手情報の取得に失敗しました。通信状態を確認して、もう一度お試しください。";
+      "選手情報の取得に失敗しました。";
 
   }finally{
 
@@ -1428,10 +1341,6 @@ async function searchPlayer(){
   }
 }
 
-
-/* =========================================
-   Enterキーでも検索
-========================================= */
 
 $("playerName")
   .addEventListener(
@@ -1451,7 +1360,7 @@ $("playerName")
 
 
 /* =========================================
-   MIDI表示
+   MIDI STATUS
 ========================================= */
 
 function setStatus(
@@ -1484,7 +1393,6 @@ function resetMidi(){
     bass:null
   };
 
-
   setStatus(
     "melodyStatus",
     "解析待ち"
@@ -1499,96 +1407,300 @@ function resetMidi(){
     "bassStatus",
     "解析待ち"
   );
+}
 
-  setStatus(
-    "zipStatus",
-    "解析待ち"
+
+/* =========================================
+   Base64 → File
+========================================= */
+
+function base64ToFile(
+  base64,
+  fileName
+){
+
+  const binary =
+    atob(base64);
+
+  const bytes =
+    new Uint8Array(
+      binary.length
+    );
+
+  for(
+    let i = 0;
+    i < binary.length;
+    i++
+  ){
+
+    bytes[i] =
+      binary.charCodeAt(i);
+  }
+
+  return new File(
+    [bytes],
+    fileName,
+    {
+      type:"audio/midi"
+    }
   );
 }
 
 
-function baseName(path){
+/* =========================================
+   projectData探索
+========================================= */
 
-  try{
+async function findProjectData(zipFile){
 
-    return decodeURIComponent(
-      path
-        .split("/")
-        .pop() ||
-      path
+  const zip =
+    await JSZip.loadAsync(
+      zipFile
     );
 
-  }catch{
+  const files =
+    Object.values(
+      zip.files
+    );
 
-    return path
-      .split("/")
-      .pop() ||
-      path;
+  const entry =
+    files.find(
+      item =>
+        !item.dir &&
+        (
+          item.name ===
+            "projectData" ||
+
+          item.name
+            .toLowerCase()
+            .endsWith(
+              "/projectdata"
+            )
+        )
+    );
+
+  if(!entry){
+
+    throw new Error(
+      "GarageBand ZIP内にprojectDataが見つかりません。"
+    );
   }
+
+  return await entry.async(
+    "arraybuffer"
+  );
 }
 
 
 /* =========================================
-   ZIP解析
+   WorkerでMIDI抽出
 ========================================= */
 
-async function analyzeZip(file){
+async function extractMidiFromGarageBand(
+  zipFile
+){
 
   resetMidi();
 
+  setStatus(
+    "melodyStatus",
+    "解析中...",
+    "loading"
+  );
+
+  setStatus(
+    "chordStatus",
+    "解析中...",
+    "loading"
+  );
+
+  setStatus(
+    "bassStatus",
+    "解析中...",
+    "loading"
+  );
+
   try{
-    const zip = await JSZip.loadAsync(file);
 
-    const specs = [
-      { key:"melody", status:"melodyStatus", track:1 },
-      { key:"chord",  status:"chordStatus",  track:2 },
-      { key:"bass",   status:"bassStatus",   track:3 }
-    ];
+    /*
+    GarageBand ZIPからprojectDataだけ取得
+    */
+    const projectData =
+      await findProjectData(
+        zipFile
+      );
 
-    for(const spec of specs){
-      const candidates = Object.values(zip.files)
-        .filter(entry =>
-          !entry.dir &&
-          /\.(mid|midi)$/i.test(entry.name) &&
-          new RegExp("(?:^|/)tracks/" + spec.track + "_(?:/|$)", "i").test(entry.name)
-        )
-        .sort((a,b) => a.name.localeCompare(b.name, "ja", {numeric:true}));
 
-      const entry = candidates[0];
+    /*
+    Workerへ送信
+    */
+    const response =
+      await fetch(
+        MIDI_EXTRACT_API,
+        {
+          method:"POST",
 
-      if(!entry){
-        setStatus(spec.status, "× Track " + spec.track + " が見つかりません", "ng");
-        continue;
-      }
+          headers:{
+            "Content-Type":
+              "application/octet-stream"
+          },
 
-      const blob = await entry.async("blob");
-      const outputName =
-        spec.track === 1 ? "メロディー.mid" :
-        spec.track === 2 ? "コード進行.mid" :
-                           "ベース.mid";
+          body:
+            projectData
+        }
+      );
 
-      extractedMidi[spec.key] = new File([blob], outputName, {type:"audio/midi"});
-      setStatus(spec.status, "✓ Track " + spec.track + " / " + baseName(entry.name), "ok");
+
+    let data = null;
+
+    try{
+
+      data =
+        await response.json();
+
+    }catch{
+
+      throw new Error(
+        "Workerから正しいJSONが返りませんでした。"
+      );
     }
 
-    if(extractedMidi.melody && extractedMidi.chord && extractedMidi.bass){
-      clearMessage();
-    }else{
-      showError("抽出結果ZIPからTrack 1・Track 2・Track 3をすべて確認できませんでした。");
+
+    if(
+      !response.ok ||
+      !data.ok
+    ){
+
+      throw new Error(
+        data?.error ||
+        "MIDI解析に失敗しました。"
+      );
     }
+
+
+    if(
+      !data.tracks ||
+      !data.tracks.melody ||
+      !data.tracks.chord ||
+      !data.tracks.bass
+    ){
+
+      throw new Error(
+        "Workerから3トラックが返りませんでした。"
+      );
+    }
+
+
+    /*
+    メロディー
+    */
+    extractedMidi.melody =
+      base64ToFile(
+        data.tracks.melody.midi,
+        data.tracks.melody.name ||
+        "01_メロディー.mid"
+      );
+
+
+    /*
+    コード進行
+    */
+    extractedMidi.chord =
+      base64ToFile(
+        data.tracks.chord.midi,
+        data.tracks.chord.name ||
+        "02_コード進行.mid"
+      );
+
+
+    /*
+    ベース
+    */
+    extractedMidi.bass =
+      base64ToFile(
+        data.tracks.bass.midi,
+        data.tracks.bass.name ||
+        "03_ベース.mid"
+      );
+
+
+    setStatus(
+      "melodyStatus",
+      "✓ " +
+      data.tracks.melody.noteCount +
+      "音",
+      "ok"
+    );
+
+
+    setStatus(
+      "chordStatus",
+      "✓ " +
+      data.tracks.chord.noteCount +
+      "音",
+      "ok"
+    );
+
+
+    setStatus(
+      "bassStatus",
+      "✓ " +
+      data.tracks.bass.noteCount +
+      "音",
+      "ok"
+    );
+
+
+    clearMessage();
+
+    return true;
+
 
   }catch(error){
+
     console.error(error);
-    showError("MIDI抽出結果ZIPを解析できませんでした。");
-    setStatus("melodyStatus", "× 解析失敗", "ng");
-    setStatus("chordStatus", "× 解析失敗", "ng");
-    setStatus("bassStatus", "× 解析失敗", "ng");
+
+    extractedMidi = {
+      melody:null,
+      chord:null,
+      bass:null
+    };
+
+
+    setStatus(
+      "melodyStatus",
+      "× 解析失敗",
+      "ng"
+    );
+
+    setStatus(
+      "chordStatus",
+      "× 解析失敗",
+      "ng"
+    );
+
+    setStatus(
+      "bassStatus",
+      "× 解析失敗",
+      "ng"
+    );
+
+
+    showError(
+      "MIDI自動抽出エラー：" +
+      (
+        error?.message ||
+        "原因不明"
+      )
+    );
+
+    return false;
   }
 }
 
 
 /* =========================================
-   ZIP選択
+   GarageBand ZIP選択
 ========================================= */
 
 $("zipFile")
@@ -1606,23 +1718,21 @@ $("zipFile")
         selectedZipFile =
           null;
 
+        resetMidi();
 
         $("selectedFileName")
           .textContent =
           "ZIPが選択されていません";
-
 
         $("fileResult")
           .style
           .display =
           "none";
 
-
         $("registerArea")
           .style
           .display =
           "none";
-
 
         return;
       }
@@ -1631,42 +1741,39 @@ $("zipFile")
       if(
         !f.name
           .toLowerCase()
-          .endsWith(
-            ".zip"
-          )
+          .endsWith(".zip")
       ){
 
         selectedZipFile =
           null;
 
-
         $("selectedFileName")
           .textContent =
           f.name;
-
 
         $("fileResult")
           .style
           .display =
           "block";
 
+        $("fileResult")
+          .style
+          .background =
+          "#fdecec";
 
         $("fileResult")
           .style
           .color =
           "#a51f1f";
 
-
         $("fileResult")
           .textContent =
           "× ZIPファイルではありません";
-
 
         $("registerArea")
           .style
           .display =
           "none";
-
 
         return;
       }
@@ -1689,14 +1796,19 @@ $("zipFile")
 
       $("fileResult")
         .style
+        .background =
+        "#eef1f4";
+
+
+      $("fileResult")
+        .style
         .color =
-        "#137333";
+        "#53606c";
 
 
       $("fileResult")
         .textContent =
-        "✓ ZIPを選択できました：" +
-        f.name;
+        "GarageBand ZIPを解析しています...";
 
 
       $("registerArea")
@@ -1706,7 +1818,7 @@ $("zipFile")
 
 
       /*
-      ZIP名から選手名を仮入力
+      ZIP名から選手名
       */
       const auto =
         f.name
@@ -1726,9 +1838,6 @@ $("zipFile")
         auto;
 
 
-      /*
-      前の選手情報を消す
-      */
       $("reading").value =
         "";
 
@@ -1754,59 +1863,66 @@ $("zipFile")
 
       await updateProductionNumber();
 
+
       setStatus(
         "zipStatus",
         "✓ " + f.name,
         "ok"
       );
-    }
-  );
 
 
-/* =========================================
-   MIDI抽出結果ZIP選択
-========================================= */
+      /*
+      ★ GarageBand ZIPから
+      MIDIを自動抽出
+      */
+      const success =
+        await extractMidiFromGarageBand(
+          f
+        );
 
-$("midiExtractZipFile")
-  .addEventListener(
-    "change",
-    async () => {
-      const f = $("midiExtractZipFile").files?.[0];
-      const result = $("midiExtractResult");
 
-      resetMidi();
+      if(success){
 
-      if(!f){
-        result.style.display = "none";
-        return;
-      }
+        $("fileResult")
+          .style
+          .background =
+          "#e6f5eb";
 
-      if(!f.name.toLowerCase().endsWith(".zip")){
-        result.style.display = "block";
-        result.style.color = "#a51f1f";
-        result.textContent = "× ZIPファイルではありません";
-        return;
-      }
 
-      result.style.display = "block";
-      result.style.color = "#137333";
-      result.textContent = "解析中… " + f.name;
+        $("fileResult")
+          .style
+          .color =
+          "#126b32";
 
-      await analyzeZip(f);
 
-      if(extractedMidi.melody && extractedMidi.chord && extractedMidi.bass){
-        result.style.color = "#137333";
-        result.textContent = "✓ Track 1・2・3を読み込みました：" + f.name;
+        $("fileResult")
+          .textContent =
+          "✓ GarageBand ZIPからMIDIを自動抽出しました";
+
       }else{
-        result.style.color = "#a51f1f";
-        result.textContent = "× Track 1・2・3の読み込みに失敗しました";
+
+        $("fileResult")
+          .style
+          .background =
+          "#fdecec";
+
+
+        $("fileResult")
+          .style
+          .color =
+          "#a51f1f";
+
+
+        $("fileResult")
+          .textContent =
+          "× GarageBand ZIPのMIDI解析に失敗しました";
       }
     }
   );
 
 
 /* =========================================
-   m4a選択
+   m4a
 ========================================= */
 
 $("audioFile")
@@ -1818,7 +1934,6 @@ $("audioFile")
         $("audioFile")
           .files?.[0];
 
-
       const result =
         $("audioResult");
 
@@ -1828,15 +1943,12 @@ $("audioFile")
         selectedAudioFile =
           null;
 
-
         $("selectedAudioName")
           .textContent =
           "m4aが選択されていません";
 
-
         result.style.display =
           "none";
-
 
         return;
       }
@@ -1845,31 +1957,27 @@ $("audioFile")
       if(
         !file.name
           .toLowerCase()
-          .endsWith(
-            ".m4a"
-          )
+          .endsWith(".m4a")
       ){
 
         selectedAudioFile =
           null;
 
-
         $("selectedAudioName")
           .textContent =
           file.name;
 
-
         result.style.display =
           "block";
 
+        result.style.background =
+          "#fdecec";
 
         result.style.color =
           "#a51f1f";
 
-
         result.textContent =
           "× m4aファイルを選択してください";
-
 
         return;
       }
@@ -1887,10 +1995,11 @@ $("audioFile")
       result.style.display =
         "block";
 
+      result.style.background =
+        "#e6f5eb";
 
       result.style.color =
         "#137333";
-
 
       result.textContent =
         "✓ m4aを選択できました：" +
@@ -1910,7 +2019,6 @@ async function registerPlayer(){
       .value
       .trim();
 
-
   const reading =
     $("reading")
       .value
@@ -1920,11 +2028,9 @@ async function registerPlayer(){
         ""
       );
 
-
   const team =
     $("team")
       .value;
-
 
   const type =
     document
@@ -1933,11 +2039,9 @@ async function registerPlayer(){
       )
       ?.value || "";
 
-
   const number =
     $("number")
       .value;
-
 
   const lyrics =
     $("lyrics")
@@ -1948,7 +2052,7 @@ async function registerPlayer(){
   if(!selectedZipFile){
 
     showError(
-      "ZIPを選択してください。"
+      "GarageBand ZIPを選択してください。"
     );
 
     return;
@@ -2002,7 +2106,7 @@ async function registerPlayer(){
   ){
 
     showError(
-      "MIDIを3つ確認できません。トラック1＝メロディー、トラック2＝コード進行、トラック3＝ベースが必要です。"
+      "MIDIの自動抽出が完了していません。"
     );
 
     return;
@@ -2022,26 +2126,13 @@ async function registerPlayer(){
 
     const data = {
 
-      name:
-        name,
-
-      reading:
-        reading,
-
-      team:
-        team,
-
-      type:
-        type,
-
-      number:
-        number,
-
-      productionNumber:
-        productionNumber,
-
-      lyrics:
-        lyrics,
+      name,
+      reading,
+      team,
+      type,
+      number,
+      productionNumber,
+      lyrics,
 
 
       /*
@@ -2055,7 +2146,7 @@ async function registerPlayer(){
 
 
       /*
-      元ZIP
+      GarageBand ZIP
       */
       zipFileName:
         selectedZipFile.name,
@@ -2117,10 +2208,7 @@ async function registerPlayer(){
 
   }catch(error){
 
-    console.error(
-      error
-    );
-
+    console.error(error);
 
     showError(
       "登録に失敗しました。ブラウザの保存容量も確認してください。"
@@ -2165,9 +2253,7 @@ async function renderSavedList(){
     "";
 
 
-  if(
-    !all.length
-  ){
+  if(!all.length){
 
     area.innerHTML =
       '<div class="empty">登録データはありません</div>';
@@ -2209,9 +2295,7 @@ async function renderSavedList(){
         p.type;
 
 
-      if(
-        p.number
-      ){
+      if(p.number){
 
         meta +=
           " ／ 背番号 " +
@@ -2219,9 +2303,7 @@ async function renderSavedList(){
       }
 
 
-      if(
-        p.audioFileName
-      ){
+      if(p.audioFileName){
 
         meta +=
           " ／ m4a：" +
@@ -2258,7 +2340,6 @@ function showError(text){
     .className =
     "message-error";
 
-
   $("message")
     .textContent =
     text;
@@ -2271,7 +2352,6 @@ function showSuccess(text){
     .className =
     "message-success";
 
-
   $("message")
     .textContent =
     text;
@@ -2281,6 +2361,77 @@ function showSuccess(text){
 function clearMessage(){
 
   $("message")
+    .className =
+    "";
+
+  $("message")
+    .style
+    .display =
+    "none";
+
+  $("message")
+    .textContent =
+    "";
+}
+
+
+/* =========================================
+   HTML Escape
+========================================= */
+
+function escapeHtml(value){
+
+  return String(
+    value ?? ""
+  )
+  .replace(/&/g,"&amp;")
+  .replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;")
+  .replace(/"/g,"&quot;")
+  .replace(/'/g,"&#039;");
+}
+
+
+/* =========================================
+   BASEへ戻る
+========================================= */
+
+function backToBase(){
+
+  window.location.href =
+    "./index.html";
+}
+
+
+/* =========================================
+   起動
+========================================= */
+
+(async()=>{
+
+  try{
+
+    await openDB();
+
+    await renderSavedList();
+
+    await updateProductionNumber();
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      "ブラウザ内保存を開始できませんでした。"
+    );
+  }
+
+})();
+
+</script>
+
+</body>
+</html>"message")
     .className =
     "";
 
