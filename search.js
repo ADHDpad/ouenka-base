@@ -1,7 +1,7 @@
 // ========================================
 // OUENKA BASE
 // search.js
-// D1検索対応版
+// D1検索・再生・MIDI・GarageBand対応版
 // ========================================
 
 const MAX_SUGGESTIONS = 10;
@@ -37,7 +37,6 @@ async function searchPlayers() {
         document.getElementById(
             "clearSearchButton"
         );
-
 
     const keyword =
         searchInput.value.trim();
@@ -103,17 +102,14 @@ async function searchPlayers() {
 
         const response =
             await fetch(
-
                 DATA_API +
                 "/songs/search?q=" +
                 encodeURIComponent(
                     keyword
                 ),
-
                 {
                     cache: "no-store"
                 }
-
             );
 
 
@@ -159,23 +155,18 @@ async function searchPlayers() {
                     "div"
                 );
 
-
             noResult.className =
                 "no-search-result";
 
-
             noResult.textContent =
                 "該当する選手はいません";
-
 
             suggestions.appendChild(
                 noResult
             );
 
-
             suggestions.style.display =
                 "block";
-
 
             return;
 
@@ -200,7 +191,7 @@ async function searchPlayers() {
 
 
                     // ============================
-                    // GitHub Pages上の保存場所
+                    // 保存フォルダ
                     //
                     // データ/
                     // └ 選手名/
@@ -245,7 +236,7 @@ async function searchPlayers() {
 
 
                         // ========================
-                        // 音声
+                        // m4a
                         // ========================
 
                         audio:
@@ -279,6 +270,18 @@ async function searchPlayers() {
                             (
                                 song.bass_filename ||
                                 "bass.mid"
+                            ),
+
+
+                        // ========================
+                        // GarageBand
+                        // ========================
+
+                        garageBand:
+                            basePath +
+                            (
+                                song.garageband_filename ||
+                                "garageband.zip"
                             )
 
                     };
@@ -297,10 +300,8 @@ async function searchPlayers() {
                             "div"
                         );
 
-
                     candidate.className =
                         "search-candidate";
-
 
                     candidate.textContent =
                         player.name;
@@ -354,19 +355,15 @@ async function searchPlayers() {
                 "div"
             );
 
-
         errorResult.className =
             "no-search-result";
-
 
         errorResult.textContent =
             "検索データを取得できません";
 
-
         suggestions.appendChild(
             errorResult
         );
-
 
         suggestions.style.display =
             "block";
@@ -416,7 +413,6 @@ function selectSearchCandidate(
 
 
     suggestions.innerHTML = "";
-
 
     suggestions.style.display =
         "none";
@@ -489,9 +485,7 @@ function showPlayerActions(
 
 
     // ====================================
-    // ② MIDI
-    // 今回は3ファイル保存方式なので
-    // 次回ここを完成させる
+    // ② MIDI出力
     // ====================================
 
     const midiButton =
@@ -505,10 +499,10 @@ function showPlayerActions(
 
 
     midiButton.onclick =
-        function() {
+        async function() {
 
-            alert(
-                "MIDI出力は次回、3つのMIDIをまとめて出力できるようにします"
+            await downloadMidiZip(
+                player
             );
 
         };
@@ -520,9 +514,7 @@ function showPlayerActions(
 
 
     // ====================================
-    // ③ GarageBand
-    // 今回の新保存方式ではZIPを
-    // サイトに保存していないため一旦停止
+    // ③ GarageBand出力
     // ====================================
 
     const garageButton =
@@ -535,8 +527,14 @@ function showPlayerActions(
         "GarageBandファイル出力（iPhoneのみ）";
 
 
-    garageButton.disabled =
-        true;
+    garageButton.onclick =
+        async function() {
+
+            await downloadGarageBand(
+                player
+            );
+
+        };
 
 
     menu.appendChild(
@@ -547,6 +545,267 @@ function showPlayerActions(
     resultArea.appendChild(
         menu
     );
+
+}
+
+
+// ========================================
+// ファイル取得
+// ========================================
+
+async function fetchFileBlob(url) {
+
+    const response =
+        await fetch(
+            url,
+            {
+                cache: "no-store"
+            }
+        );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "ファイルを取得できませんでした：" +
+            response.status +
+            " / " +
+            url
+        );
+
+    }
+
+
+    return await response.blob();
+
+}
+
+
+// ========================================
+// Blobをダウンロード
+// ========================================
+
+function downloadBlob(
+    blob,
+    fileName
+) {
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        fileName;
+
+
+    link.style.display =
+        "none";
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    document.body.removeChild(
+        link
+    );
+
+
+    setTimeout(
+
+        function() {
+
+            URL.revokeObjectURL(
+                url
+            );
+
+        },
+
+        5000
+
+    );
+
+}
+
+
+// ========================================
+// MIDI ZIP出力
+// ========================================
+
+async function downloadMidiZip(
+    player
+) {
+
+    if (
+        typeof JSZip ===
+        "undefined"
+    ) {
+
+        alert(
+            "MIDI ZIP作成機能を読み込めませんでした"
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        // ====================================
+        // 3つのMIDIを取得
+        // ====================================
+
+        const [
+            melodyBlob,
+            chordBlob,
+            bassBlob
+        ] =
+            await Promise.all([
+
+                fetchFileBlob(
+                    player.melody
+                ),
+
+                fetchFileBlob(
+                    player.chord
+                ),
+
+                fetchFileBlob(
+                    player.bass
+                )
+
+            ]);
+
+
+        // ====================================
+        // ZIP作成
+        // ====================================
+
+        const zip =
+            new JSZip();
+
+
+        zip.file(
+            "melody.mid",
+            melodyBlob
+        );
+
+
+        zip.file(
+            "chord.mid",
+            chordBlob
+        );
+
+
+        zip.file(
+            "bass.mid",
+            bassBlob
+        );
+
+
+        const zipBlob =
+            await zip.generateAsync({
+
+                type:
+                    "blob",
+
+                compression:
+                    "DEFLATE",
+
+                compressionOptions: {
+                    level: 6
+                }
+
+            });
+
+
+        // ====================================
+        // ダウンロード
+        // ====================================
+
+        downloadBlob(
+            zipBlob,
+            player.name +
+            "_" +
+            player.productionNumber +
+            "_MIDI.zip"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "MIDI出力エラー:",
+            error
+        );
+
+
+        alert(
+            "MIDIを出力できませんでした"
+        );
+
+    }
+
+}
+
+
+// ========================================
+// GarageBand ZIP出力
+// ========================================
+
+async function downloadGarageBand(
+    player
+) {
+
+    try {
+
+        const garageBlob =
+            await fetchFileBlob(
+                player.garageBand
+            );
+
+
+        downloadBlob(
+            garageBlob,
+            player.name +
+            "_" +
+            player.productionNumber +
+            "_GarageBand.zip"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "GarageBand出力エラー:",
+            error
+        );
+
+
+        alert(
+            "GarageBandファイルを出力できませんでした"
+        );
+
+    }
 
 }
 
@@ -577,7 +836,7 @@ function selectPlayer(
 
 
     // ====================================
-    // audio要素取得
+    // audio要素を探す
     // ====================================
 
     let audio =
@@ -585,8 +844,6 @@ function selectPlayer(
             "audioPlayer"
         );
 
-
-    // IDが違う場合にも対応
 
     if (!audio) {
 
@@ -610,8 +867,11 @@ function selectPlayer(
 
 
     // ====================================
-    // 音源セット
+    // m4aセット
     // ====================================
+
+    audio.pause();
+
 
     audio.src =
         player.audio;
@@ -829,5 +1089,5 @@ function clearSearch() {
 // ========================================
 
 console.log(
-    "OUENKA BASE D1検索準備完了"
+    "OUENKA BASE D1検索・再生・MIDI・GarageBand準備完了"
 );
