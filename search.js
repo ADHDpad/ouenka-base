@@ -771,42 +771,26 @@ async function downloadMidiZip(
 // GarageBand ZIP出力
 // ========================================
 
-async function downloadGarageBand(
-    player
-) {
+function downloadGarageBand(player) {
 
-    try {
-
-        const garageBlob =
-            await fetchFileBlob(
-                player.garageBand
-            );
-
-
-        downloadBlob(
-            garageBlob,
-            player.name +
-            "_" +
-            player.productionNumber +
-            "_GarageBand.zip"
-        );
-
+    if (!player || !player.garageBand) {
+        alert("GarageBandファイルが見つかりません");
+        return;
     }
 
-    catch (error) {
-
-        console.error(
-            "GarageBand出力エラー:",
-            error
-        );
-
-
-        alert(
-            "GarageBandファイルを出力できませんでした"
-        );
-
-    }
-
+    // Safari対策：fetch/Blob化せず、実ファイルURLを直接開く。
+    // ユーザーのタップ操作から直結させることで、ダウンロード確認が消える問題を避ける。
+    const link = document.createElement("a");
+    link.href = player.garageBand;
+    link.download =
+        player.name +
+        "_" +
+        player.productionNumber +
+        "_GarageBand.zip";
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 
@@ -818,153 +802,25 @@ function selectPlayer(
     playerId,
     playerData = null
 ) {
-
-    const player =
-        playerData ||
-        d1Players[playerId];
-
+    const player = playerData || d1Players[playerId];
 
     if (!player) {
-
-        alert(
-            "選手データを取得できませんでした"
-        );
-
+        alert("選手データを取得できませんでした");
         return;
-
     }
 
-
-    // ====================================
-    // audio要素を探す
-    // ====================================
-
-    let audio =
-        document.getElementById(
-            "audioPlayer"
-        );
-
-
-    if (!audio) {
-
-        audio =
-            document.querySelector(
-                "audio"
-            );
-
-    }
-
-
-    if (!audio) {
-
-        alert(
-            "再生プレイヤーが見つかりません"
-        );
-
+    if (typeof playSongData !== "function") {
+        alert("音楽プレイヤーを読み込めませんでした");
         return;
-
     }
 
+    playSongData(player);
 
-    // ====================================
-    // m4aセット
-    // ====================================
+    const lyricsTitle = document.getElementById("lyricsTitle");
+    if (lyricsTitle) lyricsTitle.textContent = player.name + " 応援歌";
 
-    audio.pause();
-
-
-    audio.src =
-        player.audio;
-
-
-    audio.load();
-
-
-    // ====================================
-    // 再生
-    // ====================================
-
-    const playResult =
-        audio.play();
-
-
-    if (
-        playResult &&
-        typeof playResult.catch ===
-            "function"
-    ) {
-
-        playResult.catch(
-
-            function(error) {
-
-                console.error(
-                    "音声再生エラー:",
-                    error
-                );
-
-
-                alert(
-                    "音声を再生できませんでした"
-                );
-
-            }
-
-        );
-
-    }
-
-
-    // ====================================
-    // 再生中表示
-    // ====================================
-
-    const nowPlaying =
-        document.getElementById(
-            "nowPlaying"
-        );
-
-
-    if (nowPlaying) {
-
-        nowPlaying.textContent =
-            player.name;
-
-    }
-
-
-    // ====================================
-    // 歌詞
-    // ====================================
-
-    const lyricsTitle =
-        document.getElementById(
-            "lyricsTitle"
-        );
-
-
-    if (lyricsTitle) {
-
-        lyricsTitle.textContent =
-            player.name +
-            " 応援歌";
-
-    }
-
-
-    const lyrics =
-        document.getElementById(
-            "lyrics"
-        );
-
-
-    if (lyrics) {
-
-        lyrics.textContent =
-            player.lyrics || "";
-
-    }
-
+    const lyrics = document.getElementById("lyrics");
+    if (lyrics) lyrics.textContent = player.lyrics || "";
 }
 
 

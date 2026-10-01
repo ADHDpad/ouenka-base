@@ -1,174 +1,63 @@
 // ========================================
-// 音楽プレイヤー
+// OUENKA BASE 音楽プレイヤー
 // ========================================
 
-// 現在再生しているAudioを保存
 let audioPlayer = null;
 
-
-// ========================================
-// 応援歌を再生
-// ========================================
-
-function playSong(playerId) {
-
-    const player =
-        players[playerId];
-
-
-    if (!player) {
-
-        console.error(
-            "選手データが見つかりません:",
-            playerId
-        );
-
-        return;
-
-    }
-
-
-    // ====================================
-    // 今までの曲を停止
-    // ====================================
-
-    if (audioPlayer) {
-
+function stopCurrentSong() {
+    if (!audioPlayer) return;
+    try {
         audioPlayer.pause();
-
         audioPlayer.currentTime = 0;
-
-        audioPlayer.src = "";
-
+        audioPlayer.removeAttribute("src");
         audioPlayer.load();
+    } catch (error) {
+        console.warn("停止処理:", error);
+    }
+}
 
+function playSongData(player) {
+    if (!player || !player.audio) {
+        console.error("再生データがありません", player);
+        const now = document.getElementById("nowPlaying");
+        if (now) now.textContent = "音源データがありません";
+        return;
     }
 
+    stopCurrentSong();
 
-    // ====================================
-    // ボタンを押したタイミングで
-    // 新しいAudioを作成
-    // ====================================
+    audioPlayer = new Audio();
+    audioPlayer.preload = "auto";
+    audioPlayer.volume = 1;
+    audioPlayer.muted = false;
+    audioPlayer.src = player.audio;
 
-    audioPlayer =
-        new Audio();
+    audioPlayer.addEventListener("playing", () => {
+        const now = document.getElementById("nowPlaying");
+        if (now) now.textContent = "♪ 再生中：" + (player.name || "");
+    });
 
+    audioPlayer.addEventListener("error", () => {
+        console.error("Audioエラー:", audioPlayer.error, player.audio);
+        const now = document.getElementById("nowPlaying");
+        if (now) now.textContent = "音源を読み込めませんでした";
+    });
 
-    audioPlayer.preload =
-        "auto";
-
-
-    audioPlayer.src =
-        player.audio;
-
-
-    // ====================================
-    // 音量
-    // ====================================
-
-    audioPlayer.volume =
-        1;
-
-
-    audioPlayer.muted =
-        false;
-
-
-    // ====================================
-    // 読み込み
-    // ====================================
-
-    audioPlayer.load();
-
-
-    // ====================================
-    // 再生
-    // ====================================
-
-    const playPromise =
-        audioPlayer.play();
-
-
-    if (playPromise !== undefined) {
-
-        playPromise
-
-            .then(function() {
-
-                console.log(
-                    "再生開始:",
-                    player.audio
-                );
-
-
-                document.getElementById(
-                    "nowPlaying"
-                ).textContent =
-                    "♪ 再生中：" +
-                    player.name;
-
-            })
-
-            .catch(function(error) {
-
-                console.error(
-                    "再生エラー:",
-                    error
-                );
-
-
-                document.getElementById(
-                    "nowPlaying"
-                ).textContent =
-                    "音源を再生できませんでした";
-
-            });
-
+    const promise = audioPlayer.play();
+    if (promise) {
+        promise.catch(error => {
+            console.error("再生エラー:", error, player.audio);
+            const now = document.getElementById("nowPlaying");
+            if (now) now.textContent = "音源を再生できませんでした";
+        });
     }
+}
 
-
-    // ====================================
-    // 実際に再生が始まったか確認
-    // ====================================
-
-    audioPlayer.addEventListener(
-
-        "playing",
-
-        function() {
-
-            console.log(
-                "Audio playing"
-            );
-
-        }
-
-    );
-
-
-    // ====================================
-    // 音源エラー
-    // ====================================
-
-    audioPlayer.addEventListener(
-
-        "error",
-
-        function() {
-
-            console.error(
-                "Audioエラー:",
-                audioPlayer.error
-            );
-
-
-            document.getElementById(
-                "nowPlaying"
-            ).textContent =
-                "音源を読み込めませんでした";
-
-        }
-
-    );
-
+// 旧players.js用も残す
+function playSong(playerId) {
+    if (typeof players !== "object" || !players || !players[playerId]) {
+        console.error("選手データが見つかりません:", playerId);
+        return;
+    }
+    playSongData(players[playerId]);
 }

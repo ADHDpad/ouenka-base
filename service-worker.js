@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-v5";
+const CACHE_NAME = "ouenka-base-v6";
 
 
 // ========================================
@@ -96,7 +96,8 @@ self.addEventListener("fetch", (event) => {
         url.pathname.toLowerCase().endsWith(".mp3") ||
         url.pathname.toLowerCase().endsWith(".wav") ||
         url.pathname.toLowerCase().endsWith(".aac") ||
-        url.pathname.toLowerCase().endsWith(".mid")
+        url.pathname.toLowerCase().endsWith(".mid") ||
+        url.pathname.toLowerCase().endsWith(".zip")
     ) {
 
         return;
