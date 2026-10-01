@@ -926,6 +926,9 @@ const PLAYER_API =
 const MIDI_EXTRACT_API =
   "https://ouenka-base-midi.ninzin5600.workers.dev/extract";
 
+const DATA_API =
+  "https://ouenka-base-data.ninzin5600.workers.dev";
+
 
 /* =========================================
    IndexedDB
@@ -1149,6 +1152,56 @@ async function updateProductionNumber(){
     return 1;
   }
 
+  /*
+    共通D1を最優先で参照
+  */
+  try{
+
+    const response =
+      await fetch(
+        DATA_API +
+        "/songs/next-number?name=" +
+        encodeURIComponent(name),
+        {
+          cache:"no-store"
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if(
+      response.ok &&
+      data.ok &&
+      Number.isFinite(
+        Number(data.next_production_number)
+      )
+    ){
+
+      const n =
+        Number(
+          data.next_production_number
+        );
+
+      $("productionNumberDisplay")
+        .textContent =
+        String(n);
+
+      return n;
+    }
+
+  }catch(error){
+
+    console.warn(
+      "D1制作番号取得失敗。ローカル計算へ切替:",
+      error
+    );
+  }
+
+  /*
+    D1へ接続できない場合だけ
+    従来方式で仮表示
+  */
   const n =
     publicSameNameCount(name) +
     await localSameNameCount(name) +
@@ -2113,17 +2166,101 @@ async function registerPlayer(){
   }
 
 
-  const productionNumber =
-    await updateProductionNumber();
-
-
   $("registerButton")
     .disabled =
     true;
 
+  $("registerButton")
+    .textContent =
+    "登録中...";
+
 
   try{
 
+    /*
+      =========================================
+      1. 共通D1へ登録
+      =========================================
+      ファイル本体はまだ送らず、
+      ファイル名と選手情報を共通化する。
+    */
+    const response =
+      await fetch(
+        DATA_API + "/songs",
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          body:JSON.stringify({
+            player_name:name,
+            reading:reading,
+            team:team,
+            player_type:type,
+            uniform_number:
+              number === ""
+                ? null
+                : Number(number),
+            lyrics:lyrics,
+            audio_filename:
+              selectedAudioFile.name,
+            garageband_filename:
+              selectedZipFile.name,
+            melody_filename:
+              extractedMidi.melody.name,
+            chord_filename:
+              extractedMidi.chord.name,
+            bass_filename:
+              extractedMidi.bass.name
+          })
+        }
+      );
+
+
+    let serverData = null;
+
+    try{
+
+      serverData =
+        await response.json();
+
+    }catch{
+
+      throw new Error(
+        "共通データAPIから正しいJSONが返りませんでした。"
+      );
+    }
+
+
+    if(
+      !response.ok ||
+      !serverData.ok
+    ){
+
+      throw new Error(
+        serverData?.error ||
+        "共通データへの登録に失敗しました。"
+      );
+    }
+
+
+    /*
+      制作番号はD1側で確定
+    */
+    const productionNumber =
+      Number(
+        serverData.production_number
+      );
+
+
+    /*
+      =========================================
+      2. この端末のIndexedDBにも保存
+      =========================================
+    */
     const data = {
 
       name,
@@ -2182,19 +2319,55 @@ async function registerPlayer(){
       },
 
 
+      /*
+      D1情報
+      */
+      serverId:
+        serverData.id || null,
+
+      syncedToD1:
+        true,
+
+
       savedAt:
         new Date()
           .toISOString()
     };
 
 
-    await addSaved(
-      data
-    );
+    try{
+
+      await addSaved(
+        data
+      );
+
+    }catch(localError){
+
+      /*
+        D1登録は成功しているので、
+        二重登録防止のため再送しない。
+      */
+      console.error(
+        "IndexedDB保存のみ失敗:",
+        localError
+      );
+
+      showSuccess(
+        "✓ 共通データへ登録しました：" +
+        name +
+        "　制作番号 " +
+        productionNumber +
+        "（この端末内へのファイル保存のみ失敗しました）"
+      );
+
+      await updateProductionNumber();
+
+      return;
+    }
 
 
     showSuccess(
-      "✓ 登録しました：" +
+      "✓ 共通登録しました：" +
       name +
       "　制作番号 " +
       productionNumber
@@ -2211,7 +2384,11 @@ async function registerPlayer(){
     console.error(error);
 
     showError(
-      "登録に失敗しました。ブラウザの保存容量も確認してください。"
+      "登録に失敗しました：" +
+      (
+        error?.message ||
+        "原因不明"
+      )
     );
 
 
@@ -2220,6 +2397,10 @@ async function registerPlayer(){
     $("registerButton")
       .disabled =
       false;
+
+    $("registerButton")
+      .textContent =
+      "この選手を登録";
   }
 }
 
