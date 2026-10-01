@@ -1,38 +1,32 @@
 // ========================================
-// 選手検索
+// OUENKA BASE
+// search.js
+// D1検索対応版
 // ========================================
 
 const MAX_SUGGESTIONS = 10;
 
+const DATA_API =
+    "https://ouenka-base-data.ninzin5600.workers.dev";
+
 let selectedPlayerId = null;
 let selectedSearchText = "";
 
+const d1Players = {};
 
-// ========================================
-// GarageBand先読み用
-// ========================================
-
-let preparedGarageBandFile = null;
-let preparedGarageBandPath = "";
-let garageBandPreparing = false;
+let searchRequestNumber = 0;
 
 
 // ========================================
-// 選手を検索
+// 選手検索
 // ========================================
 
-function searchPlayers() {
+async function searchPlayers() {
 
     const searchInput =
-        document.getElementById("searchInput");
-
-    const keyword =
-        searchInput.value
-            .trim()
-            .toLowerCase();
-
-    const currentText =
-        searchInput.value;
+        document.getElementById(
+            "searchInput"
+        );
 
     const suggestions =
         document.getElementById(
@@ -45,9 +39,18 @@ function searchPlayers() {
         );
 
 
-    // ×ボタン
+    const keyword =
+        searchInput.value.trim();
 
-    if (searchInput.value.length > 0) {
+    const currentText =
+        searchInput.value;
+
+
+    // ====================================
+    // ×ボタン
+    // ====================================
+
+    if (keyword.length > 0) {
 
         clearButton.style.display =
             "flex";
@@ -61,7 +64,9 @@ function searchPlayers() {
     }
 
 
-    // 選手選択後に文字を変更した場合
+    // ====================================
+    // 選択後に文字を変更した場合
+    // ====================================
 
     if (
         selectedPlayerId !== null &&
@@ -86,143 +91,287 @@ function searchPlayers() {
     }
 
 
-    // ====================================
-    // 一致する選手
-    // ====================================
-
-    const matchedPlayers = [];
+    const requestNumber =
+        ++searchRequestNumber;
 
 
-    Object.keys(players).forEach(
+    try {
 
-        function(playerId) {
+        // ====================================
+        // D1検索
+        // ====================================
 
-            const player =
-                players[playerId];
+        const response =
+            await fetch(
 
-            const name =
-                (player.name || "")
-                    .toLowerCase();
+                DATA_API +
+                "/songs/search?q=" +
+                encodeURIComponent(
+                    keyword
+                ),
 
-            const reading =
-                (player.reading || "")
-                    .toLowerCase();
+                {
+                    cache: "no-store"
+                }
 
-            const team =
-                (player.team || "")
-                    .toLowerCase();
+            );
 
 
-            if (
+        if (!response.ok) {
 
-                name.includes(keyword) ||
-
-                reading.includes(keyword) ||
-
-                team.includes(keyword)
-
-            ) {
-
-                matchedPlayers.push({
-
-                    playerId:
-                        playerId,
-
-                    player:
-                        player
-
-                });
-
-            }
+            throw new Error(
+                "検索データを取得できませんでした"
+            );
 
         }
 
-    );
+
+        const data =
+            await response.json();
 
 
-    // ====================================
-    // 候補なし
-    // ====================================
+        // 古い検索結果は無視
 
-    if (matchedPlayers.length === 0) {
+        if (
+            requestNumber !==
+            searchRequestNumber
+        ) {
 
-        const noResult =
-            document.createElement(
-                "div"
-            );
+            return;
 
-        noResult.className =
-            "no-search-result";
-
-        noResult.textContent =
-            "該当する選手はいません";
-
-        suggestions.appendChild(
-            noResult
-        );
-
-        suggestions.style.display =
-            "block";
-
-        return;
-
-    }
+        }
 
 
-    // 最大10件
-
-    const displayPlayers =
-        matchedPlayers.slice(
-            0,
-            MAX_SUGGESTIONS
-        );
+        const songs =
+            Array.isArray(data.songs)
+                ? data.songs
+                : [];
 
 
-    // ====================================
-    // 検索候補
-    // ====================================
+        // ====================================
+        // 候補なし
+        // ====================================
 
-    displayPlayers.forEach(
+        if (songs.length === 0) {
 
-        function(item) {
-
-            const candidate =
+            const noResult =
                 document.createElement(
                     "div"
                 );
 
-            candidate.className =
-                "search-candidate";
 
-            candidate.textContent =
-                item.player.name;
+            noResult.className =
+                "no-search-result";
 
 
-            candidate.onclick =
-                function() {
-
-                    selectSearchCandidate(
-
-                        item.playerId,
-
-                        item.player
-
-                    );
-
-                };
+            noResult.textContent =
+                "該当する選手はいません";
 
 
             suggestions.appendChild(
-                candidate
+                noResult
             );
+
+
+            suggestions.style.display =
+                "block";
+
+
+            return;
 
         }
 
-    );
+
+        // ====================================
+        // 最大10件表示
+        // ====================================
+
+        songs
+            .slice(
+                0,
+                MAX_SUGGESTIONS
+            )
+            .forEach(
+
+                function(song) {
+
+                    const playerId =
+                        "d1_" + song.id;
 
 
-    suggestions.style.display =
-        "block";
+                    // ============================
+                    // GitHub Pages上の保存場所
+                    //
+                    // データ/
+                    // └ 選手名/
+                    //    └ 制作番号/
+                    // ============================
+
+                    const basePath =
+                        "データ/" +
+                        encodeURIComponent(
+                            song.player_name
+                        ) +
+                        "/" +
+                        song.production_number +
+                        "/";
+
+
+                    const player = {
+
+                        id:
+                            song.id,
+
+                        name:
+                            song.player_name || "",
+
+                        reading:
+                            song.reading || "",
+
+                        team:
+                            song.team || "",
+
+                        playerType:
+                            song.player_type || "",
+
+                        uniformNumber:
+                            song.uniform_number,
+
+                        productionNumber:
+                            song.production_number,
+
+                        lyrics:
+                            song.lyrics || "",
+
+
+                        // ========================
+                        // 音声
+                        // ========================
+
+                        audio:
+                            basePath +
+                            (
+                                song.audio_filename ||
+                                "audio.m4a"
+                            ),
+
+
+                        // ========================
+                        // MIDI
+                        // ========================
+
+                        melody:
+                            basePath +
+                            (
+                                song.melody_filename ||
+                                "melody.mid"
+                            ),
+
+                        chord:
+                            basePath +
+                            (
+                                song.chord_filename ||
+                                "chord.mid"
+                            ),
+
+                        bass:
+                            basePath +
+                            (
+                                song.bass_filename ||
+                                "bass.mid"
+                            )
+
+                    };
+
+
+                    d1Players[playerId] =
+                        player;
+
+
+                    // ============================
+                    // 検索候補
+                    // ============================
+
+                    const candidate =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    candidate.className =
+                        "search-candidate";
+
+
+                    candidate.textContent =
+                        player.name;
+
+
+                    candidate.onclick =
+                        function() {
+
+                            selectSearchCandidate(
+                                playerId,
+                                player
+                            );
+
+                        };
+
+
+                    suggestions.appendChild(
+                        candidate
+                    );
+
+                }
+
+            );
+
+
+        suggestions.style.display =
+            "block";
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "D1検索エラー:",
+            error
+        );
+
+
+        if (
+            requestNumber !==
+            searchRequestNumber
+        ) {
+
+            return;
+
+        }
+
+
+        const errorResult =
+            document.createElement(
+                "div"
+            );
+
+
+        errorResult.className =
+            "no-search-result";
+
+
+        errorResult.textContent =
+            "検索データを取得できません";
+
+
+        suggestions.appendChild(
+            errorResult
+        );
+
+
+        suggestions.style.display =
+            "block";
+
+    }
 
 }
 
@@ -266,27 +415,15 @@ function selectSearchCandidate(
         );
 
 
-    suggestions.innerHTML =
-        "";
+    suggestions.innerHTML = "";
 
 
     suggestions.style.display =
         "none";
 
 
-    // 3ボタン表示
-
     showPlayerActions(
         playerId,
-        player
-    );
-
-
-    // ====================================
-    // GarageBand ZIPをここで先読み
-    // ====================================
-
-    prepareGarageBandFile(
         player
     );
 
@@ -294,7 +431,7 @@ function selectSearchCandidate(
 
 
 // ========================================
-// 3種類のボタン
+// 選手操作ボタン
 // ========================================
 
 function showPlayerActions(
@@ -308,8 +445,7 @@ function showPlayerActions(
         );
 
 
-    resultArea.innerHTML =
-        "";
+    resultArea.innerHTML = "";
 
 
     const menu =
@@ -340,7 +476,8 @@ function showPlayerActions(
         function() {
 
             selectPlayer(
-                playerId
+                playerId,
+                player
             );
 
         };
@@ -352,7 +489,9 @@ function showPlayerActions(
 
 
     // ====================================
-    // ② MIDIファイル出力
+    // ② MIDI
+    // 今回は3ファイル保存方式なので
+    // 次回ここを完成させる
     // ====================================
 
     const midiButton =
@@ -368,19 +507,8 @@ function showPlayerActions(
     midiButton.onclick =
         function() {
 
-            if (!player.midiZip) {
-
-                alert(
-                    "MIDIファイルが登録されていません"
-                );
-
-                return;
-
-            }
-
-
-            shareFileNormally(
-                player.midiZip
+            alert(
+                "MIDI出力は次回、3つのMIDIをまとめて出力できるようにします"
             );
 
         };
@@ -393,6 +521,8 @@ function showPlayerActions(
 
     // ====================================
     // ③ GarageBand
+    // 今回の新保存方式ではZIPを
+    // サイトに保存していないため一旦停止
     // ====================================
 
     const garageButton =
@@ -401,26 +531,12 @@ function showPlayerActions(
         );
 
 
-    garageButton.id =
-        "garageBandButton";
-
-
     garageButton.textContent =
-        "GarageBand準備中…";
+        "GarageBandファイル出力（iPhoneのみ）";
 
 
     garageButton.disabled =
         true;
-
-
-    garageButton.onclick =
-        function() {
-
-            sharePreparedGarageBand(
-                player
-            );
-
-        };
 
 
     menu.appendChild(
@@ -436,217 +552,23 @@ function showPlayerActions(
 
 
 // ========================================
-// GarageBandファイルを先読み
+// 曲を再生
 // ========================================
 
-async function prepareGarageBandFile(
-    player
+function selectPlayer(
+    playerId,
+    playerData = null
 ) {
 
-    // 前の選手のデータを消す
+    const player =
+        playerData ||
+        d1Players[playerId];
 
-    preparedGarageBandFile =
-        null;
 
-    preparedGarageBandPath =
-        "";
-
-    garageBandPreparing =
-        false;
-
-
-    const button =
-        document.getElementById(
-            "garageBandButton"
-        );
-
-
-    // ファイル未登録
-
-    if (!player.garageBandZip) {
-
-        if (button) {
-
-            button.textContent =
-                "GarageBandファイル未登録";
-
-            button.disabled =
-                true;
-
-        }
-
-        return;
-
-    }
-
-
-    garageBandPreparing =
-        true;
-
-
-    if (button) {
-
-        button.textContent =
-            "GarageBand準備中…";
-
-        button.disabled =
-            true;
-
-    }
-
-
-    try {
-
-        // ====================================
-        // ZIP取得
-        // ====================================
-
-        const response =
-            await fetch(
-                player.garageBandZip
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "GarageBandファイルを取得できませんでした"
-            );
-
-        }
-
-
-        // ====================================
-        // Blob化
-        // ====================================
-
-        const blob =
-            await response.blob();
-
-
-        // ====================================
-        // ファイル名
-        // ====================================
-
-        const fileName =
-            decodeURIComponent(
-
-                player.garageBandZip
-                    .split("/")
-                    .pop()
-
-            );
-
-
-        // ====================================
-        // Fileを作る
-        // ====================================
-
-        preparedGarageBandFile =
-            new File(
-
-                [blob],
-
-                fileName,
-
-                {
-                    type:
-                        blob.type ||
-                        "application/zip"
-                }
-
-            );
-
-
-        preparedGarageBandPath =
-            player.garageBandZip;
-
-
-        garageBandPreparing =
-            false;
-
-
-        // ====================================
-        // 同じ選手をまだ表示中なら
-        // ボタンを使用可能にする
-        // ====================================
-
-        if (
-
-            selectedPlayerId !== null &&
-
-            preparedGarageBandPath ===
-                player.garageBandZip
-
-        ) {
-
-            const currentButton =
-                document.getElementById(
-                    "garageBandButton"
-                );
-
-
-            if (currentButton) {
-
-                currentButton.textContent =
-                    "GarageBandファイル出力（iPhoneのみ）";
-
-                currentButton.disabled =
-                    false;
-
-            }
-
-        }
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "GarageBand準備エラー:",
-            error
-        );
-
-
-        garageBandPreparing =
-            false;
-
-
-        const currentButton =
-            document.getElementById(
-                "garageBandButton"
-            );
-
-
-        if (currentButton) {
-
-            currentButton.textContent =
-                "GarageBand準備失敗";
-
-            currentButton.disabled =
-                false;
-
-        }
-
-    }
-
-}
-
-
-// ========================================
-// 準備済みGarageBandファイルを共有
-// ========================================
-
-function sharePreparedGarageBand(
-    player
-) {
-
-    // まだ準備中
-
-    if (garageBandPreparing) {
+    if (!player) {
 
         alert(
-            "GarageBandファイルを準備中です"
+            "選手データを取得できませんでした"
         );
 
         return;
@@ -654,309 +576,134 @@ function sharePreparedGarageBand(
     }
 
 
-    // 準備できていない
+    // ====================================
+    // audio要素取得
+    // ====================================
+
+    let audio =
+        document.getElementById(
+            "audioPlayer"
+        );
+
+
+    // IDが違う場合にも対応
+
+    if (!audio) {
+
+        audio =
+            document.querySelector(
+                "audio"
+            );
+
+    }
+
+
+    if (!audio) {
+
+        alert(
+            "再生プレイヤーが見つかりません"
+        );
+
+        return;
+
+    }
+
+
+    // ====================================
+    // 音源セット
+    // ====================================
+
+    audio.src =
+        player.audio;
+
+
+    audio.load();
+
+
+    // ====================================
+    // 再生
+    // ====================================
+
+    const playResult =
+        audio.play();
+
 
     if (
-
-        !preparedGarageBandFile ||
-
-        preparedGarageBandPath !==
-            player.garageBandZip
-
+        playResult &&
+        typeof playResult.catch ===
+            "function"
     ) {
 
-        alert(
-            "GarageBandファイルの準備ができていません"
-        );
+        playResult.catch(
 
-        return;
+            function(error) {
 
-    }
-
-
-    try {
-
-        const shareData = {
-
-            files: [
-                preparedGarageBandFile
-            ]
-
-        };
-
-
-        // ====================================
-        // 共有できるか確認
-        // ====================================
-
-        if (
-
-            navigator.share &&
-
-            navigator.canShare &&
-
-            navigator.canShare(
-                shareData
-            )
-
-        ) {
-
-            /*
-             * 重要
-             *
-             * ここではfetchしない。
-             *
-             * ボタンを押した直後に
-             * navigator.share()を実行する。
-             */
-
-            const result =
-                navigator.share(
-                    shareData
+                console.error(
+                    "音声再生エラー:",
+                    error
                 );
 
 
-            if (
-
-                result &&
-
-                typeof result.catch ===
-                    "function"
-
-            ) {
-
-                result.catch(
-
-                    function(error) {
-
-                        if (
-                            error.name !==
-                            "AbortError"
-                        ) {
-
-                            console.error(
-                                "GarageBand共有エラー:",
-                                error
-                            );
-
-
-                            alert(
-                                "GarageBandファイルを共有できませんでした"
-                            );
-
-                        }
-
-                    }
-
+                alert(
+                    "音声を再生できませんでした"
                 );
 
             }
 
-
-            return;
-
-        }
-
-
-        alert(
-            "この端末ではGarageBandファイル共有に対応していません"
         );
 
     }
 
-    catch (error) {
 
-        console.error(
-            "GarageBand共有エラー:",
-            error
+    // ====================================
+    // 再生中表示
+    // ====================================
+
+    const nowPlaying =
+        document.getElementById(
+            "nowPlaying"
         );
 
 
-        alert(
-            "GarageBandファイルを共有できませんでした"
-        );
+    if (nowPlaying) {
+
+        nowPlaying.textContent =
+            player.name;
 
     }
 
-}
 
+    // ====================================
+    // 歌詞
+    // ====================================
 
-// ========================================
-// MIDI共有
-// ========================================
-
-async function shareFileNormally(
-    filePath
-) {
-
-    try {
-
-        const response =
-            await fetch(
-                filePath
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "ファイルを取得できませんでした"
-            );
-
-        }
-
-
-        const blob =
-            await response.blob();
-
-
-        const fileName =
-            decodeURIComponent(
-
-                filePath
-                    .split("/")
-                    .pop()
-
-            );
-
-
-        const file =
-            new File(
-
-                [blob],
-
-                fileName,
-
-                {
-                    type:
-                        blob.type ||
-                        "application/zip"
-                }
-
-            );
-
-
-        const shareData = {
-
-            files: [file]
-
-        };
-
-
-        if (
-
-            navigator.share &&
-
-            navigator.canShare &&
-
-            navigator.canShare(
-                shareData
-            )
-
-        ) {
-
-            await navigator.share(
-                shareData
-            );
-
-            return;
-
-        }
-
-
-        fallbackDownload(
-            blob,
-            fileName
+    const lyricsTitle =
+        document.getElementById(
+            "lyricsTitle"
         );
+
+
+    if (lyricsTitle) {
+
+        lyricsTitle.textContent =
+            player.name +
+            " 応援歌";
 
     }
 
-    catch (error) {
 
-        if (
-            error.name ===
-            "AbortError"
-        ) {
-
-            return;
-
-        }
-
-
-        console.error(
-            "MIDI共有エラー:",
-            error
+    const lyrics =
+        document.getElementById(
+            "lyrics"
         );
 
 
-        alert(
-            "MIDIファイルを開けませんでした"
-        );
+    if (lyrics) {
+
+        lyrics.textContent =
+            player.lyrics || "";
 
     }
-
-}
-
-
-// ========================================
-// 通常ダウンロード
-// ========================================
-
-function fallbackDownload(
-    blob,
-    fileName
-) {
-
-    const blobUrl =
-        URL.createObjectURL(
-            blob
-        );
-
-
-    const link =
-        document.createElement(
-            "a"
-        );
-
-
-    link.href =
-        blobUrl;
-
-
-    link.download =
-        fileName;
-
-
-    link.style.display =
-        "none";
-
-
-    document.body.appendChild(
-        link
-    );
-
-
-    link.click();
-
-
-    document.body.removeChild(
-        link
-    );
-
-
-    setTimeout(
-
-        function() {
-
-            URL.revokeObjectURL(
-                blobUrl
-            );
-
-        },
-
-        3000
-
-    );
 
 }
 
@@ -975,40 +722,60 @@ function clearSelectedPlayer() {
         "";
 
 
-    // GarageBand先読みデータも解除
-
-    preparedGarageBandFile =
-        null;
-
-    preparedGarageBandPath =
-        "";
-
-    garageBandPreparing =
-        false;
+    const playerButtons =
+        document.getElementById(
+            "playerButtons"
+        );
 
 
-    document.getElementById(
-        "playerButtons"
-    ).innerHTML =
-        "";
+    if (playerButtons) {
+
+        playerButtons.innerHTML =
+            "";
+
+    }
 
 
-    document.getElementById(
-        "nowPlaying"
-    ).textContent =
-        "選手を検索してください";
+    const nowPlaying =
+        document.getElementById(
+            "nowPlaying"
+        );
 
 
-    document.getElementById(
-        "lyricsTitle"
-    ).textContent =
-        "";
+    if (nowPlaying) {
+
+        nowPlaying.textContent =
+            "選手を検索してください";
+
+    }
 
 
-    document.getElementById(
-        "lyrics"
-    ).textContent =
-        "";
+    const lyricsTitle =
+        document.getElementById(
+            "lyricsTitle"
+        );
+
+
+    if (lyricsTitle) {
+
+        lyricsTitle.textContent =
+            "";
+
+    }
+
+
+    const lyrics =
+        document.getElementById(
+            "lyrics"
+        );
+
+
+    if (lyrics) {
+
+        lyrics.textContent =
+            "";
+
+    }
 
 }
 
@@ -1058,64 +825,9 @@ function clearSearch() {
 
 
 // ========================================
-// 曲を再生＋歌詞
+// 準備完了
 // ========================================
 
-function selectPlayer(
-    playerId
-) {
-
-    const player =
-        players[playerId];
-
-
-    if (!player) {
-
-        return;
-
-    }
-
-
-    playSong(
-        playerId
-    );
-
-
-    document.getElementById(
-        "lyricsTitle"
-    ).textContent =
-        player.name +
-        " 応援歌";
-
-
-    document.getElementById(
-        "lyrics"
-    ).textContent =
-        player.lyrics;
-
-}
-
-
-// ========================================
-// CSV読み込み完了
-// ========================================
-
-window.addEventListener(
-
-    "playersLoaded",
-
-    function() {
-
-        document.getElementById(
-            "playerButtons"
-        ).innerHTML =
-            "";
-
-
-        console.log(
-            "検索候補機能準備完了"
-        );
-
-    }
-
+console.log(
+    "OUENKA BASE D1検索準備完了"
 );
