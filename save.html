@@ -523,7 +523,7 @@ OUENKA BASE /// DATA REGISTER
 
 <div class="description">
 GarageBand ZIPを選択すると、内部のMIDIデータを自動解析します。
-選手情報を共通データベースに登録し、登録完了後にPC保存用データZIP（m4a＋3種類のMIDI）を自動作成します。
+選手情報を共通データベースに登録し、登録完了後にPC保存用データZIP（m4a＋3種類のMIDI＋GarageBand ZIP）を自動作成します。
 </div>
 
 
@@ -2217,7 +2217,7 @@ $("audioFile")
 
 /* =========================================
    PC保存用ZIP
-   データ/選手名/制作番号/ に展開する4ファイルを作成
+   データ/選手名/制作番号/ に展開する5ファイルを作成
 ========================================= */
 
 function safeFolderName(value){
@@ -2230,16 +2230,18 @@ async function downloadPcDataZip(
   playerName,
   productionNumber,
   audioFile,
-  midi
+  midi,
+  garageBandZipFile
 ){
   if(
     !audioFile ||
     !midi?.melody ||
     !midi?.chord ||
-    !midi?.bass
+    !midi?.bass ||
+    !garageBandZipFile
   ){
     throw new Error(
-      "PC保存用ZIPに必要な4ファイルがそろっていません。"
+      "PC保存用ZIPに必要な5ファイルがそろっていません。"
     );
   }
 
@@ -2280,6 +2282,15 @@ async function downloadPcDataZip(
   songFolder.file(
     "bass.mid",
     midi.bass
+  );
+
+  /*
+    GarageBand元ZIP
+    サイトの「GarageBandファイル出力（iPhoneのみ）」で使用
+  */
+  songFolder.file(
+    "garageband.zip",
+    garageBandZipFile
   );
 
   const blob =
@@ -2479,7 +2490,7 @@ async function registerPlayer(){
             audio_filename:
               "audio.m4a",
             garageband_filename:
-              selectedZipFile.name,
+              "garageband.zip",
             melody_filename:
               "melody.mid",
             chord_filename:
@@ -2557,7 +2568,7 @@ async function registerPlayer(){
       GarageBand ZIP
       */
       zipFileName:
-        selectedZipFile.name,
+        "garageband.zip",
 
       originalZip:
         selectedZipFile,
@@ -2648,7 +2659,8 @@ async function registerPlayer(){
         name,
         productionNumber,
         selectedAudioFile,
-        extractedMidi
+        extractedMidi,
+        selectedZipFile
       );
 
       showSuccess(
