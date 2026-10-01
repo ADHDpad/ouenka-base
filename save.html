@@ -417,6 +417,22 @@ textarea{
   cursor:pointer;
 }
 
+.delete-button{
+  border:1px solid #b42318;
+  border-radius:7px;
+  background:#fff;
+  color:#b42318;
+  padding:9px 14px;
+  font-size:13px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.delete-button:disabled{
+  opacity:.45;
+  cursor:default;
+}
+
 .edit-mode-box{
   display:none;
   margin-bottom:18px;
@@ -507,7 +523,7 @@ OUENKA BASE /// DATA REGISTER
 
 <div class="description">
 GarageBand ZIPを選択すると、内部のMIDIデータを自動解析します。
-選手情報を共通データベースに登録し、MIDI・m4a・GarageBand ZIPを端末内にも保存します。
+選手情報を共通データベースに登録し、登録完了後にPC保存用データZIP（m4a＋3種類のMIDI）を自動作成します。
 </div>
 
 
@@ -2200,6 +2216,113 @@ $("audioFile")
 
 
 /* =========================================
+   PC保存用ZIP
+   データ/選手名/制作番号/ に展開する4ファイルを作成
+========================================= */
+
+function safeFolderName(value){
+  return String(value || "")
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim();
+}
+
+async function downloadPcDataZip(
+  playerName,
+  productionNumber,
+  audioFile,
+  midi
+){
+  if(
+    !audioFile ||
+    !midi?.melody ||
+    !midi?.chord ||
+    !midi?.bass
+  ){
+    throw new Error(
+      "PC保存用ZIPに必要な4ファイルがそろっていません。"
+    );
+  }
+
+  const safeName =
+    safeFolderName(playerName) || "player";
+
+  const safeNumber =
+    String(productionNumber || 1);
+
+  const zip =
+    new JSZip();
+
+  /*
+    ZIPを展開したら
+    郡司裕也/1/audio.m4a
+    の形になる。
+    PCでは展開した選手フォルダを「データ」へ入れるだけ。
+  */
+  const songFolder =
+    zip.folder(safeName)
+       .folder(safeNumber);
+
+  songFolder.file(
+    "audio.m4a",
+    audioFile
+  );
+
+  songFolder.file(
+    "melody.mid",
+    midi.melody
+  );
+
+  songFolder.file(
+    "chord.mid",
+    midi.chord
+  );
+
+  songFolder.file(
+    "bass.mid",
+    midi.bass
+  );
+
+  const blob =
+    await zip.generateAsync({
+      type:"blob",
+      compression:"DEFLATE",
+      compressionOptions:{
+        level:6
+      }
+    });
+
+  const blobUrl =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href =
+    blobUrl;
+
+  link.download =
+    safeName +
+    "_" +
+    safeNumber +
+    "_PC保存用.zip";
+
+  link.style.display =
+    "none";
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  setTimeout(
+    () => URL.revokeObjectURL(blobUrl),
+    5000
+  );
+}
+
+
+/* =========================================
    登録
 ========================================= */
 
@@ -2354,15 +2477,15 @@ async function registerPlayer(){
                 : Number(number),
             lyrics:lyrics,
             audio_filename:
-              selectedAudioFile.name,
+              "audio.m4a",
             garageband_filename:
               selectedZipFile.name,
             melody_filename:
-              extractedMidi.melody.name,
+              "melody.mid",
             chord_filename:
-              extractedMidi.chord.name,
+              "chord.mid",
             bass_filename:
-              extractedMidi.bass.name
+              "bass.mid" 
           })
         }
       );
@@ -2424,7 +2547,7 @@ async function registerPlayer(){
       m4a
       */
       audioFileName:
-        selectedAudioFile.name,
+        "audio.m4a",
 
       audioFile:
         selectedAudioFile,
@@ -2446,21 +2569,21 @@ async function registerPlayer(){
       midi:{
 
         track1Name:
-          "メロディー",
+          "melody.mid",
 
         track1:
           extractedMidi.melody,
 
 
         track2Name:
-          "コード進行",
+          "chord.mid",
 
         track2:
           extractedMidi.chord,
 
 
         track3Name:
-          "ベース",
+          "bass.mid",
 
         track3:
           extractedMidi.bass
@@ -2514,12 +2637,43 @@ async function registerPlayer(){
     }
 
 
-    showSuccess(
-      "✓ 共通登録しました：" +
-      name +
-      "　制作番号 " +
-      productionNumber
-    );
+    /*
+      =========================================
+      3. PC保存用ZIPを自動作成
+      =========================================
+    */
+    try{
+
+      await downloadPcDataZip(
+        name,
+        productionNumber,
+        selectedAudioFile,
+        extractedMidi
+      );
+
+      showSuccess(
+        "✓ 共通登録しました：" +
+        name +
+        "　制作番号 " +
+        productionNumber +
+        "<br>✓ PC保存用ZIPも作成しました"
+      );
+
+    }catch(zipError){
+
+      console.error(
+        "PC保存用ZIP作成エラー:",
+        zipError
+      );
+
+      showSuccess(
+        "✓ 共通登録しました：" +
+        name +
+        "　制作番号 " +
+        productionNumber +
+        "<br>※ PC保存用ZIPの作成だけ失敗しました"
+      );
+    }
 
 
     await renderSavedList();
@@ -3078,6 +3232,113 @@ function cancelEditMode(
 
 
 /* =========================================
+   D1登録データ削除
+========================================= */
+
+async function deleteSong(song){
+
+  if(
+    !song ||
+    !song.id
+  ){
+    showError(
+      "削除する登録IDがありません。"
+    );
+    return;
+  }
+
+  const name =
+    song.player_name || "この選手";
+
+  const productionNumber =
+    song.production_number || 1;
+
+  const confirmed =
+    window.confirm(
+      name +
+      "　制作番号 " +
+      productionNumber +
+      " を削除しますか？\n\n" +
+      "共通データベース（D1）の登録情報を削除します。\n" +
+      "PCのデータフォルダは削除されません。"
+    );
+
+  if(!confirmed){
+    return;
+  }
+
+  clearMessage();
+
+  try{
+
+    const response =
+      await fetch(
+        DATA_API +
+        "/songs/" +
+        encodeURIComponent(song.id),
+        {
+          method:"DELETE"
+        }
+      );
+
+    let data = null;
+
+    try{
+      data =
+        await response.json();
+    }catch{
+      throw new Error(
+        "共通データAPIから正しいJSONが返りませんでした。"
+      );
+    }
+
+    if(
+      !response.ok ||
+      !data.ok
+    ){
+      throw new Error(
+        data?.error ||
+        "削除に失敗しました。"
+      );
+    }
+
+    /*
+      削除対象を編集中だった場合は編集モード解除
+    */
+    if(
+      editingSong &&
+      Number(editingSong.id) ===
+      Number(song.id)
+    ){
+      cancelEditMode(false);
+    }
+
+    showSuccess(
+      "✓ 削除しました：" +
+      name +
+      "　制作番号 " +
+      productionNumber
+    );
+
+    await renderSavedList();
+    await updateProductionNumber();
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      "削除に失敗しました：" +
+      (
+        error?.message ||
+        "原因不明"
+      )
+    );
+  }
+}
+
+
+/* =========================================
    登録済み一覧
    D1を正本として全ブラウザ共通表示
 ========================================= */
@@ -3242,6 +3503,34 @@ async function renderSavedList(){
           )
           .appendChild(
             editButton
+          );
+
+
+          const deleteButton =
+            document.createElement(
+              "button"
+            );
+
+          deleteButton.type =
+            "button";
+
+          deleteButton.className =
+            "delete-button";
+
+          deleteButton.textContent =
+            "削除";
+
+          deleteButton.onclick =
+            () =>
+              deleteSong(
+                song
+              );
+
+          d.querySelector(
+            ".saved-actions"
+          )
+          .appendChild(
+            deleteButton
           );
         }
 
