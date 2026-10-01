@@ -507,7 +507,7 @@ OUENKA BASE /// DATA REGISTER
 
 <div class="description">
 GarageBand ZIPを選択すると、内部のMIDIデータを自動解析します。
-選手情報・MIDI・m4a・GarageBand ZIPをブラウザ内に登録します。
+選手情報を共通データベースに登録し、MIDI・m4a・GarageBand ZIPを端末内にも保存します。
 </div>
 
 
@@ -2558,15 +2558,15 @@ async function registerPlayer(){
    D1登録済みデータを編集
 ========================================= */
 
-function startEditSong(localSong){
+function startEditSong(song){
 
   clearMessage();
 
   try{
 
     if(
-      !localSong ||
-      !localSong.serverId
+      !song ||
+      !song.id
     ){
       throw new Error(
         "編集する登録IDがありません。"
@@ -2574,60 +2574,10 @@ function startEditSong(localSong){
     }
 
     /*
-      編集開始時はD1を再取得せず、
-      この端末の保存済みデータをそのまま使用する。
-      更新時だけD1へPUTする。
+      一覧はD1から取得しているため、
+      D1レコードをそのまま編集対象にする。
     */
-    const song = {
-      id:
-        Number(localSong.serverId),
-
-      player_name:
-        localSong.name || "",
-
-      reading:
-        localSong.reading || "",
-
-      team:
-        localSong.team || "",
-
-      player_type:
-        localSong.type || "現在使用",
-
-      uniform_number:
-        localSong.number === ""
-          ? null
-          : localSong.number,
-
-      production_number:
-        Number(
-          localSong.productionNumber || 1
-        ),
-
-      lyrics:
-        localSong.lyrics || "",
-
-      audio_filename:
-        localSong.audioFileName || "",
-
-      garageband_filename:
-        localSong.zipFileName || "",
-
-      melody_filename:
-        localSong.midi?.track1?.name ||
-        "01_メロディー.mid",
-
-      chord_filename:
-        localSong.midi?.track2?.name ||
-        "02_コード進行.mid",
-
-      bass_filename:
-        localSong.midi?.track3?.name ||
-        "03_ベース.mid"
-    };
-
-    editingSong =
-      song;
+    editingSong = song;
 
     $("registerArea")
       .style
@@ -2635,19 +2585,19 @@ function startEditSong(localSong){
       "block";
 
     $("playerName").value =
-      song.player_name;
+      song.player_name || "";
 
     $("reading").value =
-      song.reading;
+      song.reading || "";
 
     $("team").value =
-      song.team;
+      song.team || "";
 
     $("number").value =
       song.uniform_number ?? "";
 
     $("lyrics").value =
-      song.lyrics;
+      song.lyrics || "";
 
     if(
       song.player_type ===
@@ -2666,7 +2616,7 @@ function startEditSong(localSong){
     $("productionNumberDisplay")
       .textContent =
       String(
-        song.production_number
+        song.production_number || 1
       );
 
     $("editModeBox")
@@ -2677,9 +2627,9 @@ function startEditSong(localSong){
     $("editModeBox")
       .textContent =
       "編集中：" +
-      song.player_name +
+      (song.player_name || "") +
       "　制作番号 " +
-      song.production_number +
+      (song.production_number || 1) +
       "（制作番号は変更されません）";
 
     $("registerButton")
@@ -2692,7 +2642,8 @@ function startEditSong(localSong){
       "block";
 
     /*
-      編集中はファイルを変更しない
+      編集時は既存ファイル名を維持する。
+      ファイル差し替えは新規登録時のみ。
     */
     $("zipFile").disabled =
       true;
@@ -2713,21 +2664,30 @@ function startEditSong(localSong){
     setStatus(
       "melodyStatus",
       "✓ " +
-      song.melody_filename,
+      (
+        song.melody_filename ||
+        "01_メロディー.mid"
+      ),
       "ok"
     );
 
     setStatus(
       "chordStatus",
       "✓ " +
-      song.chord_filename,
+      (
+        song.chord_filename ||
+        "02_コード進行.mid"
+      ),
       "ok"
     );
 
     setStatus(
       "bassStatus",
       "✓ " +
-      song.bass_filename,
+      (
+        song.bass_filename ||
+        "03_ベース.mid"
+      ),
       "ok"
     );
 
@@ -2741,9 +2701,6 @@ function startEditSong(localSong){
       "ok"
     );
 
-    /*
-      PLAYER DATAの位置へ移動
-    */
     $("registerArea")
       .scrollIntoView({
         behavior:"smooth",
@@ -2754,10 +2711,6 @@ function startEditSong(localSong){
 
     console.error(error);
 
-    /*
-      登録エリアが隠れていても
-      エラーが見えるようにする
-    */
     $("registerArea")
       .style
       .display =
@@ -3126,142 +3079,185 @@ function cancelEditMode(
 
 /* =========================================
    登録済み一覧
+   D1を正本として全ブラウザ共通表示
 ========================================= */
 
 async function renderSavedList(){
 
-  const all =
-    (
-      await getAllSaved()
-    )
-    .sort(
-      (a,b) =>
-        new Date(
-          b.savedAt
-        ) -
-        new Date(
-          a.savedAt
-        )
-    );
-
-
   const area =
     $("savedList");
 
-
   area.innerHTML =
-    "";
+    '<div class="empty">共通データを読み込んでいます...</div>';
 
+  try{
 
-  if(!all.length){
+    const response =
+      await fetch(
+        DATA_API + "/songs",
+        {
+          method:"GET",
+          cache:"no-store"
+        }
+      );
 
-    area.innerHTML =
-      '<div class="empty">登録データはありません</div>';
+    let data = null;
 
-    return;
-  }
+    try{
 
+      data =
+        await response.json();
 
-  all.forEach(
-    p => {
+    }catch{
 
-      const d =
-        document.createElement(
-          "div"
-        );
-
-
-      d.className =
-        "saved-item";
-
-
-      d.innerHTML =
-        '<div class="saved-title"></div>' +
-        '<div class="saved-meta"></div>' +
-        '<div class="saved-actions"></div>';
-
-
-      d.querySelector(
-        ".saved-title"
-      )
-      .textContent =
-        p.name +
-        "　制作番号 " +
-        p.productionNumber;
-
-
-      let meta =
-        p.team +
-        " ／ " +
-        p.type;
-
-
-      if(p.number){
-
-        meta +=
-          " ／ 背番号 " +
-          p.number;
-      }
-
-
-      if(p.audioFileName){
-
-        meta +=
-          " ／ m4a：" +
-          p.audioFileName;
-      }
-
-
-      meta +=
-        " ／ MIDI：メロディー・コード進行・ベース";
-
-
-      d.querySelector(
-        ".saved-meta"
-      )
-      .textContent =
-        meta;
-
-
-      /*
-        D1と同期済みの登録だけ編集可能
-      */
-      if(p.serverId){
-
-        const editButton =
-          document.createElement(
-            "button"
-          );
-
-        editButton.type =
-          "button";
-
-        editButton.className =
-          "edit-button";
-
-        editButton.textContent =
-          "編集";
-
-        editButton.onclick =
-          () =>
-            startEditSong(
-              p
-            );
-
-        d.querySelector(
-          ".saved-actions"
-        )
-        .appendChild(
-          editButton
-        );
-      }
-
-
-      area.appendChild(
-        d
+      throw new Error(
+        "共通データAPIから正しいJSONが返りませんでした。"
       );
     }
-  );
+
+    if(
+      !response.ok ||
+      !data.ok ||
+      !Array.isArray(data.songs)
+    ){
+
+      throw new Error(
+        data?.error ||
+        "登録済みデータを取得できませんでした。"
+      );
+    }
+
+    const all =
+      [...data.songs]
+        .sort(
+          (a,b) => {
+
+            const dateA =
+              new Date(
+                a.created_at || 0
+              );
+
+            const dateB =
+              new Date(
+                b.created_at || 0
+              );
+
+            return dateB - dateA;
+          }
+        );
+
+    area.innerHTML = "";
+
+    if(!all.length){
+
+      area.innerHTML =
+        '<div class="empty">登録データはありません</div>';
+
+      return;
+    }
+
+    all.forEach(
+      song => {
+
+        const d =
+          document.createElement(
+            "div"
+          );
+
+        d.className =
+          "saved-item";
+
+        d.innerHTML =
+          '<div class="saved-title"></div>' +
+          '<div class="saved-meta"></div>' +
+          '<div class="saved-actions"></div>';
+
+        d.querySelector(
+          ".saved-title"
+        )
+        .textContent =
+          (song.player_name || "") +
+          "　制作番号 " +
+          (song.production_number || 1);
+
+        let meta =
+          (song.team || "") +
+          " ／ " +
+          (song.player_type || "");
+
+        if(
+          song.uniform_number !== null &&
+          song.uniform_number !== undefined &&
+          song.uniform_number !== ""
+        ){
+
+          meta +=
+            " ／ 背番号 " +
+            song.uniform_number;
+        }
+
+        if(song.audio_filename){
+
+          meta +=
+            " ／ m4a：" +
+            song.audio_filename;
+        }
+
+        meta +=
+          " ／ MIDI：メロディー・コード進行・ベース";
+
+        d.querySelector(
+          ".saved-meta"
+        )
+        .textContent =
+          meta;
+
+        /*
+          D1のIDがある全登録データを編集可能
+        */
+        if(song.id){
+
+          const editButton =
+            document.createElement(
+              "button"
+            );
+
+          editButton.type =
+            "button";
+
+          editButton.className =
+            "edit-button";
+
+          editButton.textContent =
+            "編集";
+
+          editButton.onclick =
+            () =>
+              startEditSong(
+                song
+              );
+
+          d.querySelector(
+            ".saved-actions"
+          )
+          .appendChild(
+            editButton
+          );
+        }
+
+        area.appendChild(
+          d
+        );
+      }
+    );
+
+  }catch(error){
+
+    console.error(error);
+
+    area.innerHTML =
+      '<div class="empty">共通データを取得できませんでした。再読み込みしてください。</div>';
+  }
 }
 
 
@@ -3357,7 +3353,7 @@ function backToBase(){
     console.error(error);
 
     showError(
-      "ブラウザ内保存を開始できませんでした。"
+      "登録データの読み込みを開始できませんでした。"
     );
   }
 
