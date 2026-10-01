@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-v4";
+const CACHE_NAME = "ouenka-base-v5";
 
 
 // ========================================
