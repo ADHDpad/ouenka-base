@@ -239,12 +239,11 @@ async function searchPlayers() {
                         // m4a
                         // ========================
 
+                        // 実ファイル名は登録時の元名に関係なく
+                        // 保存ルールどおり audio.m4a に固定
                         audio:
                             basePath +
-                            (
-                                song.audio_filename ||
-                                "audio.m4a"
-                            ),
+                            "audio.m4a",
 
 
                         // ========================
