@@ -400,6 +400,49 @@ textarea{
   line-height:1.6;
 }
 
+.saved-actions{
+  margin-top:12px;
+  display:flex;
+  gap:8px;
+}
+
+.edit-button{
+  border:1px solid #071d33;
+  border-radius:7px;
+  background:#fff;
+  color:#071d33;
+  padding:9px 14px;
+  font-size:13px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.edit-mode-box{
+  display:none;
+  margin-bottom:18px;
+  padding:14px;
+  border:1px solid #b8c7d5;
+  border-radius:8px;
+  background:#eef4f9;
+  color:#071d33;
+  font-size:13px;
+  font-weight:700;
+  line-height:1.6;
+}
+
+.edit-cancel-button{
+  width:100%;
+  margin-top:10px;
+  border:1px solid #9ba6b0;
+  border-radius:8px;
+  background:#fff;
+  color:#53606c;
+  padding:13px;
+  font-size:14px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
 .empty{
   color:#8a929a;
   font-size:13px;
@@ -872,6 +915,11 @@ GarageBand / 元ZIP
 05 /// REGISTER
 </div>
 
+<div
+  id="editModeBox"
+  class="edit-mode-box"
+></div>
+
 <button
   type="button"
   id="registerButton"
@@ -879,6 +927,16 @@ GarageBand / 元ZIP
   onclick="registerPlayer()"
 >
 この選手を登録
+</button>
+
+<button
+  type="button"
+  id="cancelEditButton"
+  class="edit-cancel-button"
+  onclick="cancelEditMode()"
+  style="display:none"
+>
+編集をやめる
 </button>
 
 <div id="message"></div>
@@ -948,6 +1006,12 @@ let db = null;
 let selectedZipFile = null;
 
 let selectedAudioFile = null;
+
+/*
+  編集中のD1レコード。
+  null = 新規登録モード
+*/
+let editingSong = null;
 
 let extractedMidi = {
   melody:null,
@@ -1092,6 +1156,56 @@ function addSaved(data){
 }
 
 
+
+/* =========================================
+   端末内保存データ更新
+========================================= */
+
+function putSaved(data){
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const r =
+        db
+          .transaction(
+            STORE_NAME,
+            "readwrite"
+          )
+          .objectStore(
+            STORE_NAME
+          )
+          .put(data);
+
+      r.onsuccess =
+        () =>
+          resolve(r.result);
+
+      r.onerror =
+        () =>
+          reject(r.error);
+    }
+  );
+}
+
+
+async function findLocalByServerId(serverId){
+
+  if(!db){
+    return null;
+  }
+
+  const all =
+    await getAllSaved();
+
+  return all.find(
+    item =>
+      Number(item.serverId) ===
+      Number(serverId)
+  ) || null;
+}
+
+
 /* =========================================
    制作番号
 ========================================= */
@@ -1137,6 +1251,22 @@ async function localSameNameCount(name){
 
 
 async function updateProductionNumber(){
+
+  /*
+    編集中は制作番号を変更しない
+  */
+  if(editingSong){
+
+    $("productionNumberDisplay")
+      .textContent =
+      String(
+        editingSong.production_number
+      );
+
+    return Number(
+      editingSong.production_number
+    );
+  }
 
   const name =
     $("playerName")
@@ -1761,6 +1891,14 @@ $("zipFile")
     "change",
     async () => {
 
+      /*
+        編集中に新しいZIPを選んだ場合は
+        新規登録モードへ戻す
+      */
+      if(editingSong){
+        cancelEditMode(false);
+      }
+
       const f =
         $("zipFile")
           .files?.[0];
@@ -2066,6 +2204,16 @@ $("audioFile")
 ========================================= */
 
 async function registerPlayer(){
+
+  /*
+    編集モードなら既存データを更新
+  */
+  if(editingSong){
+
+    await updateExistingSong();
+
+    return;
+  }
 
   const name =
     $("playerName")
@@ -2405,6 +2553,545 @@ async function registerPlayer(){
 }
 
 
+
+/* =========================================
+   D1登録済みデータを編集
+========================================= */
+
+async function startEditSong(serverId){
+
+  clearMessage();
+
+  try{
+
+    const response =
+      await fetch(
+        DATA_API +
+        "/songs/" +
+        encodeURIComponent(serverId),
+        {
+          cache:"no-store"
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if(
+      !response.ok ||
+      !data.ok ||
+      !data.song
+    ){
+
+      throw new Error(
+        data?.error ||
+        "登録データを取得できませんでした。"
+      );
+    }
+
+    const song =
+      data.song;
+
+    editingSong =
+      song;
+
+    /*
+      ZIPを再選択しなくても編集できるようにする。
+      ファイル本体は変更せず、D1の文字情報だけ更新する。
+    */
+    $("registerArea")
+      .style
+      .display =
+      "block";
+
+    $("playerName").value =
+      song.player_name || "";
+
+    $("reading").value =
+      song.reading || "";
+
+    $("team").value =
+      song.team || "";
+
+    $("number").value =
+      song.uniform_number ??
+      "";
+
+    $("lyrics").value =
+      song.lyrics || "";
+
+    const typeRadio =
+      document.querySelector(
+        'input[name="playerType"][value="' +
+        String(song.player_type)
+          .replace(/"/g,'\\"') +
+        '"]'
+      );
+
+    if(typeRadio){
+      typeRadio.checked = true;
+    }
+
+    $("productionNumberDisplay")
+      .textContent =
+      String(
+        song.production_number
+      );
+
+    $("editModeBox")
+      .style
+      .display =
+      "block";
+
+    $("editModeBox")
+      .textContent =
+      "編集中：" +
+      song.player_name +
+      "　制作番号 " +
+      song.production_number +
+      "（制作番号は変更されません）";
+
+    $("registerButton")
+      .textContent =
+      "この登録内容を更新";
+
+    $("cancelEditButton")
+      .style
+      .display =
+      "block";
+
+    /*
+      編集では既存ファイル名を維持するため、
+      ZIP/m4aの再選択は不要。
+    */
+    $("zipFile").disabled =
+      true;
+
+    $("audioFile").disabled =
+      true;
+
+    $("selectedFileName")
+      .textContent =
+      song.garageband_filename ||
+      "登録済みZIP";
+
+    $("selectedAudioName")
+      .textContent =
+      song.audio_filename ||
+      "登録済みm4a";
+
+    setStatus(
+      "melodyStatus",
+      song.melody_filename
+        ? "✓ " + song.melody_filename
+        : "登録なし",
+      song.melody_filename
+        ? "ok"
+        : ""
+    );
+
+    setStatus(
+      "chordStatus",
+      song.chord_filename
+        ? "✓ " + song.chord_filename
+        : "登録なし",
+      song.chord_filename
+        ? "ok"
+        : ""
+    );
+
+    setStatus(
+      "bassStatus",
+      song.bass_filename
+        ? "✓ " + song.bass_filename
+        : "登録なし",
+      song.bass_filename
+        ? "ok"
+        : ""
+    );
+
+    setStatus(
+      "zipStatus",
+      song.garageband_filename
+        ? "✓ " + song.garageband_filename
+        : "登録なし",
+      song.garageband_filename
+        ? "ok"
+        : ""
+    );
+
+    window.scrollTo({
+      top:
+        $("registerArea")
+          .offsetTop - 20,
+      behavior:"smooth"
+    });
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      "編集データの取得に失敗しました：" +
+      (
+        error?.message ||
+        "原因不明"
+      )
+    );
+  }
+}
+
+
+/* =========================================
+   既存データ更新
+========================================= */
+
+async function updateExistingSong(){
+
+  if(!editingSong){
+    return;
+  }
+
+  const name =
+    $("playerName")
+      .value
+      .trim();
+
+  const reading =
+    $("reading")
+      .value
+      .trim()
+      .replace(
+        /[・･\s　]/g,
+        ""
+      );
+
+  const team =
+    $("team").value;
+
+  const type =
+    document
+      .querySelector(
+        'input[name="playerType"]:checked'
+      )
+      ?.value || "";
+
+  const number =
+    $("number").value;
+
+  const lyrics =
+    $("lyrics")
+      .value
+      .trim();
+
+  if(!name){
+
+    showError(
+      "選手名を入力してください。"
+    );
+
+    return;
+  }
+
+  if(!reading){
+
+    showError(
+      "読み仮名を入力してください。"
+    );
+
+    return;
+  }
+
+  if(!team){
+
+    showError(
+      "球団を選択してください。"
+    );
+
+    return;
+  }
+
+  $("registerButton")
+    .disabled =
+    true;
+
+  $("registerButton")
+    .textContent =
+    "更新中...";
+
+  try{
+
+    const response =
+      await fetch(
+        DATA_API +
+        "/songs/" +
+        encodeURIComponent(
+          editingSong.id
+        ),
+        {
+          method:"PUT",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          body:JSON.stringify({
+            player_name:name,
+            reading:reading,
+            team:team,
+            player_type:type,
+            uniform_number:
+              number === ""
+                ? null
+                : Number(number),
+            lyrics:lyrics
+          })
+        }
+      );
+
+    let serverData = null;
+
+    try{
+
+      serverData =
+        await response.json();
+
+    }catch{
+
+      throw new Error(
+        "共通データAPIから正しいJSONが返りませんでした。"
+      );
+    }
+
+    if(
+      !response.ok ||
+      !serverData.ok ||
+      !serverData.song
+    ){
+
+      throw new Error(
+        serverData?.error ||
+        "共通データの更新に失敗しました。"
+      );
+    }
+
+    const updated =
+      serverData.song;
+
+    /*
+      同じ端末に元のファイル本体がある場合は、
+      IndexedDB側の文字情報も更新する。
+    */
+    try{
+
+      const local =
+        await findLocalByServerId(
+          updated.id
+        );
+
+      if(local){
+
+        local.name =
+          updated.player_name;
+
+        local.reading =
+          updated.reading;
+
+        local.team =
+          updated.team;
+
+        local.type =
+          updated.player_type;
+
+        local.number =
+          updated.uniform_number ?? "";
+
+        local.productionNumber =
+          updated.production_number;
+
+        local.lyrics =
+          updated.lyrics || "";
+
+        local.savedAt =
+          new Date()
+            .toISOString();
+
+        await putSaved(
+          local
+        );
+      }
+
+    }catch(localError){
+
+      console.warn(
+        "D1更新成功。端末内表示の更新のみ失敗:",
+        localError
+      );
+    }
+
+    showSuccess(
+      "✓ 更新しました：" +
+      updated.player_name +
+      "　制作番号 " +
+      updated.production_number
+    );
+
+    await renderSavedList();
+
+    /*
+      更新成功後も画面上では内容を確認できるよう、
+      編集モードを維持する。
+    */
+    editingSong =
+      updated;
+
+    $("productionNumberDisplay")
+      .textContent =
+      String(
+        updated.production_number
+      );
+
+    $("editModeBox")
+      .textContent =
+      "編集中：" +
+      updated.player_name +
+      "　制作番号 " +
+      updated.production_number +
+      "（更新済み）";
+
+    $("registerButton")
+      .textContent =
+      "この登録内容を更新";
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      "更新に失敗しました：" +
+      (
+        error?.message ||
+        "原因不明"
+      )
+    );
+
+  }finally{
+
+    $("registerButton")
+      .disabled =
+      false;
+
+    if(editingSong){
+
+      $("registerButton")
+        .textContent =
+        "この登録内容を更新";
+
+    }else{
+
+      $("registerButton")
+        .textContent =
+        "この選手を登録";
+    }
+  }
+}
+
+
+/* =========================================
+   編集モード終了
+========================================= */
+
+function cancelEditMode(
+  clearForm = true
+){
+
+  editingSong =
+    null;
+
+  $("editModeBox")
+    .style
+    .display =
+    "none";
+
+  $("editModeBox")
+    .textContent =
+    "";
+
+  $("cancelEditButton")
+    .style
+    .display =
+    "none";
+
+  $("registerButton")
+    .textContent =
+    "この選手を登録";
+
+  $("zipFile").disabled =
+    false;
+
+  $("audioFile").disabled =
+    false;
+
+  if(clearForm){
+
+    $("zipFile").value =
+      "";
+
+    $("audioFile").value =
+      "";
+
+    selectedZipFile =
+      null;
+
+    selectedAudioFile =
+      null;
+
+    $("selectedFileName")
+      .textContent =
+      "ZIPが選択されていません";
+
+    $("selectedAudioName")
+      .textContent =
+      "m4aが選択されていません";
+
+    $("playerName").value =
+      "";
+
+    $("reading").value =
+      "";
+
+    $("team").value =
+      "";
+
+    $("number").value =
+      "";
+
+    $("lyrics").value =
+      "";
+
+    $("inUse").checked =
+      true;
+
+    $("registerArea")
+      .style
+      .display =
+      "none";
+
+    resetMidi();
+
+    setStatus(
+      "zipStatus",
+      "解析待ち"
+    );
+
+    clearMessage();
+
+    updateProductionNumber();
+  }
+}
+
+
 /* =========================================
    登録済み一覧
 ========================================= */
@@ -2458,7 +3145,8 @@ async function renderSavedList(){
 
       d.innerHTML =
         '<div class="saved-title"></div>' +
-        '<div class="saved-meta"></div>';
+        '<div class="saved-meta"></div>' +
+        '<div class="saved-actions"></div>';
 
 
       d.querySelector(
@@ -2501,6 +3189,40 @@ async function renderSavedList(){
       )
       .textContent =
         meta;
+
+
+      /*
+        D1と同期済みの登録だけ編集可能
+      */
+      if(p.serverId){
+
+        const editButton =
+          document.createElement(
+            "button"
+          );
+
+        editButton.type =
+          "button";
+
+        editButton.className =
+          "edit-button";
+
+        editButton.textContent =
+          "編集";
+
+        editButton.onclick =
+          () =>
+            startEditSong(
+              p.serverId
+            );
+
+        d.querySelector(
+          ".saved-actions"
+        )
+        .appendChild(
+          editButton
+        );
+      }
 
 
       area.appendChild(
