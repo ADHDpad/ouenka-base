@@ -456,7 +456,7 @@ OUENKA BASE /// DATA REGISTER
 <h1>応援歌データ登録</h1>
 
 <div class="description">
-ZIPとm4aを選択し、選手情報・MIDI・音源をブラウザ内に登録します。
+GarageBand元ZIP・MIDI抽出結果ZIP・m4aを選択し、選手情報・MIDI・音源をブラウザ内に登録します。
 </div>
 
 
@@ -467,7 +467,7 @@ ZIPとm4aを選択し、選手情報・MIDI・音源をブラウザ内に登録�
 <section class="card">
 
 <div class="card-title">
-01 /// SELECT ZIP
+01 /// GARAGEBAND ZIP
 </div>
 
 <input
@@ -496,6 +496,12 @@ ZIPが選択されていません
   id="fileResult"
   class="file-result"
 ></div>
+
+<div style="margin-top:18px;">
+  <div class="selected-label">MIDI EXTRACT ZIP</div>
+  <input type="file" id="midiExtractZipFile" class="file-input" accept=".zip,application/zip">
+  <div id="midiExtractResult" class="file-result"></div>
+</div>
 
 </section>
 
@@ -797,7 +803,7 @@ m4aが選択されていません
 </div>
 
 <div class="music-detail">
-ZIP内MIDIの1番目
+抽出結果ZIP / tracks/1_ を使用
 </div>
 
 </div>
@@ -821,7 +827,7 @@ ZIP内MIDIの1番目
 </div>
 
 <div class="music-detail">
-ZIP内MIDIの2番目
+抽出結果ZIP / tracks/2_ を使用
 </div>
 
 </div>
@@ -845,7 +851,7 @@ ZIP内MIDIの2番目
 </div>
 
 <div class="music-detail">
-ZIP内MIDIの3番目
+抽出結果ZIP / tracks/3_ を使用
 </div>
 
 </div>
@@ -1530,154 +1536,53 @@ async function analyzeZip(file){
 
   resetMidi();
 
-
   try{
+    const zip = await JSZip.loadAsync(file);
 
-    const zip =
-      await JSZip.loadAsync(
-        file
-      );
-
-
-    const midiEntries =
-      Object
-        .values(
-          zip.files
-        )
-        .filter(
-          x =>
-            !x.dir &&
-            /\.(mid|midi)$/i
-              .test(
-                x.name
-              )
-        )
-        .sort(
-          (a,b) =>
-            a.name.localeCompare(
-              b.name,
-              "ja",
-              {
-                numeric:true,
-                sensitivity:"base"
-              }
-            )
-        );
-
-
-    const slots = [
-
-      [
-        "melody",
-        "melodyStatus"
-      ],
-
-      [
-        "chord",
-        "chordStatus"
-      ],
-
-      [
-        "bass",
-        "bassStatus"
-      ]
-
+    const specs = [
+      { key:"melody", status:"melodyStatus", track:1 },
+      { key:"chord",  status:"chordStatus",  track:2 },
+      { key:"bass",   status:"bassStatus",   track:3 }
     ];
 
+    for(const spec of specs){
+      const candidates = Object.values(zip.files)
+        .filter(entry =>
+          !entry.dir &&
+          /\.(mid|midi)$/i.test(entry.name) &&
+          new RegExp("(?:^|/)tracks/" + spec.track + "_(?:/|$)", "i").test(entry.name)
+        )
+        .sort((a,b) => a.name.localeCompare(b.name, "ja", {numeric:true}));
 
-    for(
-      let i = 0;
-      i < 3;
-      i++
-    ){
+      const entry = candidates[0];
 
-      const [
-        key,
-        status
-      ] =
-        slots[i];
-
-
-      const entry =
-        midiEntries[i];
-
-
-      if(entry){
-
-        const blob =
-          await entry.async(
-            "blob"
-          );
-
-
-        extractedMidi[key] =
-          new File(
-            [blob],
-            baseName(
-              entry.name
-            ),
-            {
-              type:
-                "audio/midi"
-            }
-          );
-
-
-        setStatus(
-          status,
-          "✓ " +
-          baseName(
-            entry.name
-          ),
-          "ok"
-        );
-
-      }else{
-
-        setStatus(
-          status,
-          "× MIDIが見つかりません",
-          "ng"
-        );
+      if(!entry){
+        setStatus(spec.status, "× Track " + spec.track + " が見つかりません", "ng");
+        continue;
       }
+
+      const blob = await entry.async("blob");
+      const outputName =
+        spec.track === 1 ? "メロディー.mid" :
+        spec.track === 2 ? "コード進行.mid" :
+                           "ベース.mid";
+
+      extractedMidi[spec.key] = new File([blob], outputName, {type:"audio/midi"});
+      setStatus(spec.status, "✓ Track " + spec.track + " / " + baseName(entry.name), "ok");
     }
 
-
-    setStatus(
-      "zipStatus",
-      "✓ " +
-      file.name,
-      "ok"
-    );
-
-
-    if(
-      midiEntries.length < 3
-    ){
-
-      showError(
-        "ZIP内にMIDIファイルが3つ必要です。トラック1＝メロディー、トラック2＝コード進行、トラック3＝ベースです。"
-      );
+    if(extractedMidi.melody && extractedMidi.chord && extractedMidi.bass){
+      clearMessage();
+    }else{
+      showError("抽出結果ZIPからTrack 1・Track 2・Track 3をすべて確認できませんでした。");
     }
-
 
   }catch(error){
-
-    console.error(
-      error
-    );
-
-
-    showError(
-      "ZIPを解析できませんでした。"
-    );
-
-
-    setStatus(
-      "zipStatus",
-      "× 解析失敗",
-      "ng"
-    );
+    console.error(error);
+    showError("MIDI抽出結果ZIPを解析できませんでした。");
+    setStatus("melodyStatus", "× 解析失敗", "ng");
+    setStatus("chordStatus", "× 解析失敗", "ng");
+    setStatus("bassStatus", "× 解析失敗", "ng");
   }
 }
 
@@ -1849,7 +1754,53 @@ $("zipFile")
 
       await updateProductionNumber();
 
+      setStatus(
+        "zipStatus",
+        "✓ " + f.name,
+        "ok"
+      );
+    }
+  );
+
+
+/* =========================================
+   MIDI抽出結果ZIP選択
+========================================= */
+
+$("midiExtractZipFile")
+  .addEventListener(
+    "change",
+    async () => {
+      const f = $("midiExtractZipFile").files?.[0];
+      const result = $("midiExtractResult");
+
+      resetMidi();
+
+      if(!f){
+        result.style.display = "none";
+        return;
+      }
+
+      if(!f.name.toLowerCase().endsWith(".zip")){
+        result.style.display = "block";
+        result.style.color = "#a51f1f";
+        result.textContent = "× ZIPファイルではありません";
+        return;
+      }
+
+      result.style.display = "block";
+      result.style.color = "#137333";
+      result.textContent = "解析中… " + f.name;
+
       await analyzeZip(f);
+
+      if(extractedMidi.melody && extractedMidi.chord && extractedMidi.bass){
+        result.style.color = "#137333";
+        result.textContent = "✓ Track 1・2・3を読み込みました：" + f.name;
+      }else{
+        result.style.color = "#a51f1f";
+        result.textContent = "× Track 1・2・3の読み込みに失敗しました";
+      }
     }
   );
 
