@@ -2558,78 +2558,109 @@ async function registerPlayer(){
    D1登録済みデータを編集
 ========================================= */
 
-async function startEditSong(serverId){
+function startEditSong(localSong){
 
   clearMessage();
 
   try{
 
-    const response =
-      await fetch(
-        DATA_API +
-        "/songs/" +
-        encodeURIComponent(serverId),
-        {
-          cache:"no-store"
-        }
-      );
-
-    const data =
-      await response.json();
-
     if(
-      !response.ok ||
-      !data.ok ||
-      !data.song
+      !localSong ||
+      !localSong.serverId
     ){
-
       throw new Error(
-        data?.error ||
-        "登録データを取得できませんでした。"
+        "編集する登録IDがありません。"
       );
     }
 
-    const song =
-      data.song;
+    /*
+      編集開始時はD1を再取得せず、
+      この端末の保存済みデータをそのまま使用する。
+      更新時だけD1へPUTする。
+    */
+    const song = {
+      id:
+        Number(localSong.serverId),
+
+      player_name:
+        localSong.name || "",
+
+      reading:
+        localSong.reading || "",
+
+      team:
+        localSong.team || "",
+
+      player_type:
+        localSong.type || "現在使用",
+
+      uniform_number:
+        localSong.number === ""
+          ? null
+          : localSong.number,
+
+      production_number:
+        Number(
+          localSong.productionNumber || 1
+        ),
+
+      lyrics:
+        localSong.lyrics || "",
+
+      audio_filename:
+        localSong.audioFileName || "",
+
+      garageband_filename:
+        localSong.zipFileName || "",
+
+      melody_filename:
+        localSong.midi?.track1?.name ||
+        "01_メロディー.mid",
+
+      chord_filename:
+        localSong.midi?.track2?.name ||
+        "02_コード進行.mid",
+
+      bass_filename:
+        localSong.midi?.track3?.name ||
+        "03_ベース.mid"
+    };
 
     editingSong =
       song;
 
-    /*
-      ZIPを再選択しなくても編集できるようにする。
-      ファイル本体は変更せず、D1の文字情報だけ更新する。
-    */
     $("registerArea")
       .style
       .display =
       "block";
 
     $("playerName").value =
-      song.player_name || "";
+      song.player_name;
 
     $("reading").value =
-      song.reading || "";
+      song.reading;
 
     $("team").value =
-      song.team || "";
+      song.team;
 
     $("number").value =
-      song.uniform_number ??
-      "";
+      song.uniform_number ?? "";
 
     $("lyrics").value =
-      song.lyrics || "";
+      song.lyrics;
 
-    const typeRadio =
-      document.querySelector(
-        'input[name="playerType"][value="' +
-        String(song.player_type)
-          .replace(/"/g,'\\"') +
-        '"]'
-      );
+    if(
+      song.player_type ===
+      "未使用"
+    ){
 
-    if(typeRadio){
-      typeRadio.checked = true;
+      $("notInUse").checked =
+        true;
+
+    }else{
+
+      $("inUse").checked =
+        true;
     }
 
     $("productionNumberDisplay")
@@ -2661,8 +2692,7 @@ async function startEditSong(serverId){
       "block";
 
     /*
-      編集では既存ファイル名を維持するため、
-      ZIP/m4aの再選択は不要。
+      編集中はファイルを変更しない
     */
     $("zipFile").disabled =
       true;
@@ -2682,57 +2712,59 @@ async function startEditSong(serverId){
 
     setStatus(
       "melodyStatus",
-      song.melody_filename
-        ? "✓ " + song.melody_filename
-        : "登録なし",
-      song.melody_filename
-        ? "ok"
-        : ""
+      "✓ " +
+      song.melody_filename,
+      "ok"
     );
 
     setStatus(
       "chordStatus",
-      song.chord_filename
-        ? "✓ " + song.chord_filename
-        : "登録なし",
-      song.chord_filename
-        ? "ok"
-        : ""
+      "✓ " +
+      song.chord_filename,
+      "ok"
     );
 
     setStatus(
       "bassStatus",
-      song.bass_filename
-        ? "✓ " + song.bass_filename
-        : "登録なし",
-      song.bass_filename
-        ? "ok"
-        : ""
+      "✓ " +
+      song.bass_filename,
+      "ok"
     );
 
     setStatus(
       "zipStatus",
-      song.garageband_filename
-        ? "✓ " + song.garageband_filename
-        : "登録なし",
-      song.garageband_filename
-        ? "ok"
-        : ""
+      "✓ " +
+      (
+        song.garageband_filename ||
+        "登録済みZIP"
+      ),
+      "ok"
     );
 
-    window.scrollTo({
-      top:
-        $("registerArea")
-          .offsetTop - 20,
-      behavior:"smooth"
-    });
+    /*
+      PLAYER DATAの位置へ移動
+    */
+    $("registerArea")
+      .scrollIntoView({
+        behavior:"smooth",
+        block:"start"
+      });
 
   }catch(error){
 
     console.error(error);
 
+    /*
+      登録エリアが隠れていても
+      エラーが見えるようにする
+    */
+    $("registerArea")
+      .style
+      .display =
+      "block";
+
     showError(
-      "編集データの取得に失敗しました：" +
+      "編集開始に失敗しました：" +
       (
         error?.message ||
         "原因不明"
@@ -3213,7 +3245,7 @@ async function renderSavedList(){
         editButton.onclick =
           () =>
             startEditSong(
-              p.serverId
+              p
             );
 
         d.querySelector(
