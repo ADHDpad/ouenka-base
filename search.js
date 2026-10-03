@@ -1,7 +1,7 @@
 // ========================================
 // OUENKA BASE
 // search.js
-// D1検索・再生・MIDI・GarageBand対応版
+// D1検索・高速再生・GarageBand対応版
 // ========================================
 
 const MAX_SUGGESTIONS = 10;
@@ -245,33 +245,6 @@ async function searchPlayers() {
                             basePath +
                             "audio.m4a",
 
-
-                        // ========================
-                        // MIDI
-                        // ========================
-
-                        melody:
-                            basePath +
-                            (
-                                song.melody_filename ||
-                                "melody.mid"
-                            ),
-
-                        chord:
-                            basePath +
-                            (
-                                song.chord_filename ||
-                                "chord.mid"
-                            ),
-
-                        bass:
-                            basePath +
-                            (
-                                song.bass_filename ||
-                                "bass.mid"
-                            ),
-
-
                         // ========================
                         // GarageBand
                         // ========================
@@ -484,36 +457,7 @@ function showPlayerActions(
 
 
     // ====================================
-    // ② MIDI出力
-    // ====================================
-
-    const midiButton =
-        document.createElement(
-            "button"
-        );
-
-
-    midiButton.textContent =
-        "MIDIを出力";
-
-
-    midiButton.onclick =
-        async function() {
-
-            await downloadMidiZip(
-                player
-            );
-
-        };
-
-
-    menu.appendChild(
-        midiButton
-    );
-
-
-    // ====================================
-    // ③ GarageBand出力
+    // ② GarageBand出力
     // ====================================
 
     const garageButton =
@@ -549,244 +493,83 @@ function showPlayerActions(
 
 
 // ========================================
-// ファイル取得
-// ========================================
-
-async function fetchFileBlob(url) {
-
-    const response =
-        await fetch(
-            url,
-            {
-                cache: "no-store"
-            }
-        );
-
-
-    if (!response.ok) {
-
-        throw new Error(
-            "ファイルを取得できませんでした：" +
-            response.status +
-            " / " +
-            url
-        );
-
-    }
-
-
-    return await response.blob();
-
-}
-
-
-// ========================================
-// Blobをダウンロード
-// ========================================
-
-function downloadBlob(
-    blob,
-    fileName
-) {
-
-    const url =
-        URL.createObjectURL(
-            blob
-        );
-
-
-    const link =
-        document.createElement(
-            "a"
-        );
-
-
-    link.href =
-        url;
-
-
-    link.download =
-        fileName;
-
-
-    link.style.display =
-        "none";
-
-
-    document.body.appendChild(
-        link
-    );
-
-
-    link.click();
-
-
-    document.body.removeChild(
-        link
-    );
-
-
-    setTimeout(
-
-        function() {
-
-            URL.revokeObjectURL(
-                url
-            );
-
-        },
-
-        5000
-
-    );
-
-}
-
-
-// ========================================
-// MIDI ZIP出力
-// ========================================
-
-async function downloadMidiZip(
-    player
-) {
-
-    if (
-        typeof JSZip ===
-        "undefined"
-    ) {
-
-        alert(
-            "MIDI ZIP作成機能を読み込めませんでした"
-        );
-
-        return;
-
-    }
-
-
-    try {
-
-        // ====================================
-        // 3つのMIDIを取得
-        // ====================================
-
-        const [
-            melodyBlob,
-            chordBlob,
-            bassBlob
-        ] =
-            await Promise.all([
-
-                fetchFileBlob(
-                    player.melody
-                ),
-
-                fetchFileBlob(
-                    player.chord
-                ),
-
-                fetchFileBlob(
-                    player.bass
-                )
-
-            ]);
-
-
-        // ====================================
-        // ZIP作成
-        // ====================================
-
-        const zip =
-            new JSZip();
-
-
-        zip.file(
-            "melody.mid",
-            melodyBlob
-        );
-
-
-        zip.file(
-            "chord.mid",
-            chordBlob
-        );
-
-
-        zip.file(
-            "bass.mid",
-            bassBlob
-        );
-
-
-        const zipBlob =
-            await zip.generateAsync({
-
-                type:
-                    "blob",
-
-                compression:
-                    "DEFLATE",
-
-                compressionOptions: {
-                    level: 6
-                }
-
-            });
-
-
-        // ====================================
-        // ダウンロード
-        // ====================================
-
-        downloadBlob(
-            zipBlob,
-            player.name +
-            "_" +
-            player.productionNumber +
-            "_MIDI.zip"
-        );
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "MIDI出力エラー:",
-            error
-        );
-
-
-        alert(
-            "MIDIを出力できませんでした"
-        );
-
-    }
-
-}
-
-
-// ========================================
 // GarageBand ZIP出力
+// iPhone：共有シートを開き「ファイルに保存」へ進みやすくする
+// その他：通常ダウンロード
 // ========================================
 
-function downloadGarageBand(player) {
+function isIPhoneLike() {
+    return /iPhone|iPod/i.test(navigator.userAgent);
+}
+
+async function downloadGarageBand(player) {
 
     if (!player || !player.garageBand) {
         alert("GarageBandファイルが見つかりません");
         return;
     }
 
-    // Safari対策：fetch/Blob化せず、実ファイルURLを直接開く。
-    // ユーザーのタップ操作から直結させることで、ダウンロード確認が消える問題を避ける。
-    const link = document.createElement("a");
-    link.href = player.garageBand;
-    link.download =
+    const fileName =
         player.name +
         "_" +
         player.productionNumber +
         "_GarageBand.zip";
+
+    // iPhoneではWeb Share APIでファイル共有を試す。
+    // 共有シートから「ファイルに保存」を選べる。
+    if (
+        isIPhoneLike() &&
+        navigator.share &&
+        navigator.canShare
+    ) {
+        try {
+            const response = await fetch(
+                player.garageBand,
+                { cache: "no-store" }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    "GarageBandファイルを取得できませんでした：" +
+                    response.status
+                );
+            }
+
+            const blob = await response.blob();
+
+            const file = new File(
+                [blob],
+                fileName,
+                { type: "application/zip" }
+            );
+
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file]
+                });
+                return;
+            }
+        } catch (error) {
+            // ユーザーが共有画面を閉じただけならエラー表示しない
+            if (error && error.name === "AbortError") {
+                return;
+            }
+
+            console.warn(
+                "iPhone共有シートを開けなかったため通常保存へ切替:",
+                error
+            );
+        }
+    }
+
+    // Web Share APIが使えない場合のフォールバック。
+    // 実ファイルURLをユーザー操作から直接ダウンロードする。
+    const link = document.createElement("a");
+
+    link.href = player.garageBand;
+    link.download = fileName;
     link.rel = "noopener";
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -944,5 +727,5 @@ function clearSearch() {
 // ========================================
 
 console.log(
-    "OUENKA BASE D1検索・再生・MIDI・GarageBand準備完了"
+    "OUENKA BASE D1検索・高速再生・GarageBand準備完了"
 );
