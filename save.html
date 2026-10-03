@@ -335,6 +335,66 @@ textarea{
   color:#a51f1f;
 }
 
+.saved-search-wrap{
+  margin-bottom:16px;
+}
+
+.saved-search-box{
+  position:relative;
+}
+
+.saved-search-box input{
+  padding-right:46px;
+}
+
+.saved-search-clear{
+  position:absolute;
+  right:7px;
+  top:50%;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
+  border:none;
+  border-radius:7px;
+  background:#eef1f4;
+  color:#071d33;
+  font-size:22px;
+  line-height:1;
+  cursor:pointer;
+}
+
+.saved-search-candidates{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:10px 0 3px;
+  scrollbar-width:thin;
+}
+
+.saved-candidate-button{
+  flex:0 0 auto;
+  border:1px solid #21486b;
+  border-radius:999px;
+  background:#071d33;
+  color:#fff;
+  padding:10px 15px;
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.saved-candidate-button:hover{
+  opacity:.9;
+}
+
+.saved-search-note{
+  width:100%;
+  color:#68727d;
+  font-size:12px;
+  padding:4px 1px;
+}
+
 .saved-list{
   display:grid;
   gap:10px;
@@ -885,12 +945,41 @@ SELECTED MEDLEY AUDIO
 06 /// REGISTERED DATA
 </div>
 
+<div class="saved-search-wrap">
+
+<label class="form-label" for="savedSearchInput">
+登録済み選手を検索
+</label>
+
+<div class="saved-search-box">
+<input
+  type="text"
+  id="savedSearchInput"
+  placeholder="選手名・ふりがなを入力"
+  autocomplete="off"
+>
+<button
+  type="button"
+  id="savedSearchClear"
+  class="saved-search-clear"
+  aria-label="検索をクリア"
+  title="検索をクリア"
+>×</button>
+</div>
+
+<div
+  id="savedSearchCandidates"
+  class="saved-search-candidates"
+></div>
+
+</div>
+
 <div
   id="savedList"
   class="saved-list"
 >
 <div class="empty">
-登録データはありません
+選手名・ふりがなを入力してください
 </div>
 </div>
 
@@ -2849,34 +2938,178 @@ async function deleteSong(song){
    D1を正本として全ブラウザ共通表示
 ========================================= */
 
+let savedSongsCache = [];
+
+function normalizeSavedSearch(value){
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[・･\s　]/g, "");
+}
+
+function showSavedSongs(songs){
+
+  const area = $("savedList");
+  area.innerHTML = "";
+
+  if(!songs.length){
+    area.innerHTML =
+      '<div class="empty">該当する登録データはありません</div>';
+    return;
+  }
+
+  [...songs]
+    .sort((a,b) =>
+      Number(a.production_number || 1) -
+      Number(b.production_number || 1)
+    )
+    .forEach(song => {
+
+      const d = document.createElement("div");
+      d.className = "saved-item";
+      d.innerHTML =
+        '<div class="saved-title"></div>' +
+        '<div class="saved-meta"></div>' +
+        '<div class="saved-actions"></div>';
+
+      d.querySelector(".saved-title").textContent =
+        (song.player_name || "") +
+        "　制作番号 " +
+        (song.production_number || 1);
+
+      let meta =
+        (song.team || "") +
+        " ／ " +
+        (song.player_type || "");
+
+      if(
+        song.uniform_number !== null &&
+        song.uniform_number !== undefined &&
+        song.uniform_number !== ""
+      ){
+        meta += " ／ 背番号 " + song.uniform_number;
+      }
+
+      if(song.audio_filename){
+        meta += " ／ m4a：" + song.audio_filename;
+      }
+
+      if(song.medley_filename){
+        meta += " ／ メドレーm4a：" + song.medley_filename;
+      }
+
+      d.querySelector(".saved-meta").textContent = meta;
+
+      if(song.id){
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.className = "edit-button";
+        editButton.textContent = "編集";
+        editButton.onclick = () => startEditSong(song);
+        d.querySelector(".saved-actions").appendChild(editButton);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-button";
+        deleteButton.textContent = "削除";
+        deleteButton.onclick = () => deleteSong(song);
+        d.querySelector(".saved-actions").appendChild(deleteButton);
+      }
+
+      area.appendChild(d);
+    });
+}
+
+function updateSavedSearch(){
+
+  const input = $("savedSearchInput");
+  const candidatesArea = $("savedSearchCandidates");
+  const q = normalizeSavedSearch(input.value);
+
+  candidatesArea.innerHTML = "";
+
+  if(!q){
+    $("savedList").innerHTML =
+      '<div class="empty">選手名・ふりがなを入力してください</div>';
+    return;
+  }
+
+  const playerMap = new Map();
+
+  savedSongsCache.forEach(song => {
+    const name = normalizeSavedSearch(song.player_name);
+    const reading = normalizeSavedSearch(song.reading);
+
+    if(!name.includes(q) && !reading.includes(q)) return;
+
+    const key = (song.player_name || "") + "\u0000" + (song.reading || "");
+    if(!playerMap.has(key)){
+      playerMap.set(key, {
+        name:song.player_name || "",
+        reading:song.reading || ""
+      });
+    }
+  });
+
+  const candidates = [...playerMap.values()]
+    .sort((a,b) =>
+      (a.reading || a.name).localeCompare(
+        b.reading || b.name,
+        "ja"
+      )
+    )
+    .slice(0,10);
+
+  if(!candidates.length){
+    candidatesArea.innerHTML =
+      '<div class="saved-search-note">候補がありません</div>';
+    $("savedList").innerHTML =
+      '<div class="empty">該当する登録データはありません</div>';
+    return;
+  }
+
+  candidates.forEach(player => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "saved-candidate-button";
+    button.textContent = player.name;
+    button.title = player.reading || player.name;
+
+    button.onclick = () => {
+      input.value = player.name;
+      candidatesArea.innerHTML = "";
+
+      const songs = savedSongsCache.filter(
+        song => song.player_name === player.name
+      );
+
+      showSavedSongs(songs);
+    };
+
+    candidatesArea.appendChild(button);
+  });
+
+  $("savedList").innerHTML =
+    '<div class="empty">候補から選手を選んでください</div>';
+}
+
 async function renderSavedList(){
 
-  const area =
-    $("savedList");
+  const area = $("savedList");
+  const candidatesArea = $("savedSearchCandidates");
 
   area.innerHTML =
     '<div class="empty">共通データを読み込んでいます...</div>';
 
   try{
-
-    const response =
-      await fetch(
-        DATA_API + "/songs",
-        {
-          method:"GET",
-          cache:"no-store"
-        }
-      );
+    const response = await fetch(
+      DATA_API + "/songs",
+      {method:"GET", cache:"no-store"}
+    );
 
     let data = null;
-
     try{
-
-      data =
-        await response.json();
-
+      data = await response.json();
     }catch{
-
       throw new Error(
         "共通データAPIから正しいJSONが返りませんでした。"
       );
@@ -2887,178 +3120,43 @@ async function renderSavedList(){
       !data.ok ||
       !Array.isArray(data.songs)
     ){
-
       throw new Error(
         data?.error ||
         "登録済みデータを取得できませんでした。"
       );
     }
 
-    const all =
-      [...data.songs]
-        .sort(
-          (a,b) => {
+    savedSongsCache = [...data.songs];
 
-            const dateA =
-              new Date(
-                a.created_at || 0
-              );
-
-            const dateB =
-              new Date(
-                b.created_at || 0
-              );
-
-            return dateB - dateA;
-          }
-        );
-
-    area.innerHTML = "";
-
-    if(!all.length){
-
+    if(!savedSongsCache.length){
+      candidatesArea.innerHTML = "";
       area.innerHTML =
         '<div class="empty">登録データはありません</div>';
-
       return;
     }
 
-    all.forEach(
-      song => {
-
-        const d =
-          document.createElement(
-            "div"
-          );
-
-        d.className =
-          "saved-item";
-
-        d.innerHTML =
-          '<div class="saved-title"></div>' +
-          '<div class="saved-meta"></div>' +
-          '<div class="saved-actions"></div>';
-
-        d.querySelector(
-          ".saved-title"
-        )
-        .textContent =
-          (song.player_name || "") +
-          "　制作番号 " +
-          (song.production_number || 1);
-
-        let meta =
-          (song.team || "") +
-          " ／ " +
-          (song.player_type || "");
-
-        if(
-          song.uniform_number !== null &&
-          song.uniform_number !== undefined &&
-          song.uniform_number !== ""
-        ){
-
-          meta +=
-            " ／ 背番号 " +
-            song.uniform_number;
-        }
-
-        if(song.audio_filename){
-
-          meta +=
-            " ／ m4a：" +
-            song.audio_filename;
-        }
-
-        if(song.medley_filename){
-
-          meta +=
-            " ／ メドレーm4a：" +
-            song.medley_filename;
-        }
-
-        d.querySelector(
-          ".saved-meta"
-        )
-        .textContent =
-          meta;
-
-        /*
-          D1のIDがある全登録データを編集可能
-        */
-        if(song.id){
-
-          const editButton =
-            document.createElement(
-              "button"
-            );
-
-          editButton.type =
-            "button";
-
-          editButton.className =
-            "edit-button";
-
-          editButton.textContent =
-            "編集";
-
-          editButton.onclick =
-            () =>
-              startEditSong(
-                song
-              );
-
-          d.querySelector(
-            ".saved-actions"
-          )
-          .appendChild(
-            editButton
-          );
-
-
-          const deleteButton =
-            document.createElement(
-              "button"
-            );
-
-          deleteButton.type =
-            "button";
-
-          deleteButton.className =
-            "delete-button";
-
-          deleteButton.textContent =
-            "削除";
-
-          deleteButton.onclick =
-            () =>
-              deleteSong(
-                song
-              );
-
-          d.querySelector(
-            ".saved-actions"
-          )
-          .appendChild(
-            deleteButton
-          );
-        }
-
-        area.appendChild(
-          d
-        );
-      }
-    );
+    updateSavedSearch();
 
   }catch(error){
-
     console.error(error);
-
+    savedSongsCache = [];
+    candidatesArea.innerHTML = "";
     area.innerHTML =
       '<div class="empty">共通データを取得できませんでした。再読み込みしてください。</div>';
   }
 }
 
+$("savedSearchInput")
+  .addEventListener("input", updateSavedSearch);
+
+$("savedSearchClear")
+  .addEventListener("click", () => {
+    $("savedSearchInput").value = "";
+    $("savedSearchCandidates").innerHTML = "";
+    $("savedList").innerHTML =
+      '<div class="empty">選手名・ふりがなを入力してください</div>';
+    $("savedSearchInput").focus();
+  });
 
 /* =========================================
    メッセージ
