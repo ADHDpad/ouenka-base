@@ -147,8 +147,6 @@ button,input,select{font:inherit} button{cursor:pointer}
 #teamSelect option[data-team="ブルーウェーブ"]{background:#DCEEFF;color:#164D82}
 
 /* ===== 1-9 入力・選択欄 ===== */
-#yearSelect,
-#teamSelect,
 #titleInput,
 .position,
 .player-search{
@@ -157,8 +155,6 @@ button,input,select{font:inherit} button{cursor:pointer}
 }
 
 /* 入力中は少しだけ強調 */
-#yearSelect:focus,
-#teamSelect:focus,
 #titleInput:focus,
 .position:focus,
 .player-search:focus{
@@ -176,14 +172,22 @@ button,input,select{font:inherit} button{cursor:pointer}
 
 
 /* 入力済み・選択済みは白 */
-#yearSelect.has-value,
-#teamSelect.has-value,
 #titleInput.has-value,
 .position.has-value,
 .player-search.has-value{
   background:#fff !important;
 }
 
+
+/* 年度・球団は任意項目なので常に白 */
+#yearSelect,#teamSelect{
+  background:#fff !important;
+}
+
+#medleyPlayButton{
+  background:#0B4F7A;
+  color:#fff;
+}
 </style>
 <script src="team-order.js">
 window.addEventListener("ouenka-team-order-change",renderTeamSelect);
@@ -225,7 +229,7 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
   <div class="bottom-actions">
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
    <button id="addButton" class="action add" type="button">＋ 選手追加</button>
-   <button id="createButton" class="action create" type="button">♪ 1-9の応援歌データを作成</button>
+   <button id="medleyPlayButton" class="action create" type="button">▶ 1-9を作成・再生</button>
   </div>
   <div id="status" class="status"></div>
   <section id="previewCard" class="preview-card">
@@ -262,6 +266,7 @@ function createRow(n,data={}){
  row.dataset.productionNumber=data.productionNumber||"";
  row.dataset.team=data.team||"";
  row.dataset.audioUrl=data.audioUrl||"";
+ row.dataset.medleyUrl=data.medleyUrl||"";
  const options=positions.map((p,i)=>{
    let cls="";
    if(p==="投手")cls="opt-pitcher";
@@ -289,6 +294,8 @@ function createRow(n,data={}){
    row.dataset.songId="";
    row.dataset.productionNumber="";
    row.dataset.team="";
+   row.dataset.audioUrl="";
+   row.dataset.medleyUrl="";
    showSuggestions(row,input,sug);
    checkDuplicates();
    saveDraft();
@@ -302,6 +309,7 @@ function createRow(n,data={}){
    row.dataset.productionNumber="";
    row.dataset.team="";
    row.dataset.audioUrl="";
+   row.dataset.medleyUrl="";
    sug.style.display="none";
    row.classList.remove("row-warning");
    if(currentPlayingRow===row) stopRowAudio();
@@ -374,15 +382,18 @@ async function showSuggestions(row,input,box){
       row.dataset.productionNumber=prod;
       row.dataset.team=getTeam(song);
 
-      // 応援歌BASE本体と同じ保存ルール
-      // データ/選手名/制作番号/audio.m4a
+      // D1の登録レコードを唯一の基準にする。
+      // 新しい選手を追加しても1-9側のコード変更は不要。
       const basePath=
         "データ/" +
-        encodeURIComponent(song.player_name) +
+        encodeURIComponent(song.player_name || "") +
         "/" +
-        song.production_number +
+        encodeURIComponent(song.production_number || "") +
         "/";
-      row.dataset.audioUrl=basePath+"audio.m4a";
+      const audioFilename=song.audio_filename || "audio.m4a";
+      const medleyFilename=song.medley_filename || "medley.m4a";
+      row.dataset.audioUrl=basePath+encodeURIComponent(audioFilename);
+      row.dataset.medleyUrl=basePath+encodeURIComponent(medleyFilename);
       box.innerHTML="";
       box.style.display="none";
       checkDuplicates();
@@ -434,29 +445,7 @@ async function playSelectedRow(row){
    return;
  }
 
- let audioValue="";
- if(row.dataset.productionNumber){
-   audioValue=
-     "データ/" +
-     encodeURIComponent(name) +
-     "/" +
-     row.dataset.productionNumber +
-     "/audio.m4a";
-   row.dataset.audioUrl=audioValue;
- }else{
-   audioValue=row.dataset.audioUrl||"";
- }
-
- // 旧保存データなどでaudioUrlが無い場合も本体ルールから復元
- if(!audioValue && row.dataset.productionNumber){
-   audioValue=
-     "データ/" +
-     encodeURIComponent(name) +
-     "/" +
-     row.dataset.productionNumber +
-     "/audio.m4a";
-   row.dataset.audioUrl=audioValue;
- }
+ let audioValue=row.dataset.audioUrl||"";
 
  if(!audioValue){
    setStatus(`${name}の再生用音源を取得できませんでした。`,"error");
@@ -500,9 +489,462 @@ async function playSelectedRow(row){
 
 // 他アプリへ移動した場合は、iOSで中断されたAudioを破棄
 document.addEventListener("visibilitychange",()=>{
- if(document.visibilityState==="hidden")stopRowAudio();
+ if(document.visibilityState==="hidden"){
+   stopRowAudio();
+   stopOneNineMedley();
+ }
 });
 window.addEventListener("pageshow",()=>stopRowAudio());
+
+
+
+// ========================================
+// 登録済み曲データ取得
+// 検索APIには音源情報を要求せず、選択後にDATA APIから取得する。
+// ========================================
+const DATA_API_FOR_19 = "https://ouenka-base-data.ninzin5600.workers.dev";
+
+async function getRegisteredSongFor19(playerName, productionNumber){
+  const name = String(playerName || "").trim();
+  const no = String(productionNumber || "").trim();
+
+  if(!name || !no) return null;
+
+  const candidates = [
+    `${DATA_API_FOR_19}/song?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`,
+    `${DATA_API_FOR_19}/songs?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`,
+    `${DATA_API_FOR_19}/search?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`
+  ];
+
+  for(const url of candidates){
+    try{
+      const res = await fetch(url,{cache:"no-store"});
+      if(!res.ok) continue;
+      const data = await res.json();
+
+      let song = null;
+      if(data && data.song) song = data.song;
+      else if(data && Array.isArray(data.songs)) {
+        song = data.songs.find(x =>
+          String(x.player_name||x.name||"") === name &&
+          String(x.production_number||x.productionNumber||"") === no
+        ) || data.songs[0] || null;
+      }
+      else if(Array.isArray(data)) {
+        song = data.find(x =>
+          String(x.player_name||x.name||"") === name &&
+          String(x.production_number||x.productionNumber||"") === no
+        ) || data[0] || null;
+      }
+      else if(data && (data.player_name || data.name)) song = data;
+
+      if(song) return song;
+    }catch(e){}
+  }
+
+  // DATA APIの一覧エンドポイントも試す。
+  try{
+    const res = await fetch(`${DATA_API_FOR_19}/songs`,{cache:"no-store"});
+    if(res.ok){
+      const data = await res.json();
+      const list = Array.isArray(data) ? data :
+        Array.isArray(data.songs) ? data.songs :
+        Array.isArray(data.items) ? data.items : [];
+
+      return list.find(x =>
+        String(x.player_name||x.name||"") === name &&
+        String(x.production_number||x.productionNumber||"") === no
+      ) || null;
+    }
+  }catch(e){}
+
+  return null;
+}
+
+function registeredSongUrls(song, playerName, productionNumber){
+  if(!song) return null;
+
+  const name = String(song.player_name || song.name || playerName || "").trim();
+  const no = String(song.production_number || song.productionNumber || productionNumber || "").trim();
+
+  const audioFile = String(song.audio_filename || song.audioFilename || "audio.m4a").trim();
+  const medleyFile = String(song.medley_filename || song.medleyFilename || "medley.m4a").trim();
+
+  if(!name || !no) return null;
+
+  const base = OUENKA_PUBLIC_BASE +
+    "%E3%83%87%E3%83%BC%E3%82%BF/" +
+    encodeURIComponent(name) + "/" +
+    encodeURIComponent(no) + "/";
+
+  return {
+    playerName:name,
+    productionNumber:no,
+    audioUrl:base + encodeURIComponent(audioFile),
+    medleyUrl:base + encodeURIComponent(medleyFile)
+  };
+}
+
+// ========================================
+// 1-9 完成音源方式【完成版】
+// ・リアルタイム複数Audio再生はしない
+// ・全曲をAudioBufferへ読み込み
+// ・0 / 11.293 / 22.586 ... 秒へ波形を配置
+// ・重複で音圧が増えた区間だけ自動補正
+// ・完成した1本の音源だけを再生
+// ========================================
+const MEDLEY_INTERVAL_SEC = 11.293;
+const MEDLEY_INTERVAL_MS = 11293;
+let completedMedleyUrl = null;
+let completedMedleyAudio = null;
+let medleyBuilding = false;
+
+function stopOneNineMedley(){
+  if(completedMedleyAudio){
+    try{
+      completedMedleyAudio.pause();
+      completedMedleyAudio.currentTime = 0;
+    }catch(e){}
+  }
+  const btn=document.getElementById("medleyPlayButton");
+  if(btn) btn.textContent="▶ 1-9を作成・再生";
+}
+
+async function getSelectedMedleyPlayers(){
+  const rows = [...document.querySelectorAll(".player-row")];
+  const selected = [];
+
+  for(const row of rows){
+    const input = row.querySelector(".player-search");
+    const name = (input?.value || "").trim();
+    const productionNumber = String(row.dataset.productionNumber || "").trim();
+
+    if(!name) continue;
+
+    if(!productionNumber){
+      throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。`);
+    }
+
+    // すでに行に音源URLが保持されていれば再利用。
+    if(row.dataset.audioUrl && row.dataset.medleyUrl){
+      selected.push({
+        name,
+        productionNumber,
+        audioUrl:row.dataset.audioUrl,
+        medleyUrl:row.dataset.medleyUrl
+      });
+      continue;
+    }
+
+    setStatus(`♪ 登録データを確認中… ${name}`,"ok");
+
+    const song = await getRegisteredSongFor19(name, productionNumber);
+    if(!song){
+      throw new Error(`${name}（制作番号 ${productionNumber}）の登録データが見つかりません。`);
+    }
+
+    const urls = registeredSongUrls(song, name, productionNumber);
+    if(!urls){
+      throw new Error(`${name} の登録音源情報を作成できません。`);
+    }
+
+    row.dataset.audioUrl = urls.audioUrl;
+    row.dataset.medleyUrl = urls.medleyUrl;
+
+    selected.push({
+      name: urls.playerName,
+      productionNumber: urls.productionNumber,
+      audioUrl: urls.audioUrl,
+      medleyUrl: urls.medleyUrl
+    });
+  }
+
+  return selected;
+}
+
+function makeMedleySongPath(item,index){
+  // 1曲目は通常音源、2曲目以降はメドレー音源。
+  // URLはDATA APIの登録レコードから解決済み。
+  return index===0 ? item.audioUrl : item.medleyUrl;
+}
+
+const OUENKA_PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
+
+function toPublicAudioUrl(path){
+  if(!path)return "";
+  if(/^https?:\/\//i.test(path))return path;
+  return new URL(path,OUENKA_PUBLIC_BASE).href;
+}
+
+async function fetchDecodeAudio(ctx,path){
+  if(!path)throw new Error("登録音源情報を取得できませんでした。");
+  const url=toPublicAudioUrl(path);
+  const response=await fetch(url,{cache:"no-store",credentials:"omit"});
+  if(!response.ok) throw new Error(`音源取得失敗 (${response.status})：${url}`);
+  const arrayBuffer=await response.arrayBuffer();
+  return await ctx.decodeAudioData(arrayBuffer.slice(0));
+}
+
+function rmsRange(buffer,startFrame,endFrame){
+  const s=Math.max(0,Math.floor(startFrame));
+  const e=Math.min(buffer.length,Math.ceil(endFrame));
+  if(e<=s)return 0;
+
+  let sum=0;
+  let count=0;
+  for(let ch=0;ch<buffer.numberOfChannels;ch++){
+    const data=buffer.getChannelData(ch);
+    for(let i=s;i<e;i++){
+      const v=data[i];
+      sum+=v*v;
+      count++;
+    }
+  }
+  return count ? Math.sqrt(sum/count) : 0;
+}
+
+function mixBuffersWithSmartOverlap(ctx,buffers){
+  const sampleRate=buffers[0].sampleRate;
+  const channels=Math.max(...buffers.map(b=>b.numberOfChannels));
+
+  const starts=buffers.map((_,i)=>Math.round(i*MEDLEY_INTERVAL_SEC*sampleRate));
+  const totalFrames=Math.max(...buffers.map((b,i)=>starts[i]+b.length));
+
+  const output=ctx.createBuffer(channels,totalFrames,sampleRate);
+
+  // まず全曲をそのまま配置するための曲別ゲイン配列を用意。
+  const gains=buffers.map(b=>new Float32Array(b.length).fill(1));
+
+  // 各つなぎで「重なったことで増えた音圧」を計測。
+  // 増加が小さい通常曲は補正しない。
+  // 増加が明確な重なりだけ、その増加分を最大4.5dBまで抑える。
+  for(let i=1;i<buffers.length;i++){
+    const prev=buffers[i-1];
+    const cur=buffers[i];
+
+    const overlapStartGlobal=starts[i];
+    const overlapEndGlobal=Math.min(starts[i-1]+prev.length,starts[i]+cur.length);
+    const overlapFrames=Math.max(0,overlapEndGlobal-overlapStartGlobal);
+    if(overlapFrames<=0)continue;
+
+    const prevLocalStart=overlapStartGlobal-starts[i-1];
+    const curLocalStart=0;
+
+    const prevRms=rmsRange(prev,prevLocalStart,prevLocalStart+overlapFrames);
+    const curRms=rmsRange(cur,curLocalStart,curLocalStart+overlapFrames);
+
+    // 無相関音源の合成RMSを推定。
+    const estimatedMix=Math.sqrt(prevRms*prevRms+curRms*curRms);
+    const base=Math.max(prevRms,curRms);
+
+    if(base<=0 || estimatedMix<=0)continue;
+
+    const increaseDb=20*Math.log10(estimatedMix/base);
+
+    // 通常の重なりはそのまま。
+    // 音圧増加が約2dBを超えた場合のみ必要分を補正。
+    if(increaseDb<=2.0)continue;
+
+    const reduceDb=Math.min(4.5,increaseDb);
+    const gain=Math.pow(10,-reduceDb/20);
+
+    // 境目を自然にするため約120msで補正へ入り、
+    // 前曲終了後は約120msで現在曲を通常音量へ戻す。
+    const fadeFrames=Math.max(1,Math.round(sampleRate*0.12));
+
+    for(let f=0;f<overlapFrames;f++){
+      const t=Math.min(1,f/fadeFrames);
+      const g=1+(gain-1)*t;
+
+      const pi=prevLocalStart+f;
+      const ci=curLocalStart+f;
+      if(pi>=0 && pi<gains[i-1].length)gains[i-1][pi]*=g;
+      if(ci>=0 && ci<gains[i].length)gains[i][ci]*=g;
+    }
+
+    // 現在曲は前曲終了直後から120msかけて1へ戻す。
+    const restoreStart=overlapFrames;
+    for(let f=0;f<fadeFrames;f++){
+      const ci=restoreStart+f;
+      if(ci>=gains[i].length)break;
+      const t=f/fadeFrames;
+      const g=gain+(1-gain)*t;
+      gains[i][ci]*=g;
+    }
+  }
+
+  // 実際に波形を1本へ加算。
+  for(let i=0;i<buffers.length;i++){
+    const b=buffers[i];
+    const start=starts[i];
+
+    for(let ch=0;ch<channels;ch++){
+      const out=output.getChannelData(ch);
+      const src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
+      const gain=gains[i];
+
+      for(let f=0;f<b.length;f++){
+        out[start+f]+=src[f]*gain[f];
+      }
+    }
+  }
+
+  // クリップだけ防止。全体音量を常時変えるのではなく、
+  // 1.0を超えた場合のみ全体を同率で収める。
+  let peak=0;
+  for(let ch=0;ch<channels;ch++){
+    const data=output.getChannelData(ch);
+    for(let i=0;i<data.length;i++){
+      const a=Math.abs(data[i]);
+      if(a>peak)peak=a;
+    }
+  }
+
+  if(peak>1){
+    const scale=0.99/peak;
+    for(let ch=0;ch<channels;ch++){
+      const data=output.getChannelData(ch);
+      for(let i=0;i<data.length;i++)data[i]*=scale;
+    }
+  }
+
+  return output;
+}
+
+function writeAscii(view,offset,text){
+  for(let i=0;i<text.length;i++)view.setUint8(offset+i,text.charCodeAt(i));
+}
+
+function audioBufferToWav(buffer){
+  const channels=buffer.numberOfChannels;
+  const sampleRate=buffer.sampleRate;
+  const bytesPerSample=2;
+  const dataLength=buffer.length*channels*bytesPerSample;
+  const ab=new ArrayBuffer(44+dataLength);
+  const view=new DataView(ab);
+
+  writeAscii(view,0,"RIFF");
+  view.setUint32(4,36+dataLength,true);
+  writeAscii(view,8,"WAVE");
+  writeAscii(view,12,"fmt ");
+  view.setUint32(16,16,true);
+  view.setUint16(20,1,true);
+  view.setUint16(22,channels,true);
+  view.setUint32(24,sampleRate,true);
+  view.setUint32(28,sampleRate*channels*bytesPerSample,true);
+  view.setUint16(32,channels*bytesPerSample,true);
+  view.setUint16(34,16,true);
+  writeAscii(view,36,"data");
+  view.setUint32(40,dataLength,true);
+
+  let offset=44;
+  for(let i=0;i<buffer.length;i++){
+    for(let ch=0;ch<channels;ch++){
+      let sample=buffer.getChannelData(ch)[i]||0;
+      sample=Math.max(-1,Math.min(1,sample));
+      view.setInt16(
+        offset,
+        sample<0 ? sample*0x8000 : sample*0x7fff,
+        true
+      );
+      offset+=2;
+    }
+  }
+
+  return new Blob([view],{type:"audio/wav"});
+}
+
+async function buildAndPlayOneNineMedley(){
+  if(medleyBuilding)return;
+
+  // 完成音源が再生中なら停止。
+  if(completedMedleyAudio && !completedMedleyAudio.paused){
+    stopOneNineMedley();
+    setStatus("1-9の再生を停止しました。");
+    return;
+  }
+
+  stopRowAudio();
+
+  const selected=await getSelectedMedleyPlayers();
+  if(!selected.length){
+    setStatus("選手を1人以上選択してください。9人すべて埋める必要はありません。","error");
+    return;
+  }
+
+  medleyBuilding=true;
+  const btn=document.getElementById("medleyPlayButton");
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="作成中…";
+  }
+
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)throw new Error("このブラウザは音源結合に対応していません。");
+
+    const ctx=new AC();
+    const buffers=[];
+
+    for(let i=0;i<selected.length;i++){
+      const item=selected[i];
+      const url=makeMedleySongPath(item,i);
+      setStatus(`♪ 完成音源を作成中… ${i+1}/${selected.length} ${item.name}`,"ok");
+      const decoded=await fetchDecodeAudio(ctx,url);
+      buffers.push(decoded);
+    }
+
+    setStatus("♪ 音源を11.293秒間隔で結合しています…","ok");
+    const completed=mixBuffersWithSmartOverlap(ctx,buffers);
+
+    setStatus("♪ 完成音源を書き出しています…","ok");
+    const wavBlob=audioBufferToWav(completed);
+
+    if(completedMedleyUrl)URL.revokeObjectURL(completedMedleyUrl);
+    completedMedleyUrl=URL.createObjectURL(wavBlob);
+
+    if(completedMedleyAudio){
+      try{completedMedleyAudio.pause();}catch(e){}
+    }
+
+    completedMedleyAudio=new Audio(completedMedleyUrl);
+    completedMedleyAudio.playsInline=true;
+    completedMedleyAudio.volume=1;
+
+    completedMedleyAudio.addEventListener("ended",()=>{
+      const b=document.getElementById("medleyPlayButton");
+      if(b)b.textContent="▶ 1-9を作成・再生";
+      setStatus("1-9の再生が終了しました。","ok");
+    },{once:true});
+
+    if(btn){
+      btn.disabled=false;
+      btn.textContent="■ 1-9を停止";
+    }
+
+    setStatus(`♪ ${selected.length}人の完成メドレーを再生します。`,"ok");
+    const p=completedMedleyAudio.play();
+    if(p)await p;
+
+    try{await ctx.close();}catch(e){}
+
+  }catch(error){
+    console.error("1-9完成音源作成エラー:",error);
+    setStatus("1-9の完成音源を作成できませんでした："+(error.message||error),"error");
+
+    if(btn){
+      btn.disabled=false;
+      btn.textContent="▶ 1-9を作成・再生";
+    }
+  }finally{
+    medleyBuilding=false;
+  }
+}
+
+// 既存コードから呼ばれても完成音源方式へ統一。
+async function playOneNineMedley(){
+  return buildAndPlayOneNineMedley();
+}
 
 function currentRows(){
  return [...document.querySelectorAll(".player-row")].map(row=>({
@@ -511,7 +953,8 @@ function currentRows(){
   songId:row.dataset.songId||"",
   productionNumber:row.dataset.productionNumber||"",
   team:row.dataset.team||"",
-  audioUrl:row.dataset.audioUrl||""
+  audioUrl:row.dataset.audioUrl||"",
+  medleyUrl:row.dataset.medleyUrl||""
  }));
 }
 function checkDuplicates(){
@@ -554,6 +997,7 @@ function loadDraft(){
  }catch(e){renderRows()}
 }
 function resetAll(){
+ stopOneNineMedley();
  if(!confirm("1-9の入力内容をすべてリセットしますか？"))return;
  localStorage.removeItem(STORAGE_KEY);
  document.getElementById("yearSelect").value="";
@@ -653,7 +1097,8 @@ function fillYears(){
 document.getElementById("resetButton").addEventListener("click",resetAll);
 document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
-document.getElementById("createButton").addEventListener("click",buildPreview);
+// 再生は9人必須チェックを通さず、選択済みの選手だけで開始
+document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
 document.getElementById("teamSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
 document.getElementById("lineupTitle").addEventListener("input",saveDraft);
@@ -669,14 +1114,14 @@ function updateInputFieldColor(el){
   el.classList.toggle("has-value",hasValue);
 }
 function updateAllInputFieldColors(){
-  document.querySelectorAll("#yearSelect,#teamSelect,#titleInput,.position,.player-search")
+  document.querySelectorAll("#titleInput,.position,.player-search")
     .forEach(updateInputFieldColor);
 }
 document.addEventListener("input",e=>{
   if(e.target.matches("#titleInput,.player-search"))updateInputFieldColor(e.target);
 });
 document.addEventListener("change",e=>{
-  if(e.target.matches("#yearSelect,#teamSelect,.position"))updateInputFieldColor(e.target);
+  if(e.target.matches(".position"))updateInputFieldColor(e.target);
 });
 document.addEventListener("click",()=>{
   /* 候補選択・クリアなどJSで値が変わった場合も反映 */
