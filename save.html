@@ -29,6 +29,13 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  width:100%;
+  z-index:1000;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
 }
 
 .brand-main{
@@ -54,8 +61,8 @@ body{
 
 main{
   max-width:680px;
-  margin:30px auto;
-  padding:0 16px 60px;
+  margin:0 auto;
+  padding:100px 16px 60px;
 }
 
 .page-label{
@@ -508,10 +515,43 @@ textarea{
     padding:13px;
   }
 }
+
+/* ===== 作成者認証 ===== */
+#creatorGate{
+  position:fixed; inset:0; z-index:9999;
+  background:#071d33; display:flex; align-items:center; justify-content:center;
+  padding:24px;
+}
+.creator-login{
+  width:min(420px,100%); background:#fff; border-radius:18px; padding:28px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+.creator-login h2{margin:0 0 8px;color:#071d33;}
+.creator-login p{margin:0 0 18px;color:#536273;font-size:14px;}
+.creator-login input{width:100%;box-sizing:border-box;padding:14px;font-size:18px;border:1px solid #bcc8d4;border-radius:10px;}
+.creator-login button{width:100%;margin-top:12px;padding:14px;border:0;border-radius:10px;background:#0B2F55;color:#fff;font-weight:700;font-size:16px;}
+#creatorError{min-height:22px;margin-top:10px;color:#b42318;font-size:14px;}
+#creatorContent{display:none;}
+.production-edit-wrap{display:none;}
+.production-edit-wrap input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #b8c4d0;border-radius:8px;font-size:16px;}
+.edit-file-note{display:none;margin:8px 0 0;color:#536273;font-size:13px;}
+
 </style>
 </head>
 
 <body>
+
+<div id="creatorGate">
+  <div class="creator-login">
+    <h2>CREATOR LOGIN</h2>
+    <p>応援歌BASE 作成者専用画面</p>
+    <input type="password" id="creatorPassword" inputmode="numeric" autocomplete="off" placeholder="作成者用パスワード">
+    <button type="button" onclick="unlockCreator()">作成者画面を開く</button>
+    <div id="creatorError"></div>
+  </div>
+</div>
+
+<div id="creatorContent">
 
 <header class="top-menu">
 
@@ -560,6 +600,7 @@ GarageBand ZIPと応援歌音源を選択して、選手情報を共通データ
   class="file-input"
   accept=".zip,application/zip"
 >
+<div class="edit-file-note" id="zipEditNote">編集時：差し替える場合だけ選択してください。</div>
 
 <div class="selected-box">
 
@@ -758,8 +799,13 @@ NPBから取得
 1
 </div>
 
-<div class="auto-note">
+<div class="auto-note" id="productionAutoNote">
 同じ選手名の登録数から自動採番
+</div>
+
+<div class="production-edit-wrap" id="productionEditWrap">
+  <input type="number" id="productionNumberEdit" min="1" inputmode="numeric" placeholder="制作番号">
+  <div class="auto-note">編集時は制作番号を変更できます。</div>
 </div>
 
 </div>
@@ -816,6 +862,7 @@ NPBから取得
   class="file-input"
   accept=".m4a,audio/mp4,audio/x-m4a"
 >
+<div class="edit-file-note" id="audioEditNote">編集時：差し替える場合だけ選択してください。</div>
 
 </div>
 
@@ -868,6 +915,7 @@ m4aが選択されていません
   class="file-input"
   accept=".m4a,audio/mp4,audio/x-m4a"
 >
+<div class="edit-file-note" id="medleyEditNote">編集時：差し替える場合だけ選択してください。</div>
 
 </div>
 
@@ -1034,6 +1082,39 @@ let editingSong = null;
 
 const $ = id =>
   document.getElementById(id);
+
+
+/* =========================================
+   作成者認証（簡易ロック）
+========================================= */
+const CREATOR_PASSWORD = "1224";
+
+function unlockCreator(){
+  const input = $("creatorPassword");
+  const error = $("creatorError");
+
+  if(input.value === CREATOR_PASSWORD){
+    $("creatorGate").style.display = "none";
+    $("creatorContent").style.display = "block";
+    error.textContent = "";
+    sessionStorage.setItem("ouenkaCreatorUnlocked","1");
+    return;
+  }
+
+  error.textContent = "パスワードが違います。";
+  input.select();
+}
+
+window.addEventListener("DOMContentLoaded",()=>{
+  if(sessionStorage.getItem("ouenkaCreatorUnlocked") === "1"){
+    $("creatorGate").style.display = "none";
+    $("creatorContent").style.display = "block";
+  }
+
+  $("creatorPassword")?.addEventListener("keydown",e=>{
+    if(e.key === "Enter") unlockCreator();
+  });
+});
 
 
 /* =========================================
@@ -2354,6 +2435,13 @@ function startEditSong(song){
     */
     editingSong = song;
 
+    selectedZipFile = null;
+    selectedAudioFile = null;
+    selectedMedleyAudioFile = null;
+    $("zipFile").value = "";
+    $("audioFile").value = "";
+    $("medleyAudioFile").value = "";
+
     $("registerArea")
       .style
       .display =
@@ -2390,9 +2478,12 @@ function startEditSong(song){
 
     $("productionNumberDisplay")
       .textContent =
-      String(
-        song.production_number || 1
-      );
+      String(song.production_number || 1);
+
+    $("productionNumberDisplay").style.display = "none";
+    $("productionAutoNote").style.display = "none";
+    $("productionEditWrap").style.display = "block";
+    $("productionNumberEdit").value = String(song.production_number || 1);
 
     $("editModeBox")
       .style
@@ -2405,7 +2496,7 @@ function startEditSong(song){
       (song.player_name || "") +
       "　制作番号 " +
       (song.production_number || 1) +
-      "（制作番号は変更されません）";
+      "（制作番号・応援歌データも変更できます）";
 
     $("registerButton")
       .textContent =
@@ -2417,17 +2508,16 @@ function startEditSong(song){
       "block";
 
     /*
-      編集時は既存ファイル名を維持する。
-      ファイル差し替えは新規登録時のみ。
+      編集時もファイル差し替え可能。
+      未選択なら既存ファイルを維持する。
     */
-    $("zipFile").disabled =
-      true;
+    $("zipFile").disabled = false;
+    $("audioFile").disabled = false;
+    $("medleyAudioFile").disabled = false;
 
-    $("audioFile").disabled =
-      true;
-
-    $("medleyAudioFile").disabled =
-      true;
+    $("zipEditNote").style.display = "block";
+    $("audioEditNote").style.display = "block";
+    $("medleyEditNote").style.display = "block";
 
     $("selectedFileName")
       .textContent =
@@ -2512,6 +2602,14 @@ async function updateExistingSong(){
       .value
       .trim();
 
+  const productionNumber =
+    Number($("productionNumberEdit").value);
+
+  const changingFiles =
+    !!selectedZipFile ||
+    !!selectedAudioFile ||
+    !!selectedMedleyAudioFile;
+
   if(!name){
 
     showError(
@@ -2536,6 +2634,16 @@ async function updateExistingSong(){
       "球団を選択してください。"
     );
 
+    return;
+  }
+
+  if(!Number.isInteger(productionNumber) || productionNumber < 1){
+    showError("制作番号は1以上の整数で入力してください。");
+    return;
+  }
+
+  if(changingFiles && !(selectedZipFile && selectedAudioFile && selectedMedleyAudioFile)){
+    showError("応援歌データを差し替える場合は、通常m4a・メドレー用m4a・GarageBand ZIPの3つをすべて選択してください。");
     return;
   }
 
@@ -2573,7 +2681,11 @@ async function updateExistingSong(){
               number === ""
                 ? null
                 : Number(number),
-            lyrics:lyrics
+            lyrics:lyrics,
+            production_number:productionNumber,
+            audio_filename: selectedAudioFile ? "audio.m4a" : (editingSong.audio_filename || "audio.m4a"),
+            medley_filename: selectedMedleyAudioFile ? "medley.m4a" : (editingSong.medley_filename || "medley.m4a"),
+            garageband_filename: selectedZipFile ? "garageband.zip" : (editingSong.garageband_filename || "garageband.zip")
           })
         }
       );
@@ -2641,6 +2753,21 @@ async function updateExistingSong(){
         local.lyrics =
           updated.lyrics || "";
 
+        if(selectedAudioFile){
+          local.audioFileName = "audio.m4a";
+          local.audioFile = selectedAudioFile;
+        }
+
+        if(selectedMedleyAudioFile){
+          local.medleyAudioFileName = "medley.m4a";
+          local.medleyAudioFile = selectedMedleyAudioFile;
+        }
+
+        if(selectedZipFile){
+          local.zipFileName = "garageband.zip";
+          local.originalZip = selectedZipFile;
+        }
+
         local.savedAt =
           new Date()
             .toISOString();
@@ -2655,6 +2782,16 @@ async function updateExistingSong(){
       console.warn(
         "D1更新成功。端末内表示の更新のみ失敗:",
         localError
+      );
+    }
+
+    if(changingFiles){
+      await downloadPcDataZip(
+        name,
+        productionNumber,
+        selectedAudioFile,
+        selectedMedleyAudioFile,
+        selectedZipFile
       );
     }
 
@@ -2676,9 +2813,10 @@ async function updateExistingSong(){
 
     $("productionNumberDisplay")
       .textContent =
-      String(
-        updated.production_number
-      );
+      String(updated.production_number);
+
+    $("productionNumberEdit").value =
+      String(updated.production_number);
 
     $("editModeBox")
       .textContent =
@@ -2763,6 +2901,15 @@ function cancelEditMode(
 
   $("medleyAudioFile").disabled =
     false;
+
+  $("productionNumberDisplay").style.display = "block";
+  $("productionAutoNote").style.display = "block";
+  $("productionEditWrap").style.display = "none";
+  $("productionNumberEdit").value = "";
+
+  $("zipEditNote").style.display = "none";
+  $("audioEditNote").style.display = "none";
+  $("medleyEditNote").style.display = "none";
 
   if(clearForm){
 
@@ -3257,6 +3404,8 @@ function backToBase(){
 })();
 
 </script>
+
+</div>
 
 </body>
 </html>
