@@ -58,7 +58,76 @@
                 display: none;
             }
         }
-    </style>
+    
+
+
+/* ===== 球団一覧下段：近鉄／ブルーウェーブ・その他 ===== */
+.legacy-extra-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:28px;
+  margin-top:18px;
+}
+.legacy-extra-column{min-width:0}
+.legacy-extra-title{
+  min-height:50px;
+  padding:0 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:#0B4B78;
+  color:#fff;
+  border-radius:6px;
+  font-size:17px;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+.legacy-extra-title small{
+  font-size:8px;
+  letter-spacing:.20em;
+  opacity:.9;
+}
+.legacy-extra-list{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  margin-top:10px;
+}
+.legacy-team-button{
+  position:relative;
+  width:100%;
+  min-height:80px;
+  padding:12px 48px 12px 84px;
+  border:1px solid #cbd9e6;
+  border-radius:6px;
+  background:#fff;
+  color:#092d4b;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(5,38,66,.06);
+}
+.legacy-team-button::before{
+  content:"";
+  position:absolute;left:0;top:0;bottom:0;width:8px;
+  border-radius:6px 0 0 6px;
+  background:var(--team-accent,#1d6fa5);
+}
+.legacy-team-number{
+  position:absolute;left:27px;top:50%;transform:translateY(-50%);
+  color:#527aa0;font-size:17px;font-weight:500;
+}
+.legacy-team-name{display:block;font-size:14px;font-weight:900;line-height:1.2}
+.legacy-team-en{display:block;margin-top:6px;font-size:7px;font-weight:800;letter-spacing:.15em;color:#52708b}
+.legacy-team-arrow{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:25px}
+.legacy-team-button[data-team="近鉄"]{--team-accent:#B51E3E}
+.legacy-team-button[data-team="ブルーウェーブ"]{--team-accent:#1767B1}
+.legacy-team-button[data-team="日本代表"]{--team-accent:#D21F3C}
+@media(max-width:700px){
+ .legacy-extra-grid{grid-template-columns:1fr;gap:16px}
+ .legacy-team-button{min-height:72px}
+}
+
+</style>
 
 
     <style>
@@ -115,6 +184,7 @@
         }
     </style>
 
+<script src="team-order.js"></script>
 </head>
 
 
@@ -204,7 +274,11 @@
 
             </button>
 
-        </div>
+        
+            <button type="button" class="top-menu-button" onclick="location.href='./settings.html'">
+                ⚙ 設定
+            </button>
+</div>
 
 
         <div class="system-version">
@@ -291,7 +365,11 @@
 
             <!-- 検索 -->
 
-            <div class="search-section">
+            
+        
+
+
+<div class="search-section">
 
 
                 <div class="search-area">
@@ -843,7 +921,26 @@
             </div>
 
 
-        </section>
+        
+
+<div class="legacy-extra-grid" id="legacyExtraGrid">
+  <section class="legacy-extra-column">
+    <div class="legacy-extra-title">
+      <span>近鉄／ブルーウェーブ</span>
+      <small>LEGACY TEAMS</small>
+    </div>
+    <div class="legacy-extra-list" id="legacyTeamsList"></div>
+  </section>
+  <section class="legacy-extra-column">
+    <div class="legacy-extra-title">
+      <span>その他</span>
+      <small>OTHER</small>
+    </div>
+    <div class="legacy-extra-list" id="otherSingleList"></div>
+  </section>
+</div>
+
+</section>
 
 
     </main>
@@ -1054,6 +1151,90 @@
 
     </script>
 
+
+
+<script>
+(function(){
+ function normalize(s){return (s||"").replace(/\s+/g,"").trim()}
+ function applyTeamOrder(){
+   if(!window.OUENKA_TEAM_ORDER)return;
+   const order=OUENKA_TEAM_ORDER.get();
+   const buttons=[...document.querySelectorAll(".team-button")];
+   if(!buttons.length)return;
+   const byName=new Map();
+   buttons.forEach(b=>{
+     const strong=b.querySelector("strong");
+     if(strong)byName.set(normalize(strong.textContent),b);
+   });
+   const columns=[...document.querySelectorAll(".league-column")];
+   if(columns.length<2)return;
+   const pacific=new Set(["福岡ソフトバンクホークス","北海道日本ハムファイターズ","オリックス・バファローズ","東北楽天ゴールデンイーグルス","埼玉西武ライオンズ","千葉ロッテマリーンズ"]);
+   const leagueOrders=[order.filter(x=>pacific.has(x)),order.filter(x=>!pacific.has(x))];
+   columns.slice(0,2).forEach((col,idx)=>{
+     const list=leagueOrders[idx];
+     list.forEach((team,i)=>{
+       const b=byName.get(normalize(team));
+       if(b){
+         const num=b.querySelector(".team-number");
+         if(num)num.textContent=String(i+1).padStart(2,"0");
+         col.appendChild(b);
+       }
+     });
+   });
+ }
+ document.addEventListener("DOMContentLoaded",applyTeamOrder);
+ window.addEventListener("ouenka-team-order-change",applyTeamOrder);
+})();
+</script>
+
+
+
+
+
+
+
+
+<script>
+(function(){
+ const LEGACY=new Set(["近鉄","ブルーウェーブ"]);
+ const ENGLISH={
+   "近鉄":"OSAKA KINTETSU BUFFALOES",
+   "ブルーウェーブ":"ORIX BLUEWAVE",
+   "日本代表":"SAMURAI JAPAN"
+ };
+ function openTeamFromExtra(team){
+   if(typeof showTeamPlayers==="function"){showTeamPlayers(team);return}
+   if(typeof selectTeam==="function"){selectTeam(team);return}
+   if(typeof openTeam==="function"){openTeam(team);return}
+   location.href="./index.html?team="+encodeURIComponent(team);
+ }
+ function makeButton(team,number){
+   const b=document.createElement("button");
+   b.type="button";
+   b.className="legacy-team-button";
+   b.dataset.team=team;
+   b.innerHTML=
+     '<span class="legacy-team-number">'+String(number).padStart(2,"0")+'</span>'+
+     '<span class="legacy-team-name">'+team+'</span>'+
+     '<span class="legacy-team-en">'+(ENGLISH[team]||"")+'</span>'+
+     '<span class="legacy-team-arrow">›</span>';
+   b.addEventListener("click",()=>openTeamFromExtra(team));
+   return b;
+ }
+ function renderExtraTeams(){
+   if(!window.OUENKA_TEAM_ORDER)return;
+   const order=OUENKA_TEAM_ORDER.get();
+   const legacyBox=document.getElementById("legacyTeamsList");
+   const otherBox=document.getElementById("otherSingleList");
+   if(!legacyBox||!otherBox)return;
+   legacyBox.innerHTML="";otherBox.innerHTML="";
+   order.filter(x=>LEGACY.has(x)).forEach((team,i)=>legacyBox.appendChild(makeButton(team,i+1)));
+   if(order.includes("日本代表"))otherBox.appendChild(makeButton("日本代表",1));
+ }
+ document.addEventListener("DOMContentLoaded",renderExtraTeams);
+ window.addEventListener("ouenka-team-order-change",renderExtraTeams);
+})();
+</script>
 
 </body>
 
