@@ -93,13 +93,33 @@
 
             </button>
 
+
+            <!-- 1-9作成 -->
+
+            <button
+                type="button"
+                class="top-menu-button"
+                onclick="openOneNineCreator()"
+            >
+
+                <span class="top-button-icon">
+                    1-9
+                </span>
+
+                <span>
+                    1-9作成
+                    <small>1-9 CREATOR</small>
+                </span>
+
+            </button>
+
         </div>
 
 
         <div class="system-version">
 
             <span>OUENKA SYSTEM</span>
-            <span>VERSION 1.01</span>
+            <span>VERSION 1.02</span>
 
         </div>
 
@@ -923,6 +943,19 @@
 
             window.location.href =
                 "./save.html";
+
+        }
+
+
+
+        // ====================================
+        // 1-9作成ページを開く
+        // ====================================
+
+        function openOneNineCreator() {
+
+            window.location.href =
+                "./1-9.html";
 
         }
 
