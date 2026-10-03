@@ -296,49 +296,6 @@ textarea{
   line-height:1.5;
 }
 
-.music-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  padding:14px 0;
-  border-bottom:1px solid #e5e8eb;
-}
-
-.music-row:last-child{
-  border-bottom:none;
-}
-
-.music-name{
-  font-weight:700;
-}
-
-.music-detail{
-  margin-top:4px;
-  font-size:12px;
-  color:#68727d;
-}
-
-.status{
-  font-size:12px;
-  font-weight:bold;
-  color:#8a929a;
-  text-align:right;
-  max-width:48%;
-  word-break:break-all;
-}
-
-.status.ok{
-  color:#137333;
-}
-
-.status.ng{
-  color:#a51f1f;
-}
-
-.status.loading{
-  color:#805b00;
-}
 
 .register-button{
   width:100%;
@@ -522,8 +479,8 @@ OUENKA BASE /// DATA REGISTER
 <h1>応援歌データ登録</h1>
 
 <div class="description">
-GarageBand ZIPを選択すると、内部のMIDIデータを自動解析します。
-選手情報を共通データベースに登録し、登録完了後にPC保存用データZIP（m4a＋3種類のMIDI＋GarageBand ZIP）を自動作成します。
+GarageBand ZIPと応援歌音源を選択して、選手情報を共通データベースに登録します。
+登録完了後にPC保存用データZIP（通常再生用m4a＋メドレー用m4a＋GarageBand ZIP）を自動作成します。
 </div>
 
 
@@ -630,7 +587,7 @@ NPBから取得
 <input
   type="text"
   id="reading"
-  placeholder="例：やのまさや"
+  placeholder="例：ならまたいき"
 >
 
 </div>
@@ -723,7 +680,7 @@ NPBから取得
   type="number"
   id="number"
   inputmode="numeric"
-  placeholder="例：4"
+  placeholder="例：58"
 >
 
 </div>
@@ -826,97 +783,53 @@ m4aが選択されていません
 
 
 <!-- ============================== -->
-<!-- 04 MIDI -->
+<!-- 04 MEDLEY M4A -->
 <!-- ============================== -->
 
 <section class="card">
 
 <div class="card-title">
-04 /// MIDI DATA
+04 /// SELECT MEDLEY AUDIO
 </div>
 
-<div class="music-row">
+<div class="form-group">
 
-<div>
-<div class="music-name">
-トラック1　メロディー
+<label
+  class="form-label"
+  for="medleyAudioFile"
+>
+メドレー用音源（m4a）
+<span class="required">*</span>
+</label>
+
+<input
+  type="file"
+  id="medleyAudioFile"
+  class="file-input"
+  accept=".m4a,audio/mp4,audio/x-m4a"
+>
+
 </div>
-<div class="music-detail">
-GarageBand ZIPから自動抽出
-</div>
+
+<div class="selected-box">
+
+<div class="selected-label">
+SELECTED MEDLEY AUDIO
 </div>
 
 <div
-  id="melodyStatus"
-  class="status"
+  id="selectedMedleyAudioName"
+  class="selected-file-name"
 >
-解析待ち
+メドレー用m4aが選択されていません
 </div>
 
-</div>
-
-
-<div class="music-row">
-
-<div>
-<div class="music-name">
-トラック2　コード進行
-</div>
-<div class="music-detail">
-GarageBand ZIPから自動抽出
-</div>
 </div>
 
 <div
-  id="chordStatus"
-  class="status"
->
-解析待ち
-</div>
-
-</div>
-
-
-<div class="music-row">
-
-<div>
-<div class="music-name">
-トラック3　ベース
-</div>
-<div class="music-detail">
-GarageBand ZIPから自動抽出
-</div>
-</div>
-
-<div
-  id="bassStatus"
-  class="status"
->
-解析待ち
-</div>
-
-</div>
-
-
-<div class="music-row">
-
-<div>
-<div class="music-name">
-GarageBand / 元ZIP
-</div>
-<div class="music-detail">
-選択したZIP本体も保存
-</div>
-</div>
-
-<div
-  id="zipStatus"
-  class="status"
->
-解析待ち
-</div>
-
-</div>
+  id="medleyAudioResult"
+  class="file-result"
+></div>
 
 </section>
 
@@ -997,8 +910,6 @@ GarageBand / 元ZIP
 const PLAYER_API =
   "https://ouenka-base-search.ninzin5600.workers.dev";
 
-const MIDI_EXTRACT_API =
-  "https://ouenka-base-midi.ninzin5600.workers.dev/extract";
 
 const DATA_API =
   "https://ouenka-base-data.ninzin5600.workers.dev";
@@ -1023,17 +934,14 @@ let selectedZipFile = null;
 
 let selectedAudioFile = null;
 
+let selectedMedleyAudioFile = null;
+
 /*
   編集中のD1レコード。
   null = 新規登録モード
 */
 let editingSong = null;
 
-let extractedMidi = {
-  melody:null,
-  chord:null,
-  bass:null
-};
 
 const $ = id =>
   document.getElementById(id);
@@ -1559,346 +1467,6 @@ $("playerName")
 
 
 /* =========================================
-   MIDI STATUS
-========================================= */
-
-function setStatus(
-  id,
-  text,
-  kind=""
-){
-
-  const e =
-    $(id);
-
-  e.textContent =
-    text;
-
-  e.className =
-    "status" +
-    (
-      kind
-        ? " " + kind
-        : ""
-    );
-}
-
-
-function resetMidi(){
-
-  extractedMidi = {
-    melody:null,
-    chord:null,
-    bass:null
-  };
-
-  setStatus(
-    "melodyStatus",
-    "解析待ち"
-  );
-
-  setStatus(
-    "chordStatus",
-    "解析待ち"
-  );
-
-  setStatus(
-    "bassStatus",
-    "解析待ち"
-  );
-}
-
-
-/* =========================================
-   Base64 → File
-========================================= */
-
-function base64ToFile(
-  base64,
-  fileName
-){
-
-  const binary =
-    atob(base64);
-
-  const bytes =
-    new Uint8Array(
-      binary.length
-    );
-
-  for(
-    let i = 0;
-    i < binary.length;
-    i++
-  ){
-
-    bytes[i] =
-      binary.charCodeAt(i);
-  }
-
-  return new File(
-    [bytes],
-    fileName,
-    {
-      type:"audio/midi"
-    }
-  );
-}
-
-
-/* =========================================
-   projectData探索
-========================================= */
-
-async function findProjectData(zipFile){
-
-  const zip =
-    await JSZip.loadAsync(
-      zipFile
-    );
-
-  const files =
-    Object.values(
-      zip.files
-    );
-
-  const entry =
-    files.find(
-      item =>
-        !item.dir &&
-        (
-          item.name ===
-            "projectData" ||
-
-          item.name
-            .toLowerCase()
-            .endsWith(
-              "/projectdata"
-            )
-        )
-    );
-
-  if(!entry){
-
-    throw new Error(
-      "GarageBand ZIP内にprojectDataが見つかりません。"
-    );
-  }
-
-  return await entry.async(
-    "arraybuffer"
-  );
-}
-
-
-/* =========================================
-   WorkerでMIDI抽出
-========================================= */
-
-async function extractMidiFromGarageBand(
-  zipFile
-){
-
-  resetMidi();
-
-  setStatus(
-    "melodyStatus",
-    "解析中...",
-    "loading"
-  );
-
-  setStatus(
-    "chordStatus",
-    "解析中...",
-    "loading"
-  );
-
-  setStatus(
-    "bassStatus",
-    "解析中...",
-    "loading"
-  );
-
-  try{
-
-    /*
-    GarageBand ZIPからprojectDataだけ取得
-    */
-    const projectData =
-      await findProjectData(
-        zipFile
-      );
-
-
-    /*
-    Workerへ送信
-    */
-    const response =
-      await fetch(
-        MIDI_EXTRACT_API,
-        {
-          method:"POST",
-
-          headers:{
-            "Content-Type":
-              "application/octet-stream"
-          },
-
-          body:
-            projectData
-        }
-      );
-
-
-    let data = null;
-
-    try{
-
-      data =
-        await response.json();
-
-    }catch{
-
-      throw new Error(
-        "Workerから正しいJSONが返りませんでした。"
-      );
-    }
-
-
-    if(
-      !response.ok ||
-      !data.ok
-    ){
-
-      throw new Error(
-        data?.error ||
-        "MIDI解析に失敗しました。"
-      );
-    }
-
-
-    if(
-      !data.tracks ||
-      !data.tracks.melody ||
-      !data.tracks.chord ||
-      !data.tracks.bass
-    ){
-
-      throw new Error(
-        "Workerから3トラックが返りませんでした。"
-      );
-    }
-
-
-    /*
-    メロディー
-    */
-    extractedMidi.melody =
-      base64ToFile(
-        data.tracks.melody.midi,
-        data.tracks.melody.name ||
-        "01_メロディー.mid"
-      );
-
-
-    /*
-    コード進行
-    */
-    extractedMidi.chord =
-      base64ToFile(
-        data.tracks.chord.midi,
-        data.tracks.chord.name ||
-        "02_コード進行.mid"
-      );
-
-
-    /*
-    ベース
-    */
-    extractedMidi.bass =
-      base64ToFile(
-        data.tracks.bass.midi,
-        data.tracks.bass.name ||
-        "03_ベース.mid"
-      );
-
-
-    setStatus(
-      "melodyStatus",
-      "✓ " +
-      data.tracks.melody.noteCount +
-      "音",
-      "ok"
-    );
-
-
-    setStatus(
-      "chordStatus",
-      "✓ " +
-      data.tracks.chord.noteCount +
-      "音",
-      "ok"
-    );
-
-
-    setStatus(
-      "bassStatus",
-      "✓ " +
-      data.tracks.bass.noteCount +
-      "音",
-      "ok"
-    );
-
-
-    clearMessage();
-
-    return true;
-
-
-  }catch(error){
-
-    console.error(error);
-
-    extractedMidi = {
-      melody:null,
-      chord:null,
-      bass:null
-    };
-
-
-    setStatus(
-      "melodyStatus",
-      "× 解析失敗",
-      "ng"
-    );
-
-    setStatus(
-      "chordStatus",
-      "× 解析失敗",
-      "ng"
-    );
-
-    setStatus(
-      "bassStatus",
-      "× 解析失敗",
-      "ng"
-    );
-
-
-    showError(
-      "MIDI自動抽出エラー：" +
-      (
-        error?.message ||
-        "原因不明"
-      )
-    );
-
-    return false;
-  }
-}
-
-
-/* =========================================
    GarageBand ZIP選択
 ========================================= */
 
@@ -1907,10 +1475,6 @@ $("zipFile")
     "change",
     async () => {
 
-      /*
-        編集中に新しいZIPを選んだ場合は
-        新規登録モードへ戻す
-      */
       if(editingSong){
         cancelEditMode(false);
       }
@@ -1919,13 +1483,9 @@ $("zipFile")
         $("zipFile")
           .files?.[0];
 
-
       if(!f){
 
-        selectedZipFile =
-          null;
-
-        resetMidi();
+        selectedZipFile = null;
 
         $("selectedFileName")
           .textContent =
@@ -1944,15 +1504,13 @@ $("zipFile")
         return;
       }
 
-
       if(
         !f.name
           .toLowerCase()
           .endsWith(".zip")
       ){
 
-        selectedZipFile =
-          null;
+        selectedZipFile = null;
 
         $("selectedFileName")
           .textContent =
@@ -1985,48 +1543,37 @@ $("zipFile")
         return;
       }
 
-
-      selectedZipFile =
-        f;
-
+      selectedZipFile = f;
 
       $("selectedFileName")
         .textContent =
         f.name;
-
 
       $("fileResult")
         .style
         .display =
         "block";
 
-
       $("fileResult")
         .style
         .background =
-        "#eef1f4";
-
+        "#e6f5eb";
 
       $("fileResult")
         .style
         .color =
-        "#53606c";
-
+        "#126b32";
 
       $("fileResult")
         .textContent =
-        "GarageBand ZIPを解析しています...";
-
+        "✓ GarageBand ZIPを選択できました：" +
+        f.name;
 
       $("registerArea")
         .style
         .display =
         "block";
 
-
-      /*
-      ZIP名から選手名
-      */
       const auto =
         f.name
           .replace(
@@ -2039,11 +1586,9 @@ $("zipFile")
           )
           .trim();
 
-
       $("playerName")
         .value =
         auto;
-
 
       $("reading").value =
         "";
@@ -2054,76 +1599,17 @@ $("zipFile")
       $("number").value =
         "";
 
-
       $("playerSearchResult")
         .className =
         "player-search-result";
-
 
       $("playerSearchResult")
         .textContent =
         "";
 
-
       clearMessage();
 
-
       await updateProductionNumber();
-
-
-      setStatus(
-        "zipStatus",
-        "✓ " + f.name,
-        "ok"
-      );
-
-
-      /*
-      ★ GarageBand ZIPから
-      MIDIを自動抽出
-      */
-      const success =
-        await extractMidiFromGarageBand(
-          f
-        );
-
-
-      if(success){
-
-        $("fileResult")
-          .style
-          .background =
-          "#e6f5eb";
-
-
-        $("fileResult")
-          .style
-          .color =
-          "#126b32";
-
-
-        $("fileResult")
-          .textContent =
-          "✓ GarageBand ZIPからMIDIを自動抽出しました";
-
-      }else{
-
-        $("fileResult")
-          .style
-          .background =
-          "#fdecec";
-
-
-        $("fileResult")
-          .style
-          .color =
-          "#a51f1f";
-
-
-        $("fileResult")
-          .textContent =
-          "× GarageBand ZIPのMIDI解析に失敗しました";
-      }
     }
   );
 
@@ -2215,6 +1701,89 @@ $("audioFile")
   );
 
 
+
+/* =========================================
+   メドレー用 m4a
+========================================= */
+
+$("medleyAudioFile")
+  .addEventListener(
+    "change",
+    () => {
+
+      const file =
+        $("medleyAudioFile")
+          .files?.[0];
+
+      const result =
+        $("medleyAudioResult");
+
+      if(!file){
+
+        selectedMedleyAudioFile =
+          null;
+
+        $("selectedMedleyAudioName")
+          .textContent =
+          "メドレー用m4aが選択されていません";
+
+        result.style.display =
+          "none";
+
+        return;
+      }
+
+      if(
+        !file.name
+          .toLowerCase()
+          .endsWith(".m4a")
+      ){
+
+        selectedMedleyAudioFile =
+          null;
+
+        $("selectedMedleyAudioName")
+          .textContent =
+          file.name;
+
+        result.style.display =
+          "block";
+
+        result.style.background =
+          "#fdecec";
+
+        result.style.color =
+          "#a51f1f";
+
+        result.textContent =
+          "× m4aファイルを選択してください";
+
+        return;
+      }
+
+      selectedMedleyAudioFile =
+        file;
+
+      $("selectedMedleyAudioName")
+        .textContent =
+        file.name;
+
+      result.style.display =
+        "block";
+
+      result.style.background =
+        "#e6f5eb";
+
+      result.style.color =
+        "#137333";
+
+      result.textContent =
+        "✓ メドレー用m4aを選択できました：" +
+        file.name;
+    }
+  );
+
+
 /* =========================================
    PC保存用ZIP
    データ/選手名/制作番号/ に展開する5ファイルを作成
@@ -2230,18 +1799,16 @@ async function downloadPcDataZip(
   playerName,
   productionNumber,
   audioFile,
-  midi,
+  medleyAudioFile,
   garageBandZipFile
 ){
   if(
     !audioFile ||
-    !midi?.melody ||
-    !midi?.chord ||
-    !midi?.bass ||
+    !medleyAudioFile ||
     !garageBandZipFile
   ){
     throw new Error(
-      "PC保存用ZIPに必要な5ファイルがそろっていません。"
+      "PC保存用ZIPに必要な3ファイルがそろっていません。"
     );
   }
 
@@ -2254,12 +1821,6 @@ async function downloadPcDataZip(
   const zip =
     new JSZip();
 
-  /*
-    ZIPを展開したら
-    郡司裕也/1/audio.m4a
-    の形になる。
-    PCでは展開した選手フォルダを「データ」へ入れるだけ。
-  */
   const songFolder =
     zip.folder(safeName)
        .folder(safeNumber);
@@ -2270,24 +1831,10 @@ async function downloadPcDataZip(
   );
 
   songFolder.file(
-    "melody.mid",
-    midi.melody
+    "medley.m4a",
+    medleyAudioFile
   );
 
-  songFolder.file(
-    "chord.mid",
-    midi.chord
-  );
-
-  songFolder.file(
-    "bass.mid",
-    midi.bass
-  );
-
-  /*
-    GarageBand元ZIP
-    サイトの「GarageBandファイル出力（iPhoneのみ）」で使用
-  */
   songFolder.file(
     "garageband.zip",
     garageBandZipFile
@@ -2432,20 +1979,15 @@ async function registerPlayer(){
 
     return;
   }
-
-
-  if(
-    !extractedMidi.melody ||
-    !extractedMidi.chord ||
-    !extractedMidi.bass
-  ){
+  if(!selectedMedleyAudioFile){
 
     showError(
-      "MIDIの自動抽出が完了していません。"
+      "メドレー用のm4aファイルを選択してください。"
     );
 
     return;
   }
+
 
 
   $("registerButton")
@@ -2491,12 +2033,8 @@ async function registerPlayer(){
               "audio.m4a",
             garageband_filename:
               "garageband.zip",
-            melody_filename:
-              "melody.mid",
-            chord_filename:
-              "chord.mid",
-            bass_filename:
-              "bass.mid" 
+            medley_filename:
+              "medley.m4a" 
           })
         }
       );
@@ -2565,6 +2103,16 @@ async function registerPlayer(){
 
 
       /*
+      メドレー用 m4a
+      */
+      medleyAudioFileName:
+        "medley.m4a",
+
+      medleyAudioFile:
+        selectedMedleyAudioFile,
+
+
+      /*
       GarageBand ZIP
       */
       zipFileName:
@@ -2572,34 +2120,6 @@ async function registerPlayer(){
 
       originalZip:
         selectedZipFile,
-
-
-      /*
-      MIDI
-      */
-      midi:{
-
-        track1Name:
-          "melody.mid",
-
-        track1:
-          extractedMidi.melody,
-
-
-        track2Name:
-          "chord.mid",
-
-        track2:
-          extractedMidi.chord,
-
-
-        track3Name:
-          "bass.mid",
-
-        track3:
-          extractedMidi.bass
-      },
-
 
       /*
       D1情報
@@ -2659,7 +2179,7 @@ async function registerPlayer(){
         name,
         productionNumber,
         selectedAudioFile,
-        extractedMidi,
+        selectedMedleyAudioFile,
         selectedZipFile
       );
 
@@ -2817,6 +2337,9 @@ function startEditSong(song){
     $("audioFile").disabled =
       true;
 
+    $("medleyAudioFile").disabled =
+      true;
+
     $("selectedFileName")
       .textContent =
       song.garageband_filename ||
@@ -2827,45 +2350,10 @@ function startEditSong(song){
       song.audio_filename ||
       "登録済みm4a";
 
-    setStatus(
-      "melodyStatus",
-      "✓ " +
-      (
-        song.melody_filename ||
-        "01_メロディー.mid"
-      ),
-      "ok"
-    );
-
-    setStatus(
-      "chordStatus",
-      "✓ " +
-      (
-        song.chord_filename ||
-        "02_コード進行.mid"
-      ),
-      "ok"
-    );
-
-    setStatus(
-      "bassStatus",
-      "✓ " +
-      (
-        song.bass_filename ||
-        "03_ベース.mid"
-      ),
-      "ok"
-    );
-
-    setStatus(
-      "zipStatus",
-      "✓ " +
-      (
-        song.garageband_filename ||
-        "登録済みZIP"
-      ),
-      "ok"
-    );
+    $("selectedMedleyAudioName")
+      .textContent =
+      song.medley_filename ||
+      "登録済みメドレー用m4a";
 
     $("registerArea")
       .scrollIntoView({
@@ -3184,6 +2672,9 @@ function cancelEditMode(
   $("audioFile").disabled =
     false;
 
+  $("medleyAudioFile").disabled =
+    false;
+
   if(clearForm){
 
     $("zipFile").value =
@@ -3192,10 +2683,16 @@ function cancelEditMode(
     $("audioFile").value =
       "";
 
+    $("medleyAudioFile").value =
+      "";
+
     selectedZipFile =
       null;
 
     selectedAudioFile =
+      null;
+
+    selectedMedleyAudioFile =
       null;
 
     $("selectedFileName")
@@ -3205,6 +2702,10 @@ function cancelEditMode(
     $("selectedAudioName")
       .textContent =
       "m4aが選択されていません";
+
+    $("selectedMedleyAudioName")
+      .textContent =
+      "メドレー用m4aが選択されていません";
 
     $("playerName").value =
       "";
@@ -3228,13 +2729,6 @@ function cancelEditMode(
       .style
       .display =
       "none";
-
-    resetMidi();
-
-    setStatus(
-      "zipStatus",
-      "解析待ち"
-    );
 
     clearMessage();
 
@@ -3476,8 +2970,12 @@ async function renderSavedList(){
             song.audio_filename;
         }
 
-        meta +=
-          " ／ MIDI：メロディー・コード進行・ベース";
+        if(song.medley_filename){
+
+          meta +=
+            " ／ メドレーm4a：" +
+            song.medley_filename;
+        }
 
         d.querySelector(
           ".saved-meta"
