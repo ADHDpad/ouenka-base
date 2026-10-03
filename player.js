@@ -1,92 +1,100 @@
 // ========================================
 // OUENKA BASE 音楽プレイヤー
-// 高速再生・iPhone再生リセット対応版
+// iPhone 他アプリ再生後の復帰対策版
 // ========================================
 
-let audioPlayer = new Audio();
-audioPlayer.preload = "auto";
-audioPlayer.volume = 1;
-audioPlayer.muted = false;
-
+let audioPlayer = null;
 let currentAudioUrl = "";
+let currentPlayerName = "";
+let needsAudioReset = true;
 
 function setNowPlaying(text) {
     const now = document.getElementById("nowPlaying");
     if (now) now.textContent = text;
 }
 
-// 前の応援歌再生を完全に解除する。
-// iPhone/PWAで前回のAudio状態が残るケースもここでリセットする。
+function destroyAudioPlayer() {
+    if (!audioPlayer) {
+        currentAudioUrl = "";
+        return;
+    }
+
+    try {
+        audioPlayer.pause();
+        try { audioPlayer.currentTime = 0; } catch (_) {}
+        audioPlayer.removeAttribute("src");
+        audioPlayer.load();
+    } catch (error) {
+        console.warn("Audio破棄処理:", error);
+    }
+
+    audioPlayer = null;
+    currentAudioUrl = "";
+}
+
+function createFreshAudio() {
+    destroyAudioPlayer();
+
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.volume = 1;
+    audio.muted = false;
+    audio.setAttribute("playsinline", "");
+
+    audio.addEventListener("playing", function () {
+        if (currentPlayerName) {
+            setNowPlaying("♪ 再生中：" + currentPlayerName);
+        }
+    });
+
+    audio.addEventListener("error", function () {
+        console.error("Audioエラー:", audio.error, currentAudioUrl);
+        needsAudioReset = true;
+        setNowPlaying("音源を読み込めませんでした");
+    });
+
+    audio.addEventListener("abort", function () {
+        needsAudioReset = true;
+    });
+
+    audioPlayer = audio;
+    needsAudioReset = false;
+    return audioPlayer;
+}
+
 function stopCurrentSong() {
+    if (!audioPlayer) return;
+
     try {
         audioPlayer.pause();
         audioPlayer.currentTime = 0;
-
-        if (currentAudioUrl) {
-            audioPlayer.removeAttribute("src");
-            audioPlayer.load();
-            currentAudioUrl = "";
-        }
     } catch (error) {
         console.warn("停止処理:", error);
     }
 }
 
-// iPhone側に残っている「このサイトの前の音声状態」を解除してから
-// 新しい音源を同じAudio要素で再生する。
-async function resetAndPlay(url) {
-    try {
-        audioPlayer.pause();
-
-        try {
-            audioPlayer.currentTime = 0;
-        } catch (_) {}
-
-        // srcを差し替える前に一度空にしてメディア状態をリセット
-        audioPlayer.removeAttribute("src");
-        audioPlayer.load();
-
-        currentAudioUrl = url;
-        audioPlayer.src = url;
-        audioPlayer.preload = "auto";
-        audioPlayer.volume = 1;
-        audioPlayer.muted = false;
-
-        // load()で即読み込み開始。再生ボタンのタップ中にplay()へ進む。
-        audioPlayer.load();
-
-        await audioPlayer.play();
-    } catch (error) {
-        console.error("再生エラー:", error, url);
-
-        // iPhoneで一時的にメディア状態が競合した場合の1回だけの再試行
-        try {
-            audioPlayer.pause();
-            audioPlayer.removeAttribute("src");
-            audioPlayer.load();
-
-            currentAudioUrl = url;
-            audioPlayer.src = url;
-            audioPlayer.preload = "auto";
-            audioPlayer.load();
-
-            await audioPlayer.play();
-            return;
-        } catch (retryError) {
-            console.error("再生再試行エラー:", retryError, url);
-            setNowPlaying("音源を再生できませんでした");
-            throw retryError;
-        }
-    }
+// 他アプリへ移動したら、iOSに中断されたAudioを残さない。
+function resetAudioForAppSwitch() {
+    needsAudioReset = true;
+    destroyAudioPlayer();
 }
 
-audioPlayer.addEventListener("playing", () => {
-    // 曲名はplaySongData側でセット済みなので、ここでは上書きしない。
+document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") {
+        resetAudioForAppSwitch();
+    } else {
+        needsAudioReset = true;
+    }
 });
 
-audioPlayer.addEventListener("error", () => {
-    console.error("Audioエラー:", audioPlayer.error, currentAudioUrl);
-    setNowPlaying("音源を読み込めませんでした");
+window.addEventListener("pageshow", function () {
+    resetAudioForAppSwitch();
+});
+
+window.addEventListener("focus", function () {
+    if (document.visibilityState === "visible") {
+        needsAudioReset = true;
+    }
 });
 
 async function playSongData(player) {
@@ -96,13 +104,48 @@ async function playSongData(player) {
         return;
     }
 
-    setNowPlaying("読み込み中：" + (player.name || ""));
+    currentPlayerName = player.name || "";
+    setNowPlaying("読み込み中：" + currentPlayerName);
+
+    // 曲を押すたびに新品Audioへ交換。
+    // 他アプリによって中断されたAudioを再利用しない。
+    createFreshAudio();
+
+    currentAudioUrl = player.audio;
+    audioPlayer.src = currentAudioUrl;
+    audioPlayer.preload = "auto";
+    audioPlayer.volume = 1;
+    audioPlayer.muted = false;
 
     try {
-        await resetAndPlay(player.audio);
-        setNowPlaying("♪ 再生中：" + (player.name || ""));
-    } catch (_) {
-        // 表示はresetAndPlay内で更新済み
+        const playPromise = audioPlayer.play();
+        if (playPromise) await playPromise;
+        needsAudioReset = false;
+    } catch (error) {
+        console.error("再生エラー:", error, currentAudioUrl);
+
+        // 1回だけ新品Audioで再試行
+        try {
+            createFreshAudio();
+
+            currentAudioUrl = player.audio;
+            audioPlayer.src = currentAudioUrl;
+            audioPlayer.preload = "auto";
+            audioPlayer.volume = 1;
+            audioPlayer.muted = false;
+
+            const retryPromise = audioPlayer.play();
+            if (retryPromise) await retryPromise;
+
+            needsAudioReset = false;
+            setNowPlaying("♪ 再生中：" + currentPlayerName);
+        } catch (retryError) {
+            console.error("再生再試行エラー:", retryError, currentAudioUrl);
+
+            needsAudioReset = true;
+            destroyAudioPlayer();
+            setNowPlaying("音源を再生できませんでした");
+        }
     }
 }
 
@@ -115,3 +158,5 @@ function playSong(playerId) {
 
     playSongData(players[playerId]);
 }
+
+console.log("OUENKA BASE iPhone音声復帰対策 準備完了");
