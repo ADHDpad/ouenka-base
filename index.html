@@ -27,6 +27,94 @@
 
     <title>応援歌BASE</title>
 
+    <style>
+        .mobile-version {
+            display: none;
+        }
+
+        @media (max-width: 700px) {
+            .top-brand-main {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                white-space: nowrap;
+            }
+
+            .mobile-version {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 2px 6px;
+                border: 1px solid rgba(255, 255, 255, 0.45);
+                border-radius: 4px;
+                font-size: 10px;
+                line-height: 1.2;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                flex: 0 0 auto;
+            }
+
+            .system-version {
+                display: none;
+            }
+        }
+    </style>
+
+
+    <style>
+        .mobile-version {
+            display: none;
+        }
+
+        @media (max-width: 700px) {
+            .top-menu {
+                overflow: visible;
+            }
+
+            .top-brand-main {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                white-space: nowrap;
+            }
+
+            .mobile-version {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                padding: 2px 6px;
+                border: 1px solid rgba(255,255,255,.55);
+                border-radius: 4px;
+                font-size: 10px;
+                line-height: 1.2;
+                font-weight: 800;
+                letter-spacing: .04em;
+                flex: 0 0 auto;
+            }
+
+            .top-actions {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .top-actions::-webkit-scrollbar {
+                display: none;
+            }
+
+            .top-menu-button {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+
+            .system-version {
+                display: none !important;
+            }
+        }
+    </style>
+
 </head>
 
 
@@ -43,6 +131,7 @@
 
             <div class="top-brand-main">
                 OUENKA BASE
+                <span class="mobile-version">V1.0</span>
             </div>
 
             <div class="top-brand-sub">
@@ -74,26 +163,6 @@
             </button>
 
 
-            <!-- データ登録 -->
-
-            <button
-                type="button"
-                class="top-menu-button"
-                onclick="openDataRegister()"
-            >
-
-                <span class="top-button-icon">
-                    ＋
-                </span>
-
-                <span>
-                    データ登録
-                    <small>DATA REGISTER</small>
-                </span>
-
-            </button>
-
-
             <!-- 1-9作成 -->
 
             <button
@@ -113,13 +182,35 @@
 
             </button>
 
+
+
+
+            <!-- データ登録 -->
+
+            <button
+                type="button"
+                class="top-menu-button"
+                onclick="openDataRegister()"
+            >
+
+                <span class="top-button-icon">
+                    ＋
+                </span>
+
+                <span>
+                    データ登録
+                    <small>DATA REGISTER</small>
+                </span>
+
+            </button>
+
         </div>
 
 
         <div class="system-version">
 
             <span>OUENKA SYSTEM</span>
-            <span>VERSION 1.02</span>
+            <span>VERSION 1.0</span>
 
         </div>
 

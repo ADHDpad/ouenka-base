@@ -530,6 +530,26 @@ textarea{
 .creator-login p{margin:0 0 18px;color:#536273;font-size:14px;}
 .creator-login input{width:100%;box-sizing:border-box;padding:14px;font-size:18px;border:1px solid #bcc8d4;border-radius:10px;}
 .creator-login button{width:100%;margin-top:12px;padding:14px;border:0;border-radius:10px;background:#0B2F55;color:#fff;font-weight:700;font-size:16px;}
+.creator-login .submit-data-button{
+  background:#fff;
+  color:#0B2F55;
+  border:2px solid #0B2F55;
+}
+.creator-login .gate-divider{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:18px 0 4px;
+  color:#8a97a5;
+  font-size:12px;
+}
+.creator-login .gate-divider::before,
+.creator-login .gate-divider::after{
+  content:"";
+  height:1px;
+  background:#d7dee6;
+  flex:1;
+}
 #creatorError{min-height:22px;margin-top:10px;color:#b42318;font-size:14px;}
 #creatorContent{display:none;}
 .production-edit-wrap{display:none;}
@@ -548,6 +568,16 @@ textarea{
     <input type="password" id="creatorPassword" inputmode="numeric" autocomplete="off" placeholder="作成者用パスワード">
     <button type="button" onclick="unlockCreator()">作成者画面を開く</button>
     <div id="creatorError"></div>
+
+    <div class="gate-divider">一般利用者はこちら</div>
+
+    <button
+      type="button"
+      class="submit-data-button"
+      onclick="openSongDataSubmit()"
+    >
+      作成者に応援歌データを渡す
+    </button>
   </div>
 </div>
 
@@ -1103,6 +1133,10 @@ function unlockCreator(){
 
   error.textContent = "パスワードが違います。";
   input.select();
+}
+
+function openSongDataSubmit(){
+  window.location.href = "./submit.html";
 }
 
 window.addEventListener("DOMContentLoaded",()=>{
