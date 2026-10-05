@@ -111,7 +111,7 @@ button,input,select{font:inherit} button{cursor:pointer}
 }
 @media(max-width:520px){
  .player-row{
-  grid-template-columns:36px 84px minmax(0,1fr) 32px!important;
+  grid-template-columns:36px 72px minmax(0,1fr) 30px!important;
   gap:3px!important;
   margin-bottom:4px!important;
   min-height:42px!important;
@@ -131,6 +131,42 @@ button,input,select{font:inherit} button{cursor:pointer}
  .suggestions{top:42px!important}
  .drag-handle{height:40px!important;width:30px!important;font-size:20px!important}
  .input-clear{width:22px!important;height:22px!important;font-size:19px!important;right:3px!important}
+}
+
+
+@media(max-width:390px){
+ .player-row{
+  grid-template-columns:34px 66px minmax(0,1fr) 28px!important;
+  gap:2px!important;
+ }
+ .player-search{
+  font-size:13px!important;
+  padding-left:23px!important;
+  padding-right:26px!important;
+ }
+ .position{font-size:9px!important}
+ .drag-handle{width:28px!important}
+}
+
+
+/* ===== iPhone Safari input auto-zoom prevention ===== */
+@media(max-width:520px){
+ .player-search,
+ .position,
+ #lineupTitle,
+ #teamSelect,
+ #yearSelect{
+  font-size:16px!important;
+ }
+}
+@media(max-width:390px){
+ .player-search,
+ .position,
+ #lineupTitle,
+ #teamSelect,
+ #yearSelect{
+  font-size:16px!important;
+ }
 }
 
 </style>
@@ -446,7 +482,7 @@ async function showSuggestions(row,input,box){
 }
 
 function resetPlayIcons(){
- document.querySelectorAll(".row-play").forEach(b=>{b.textContent="▶";b.classList.remove("playing")});
+ document.querySelectorAll(".player-row").forEach(r=>r.classList.remove("row-playing"));
 }
 function stopRowAudio(){
  document.querySelectorAll(".player-row.row-playing").forEach(r=>r.classList.remove("row-playing"));
@@ -454,23 +490,41 @@ function stopRowAudio(){
  rowAudio=null;currentPlayingRow=null;resetPlayIcons();
 }
 async function playSelectedRow(row){
- const button=row.querySelector(".row-play");
- if(currentPlayingRow===row&&rowAudio&&!rowAudio.paused){stopRowAudio();return}
+ if(currentPlayingRow===row&&rowAudio&&!rowAudio.paused){
+  stopRowAudio();
+  return;
+ }
  const name=row.querySelector(".player-search").value.trim();
  if(!name){setStatus("先に再生する選手を選択してください。","error");return}
  const audioValue=row.dataset.audioUrl||"";
  if(!audioValue){setStatus(`${name}の再生用音源を取得できませんでした。`,"error");return}
+
  stopRowAudio();
+
  try{
-  rowAudio=new Audio();rowAudio.preload="auto";rowAudio.volume=1;rowAudio.muted=false;
-  rowAudio.src=toPublicAudioUrl(audioValue);rowAudio.playsInline=true;
-  currentPlayingRow=row;button.textContent="■";button.classList.add("playing");
-  rowAudio.addEventListener("playing",()=>setStatus(`♪ ${name} を再生中`,"ok"));
+  rowAudio=new Audio();
+  rowAudio.preload="auto";
+  rowAudio.volume=1;
+  rowAudio.muted=false;
+  rowAudio.src=toPublicAudioUrl(audioValue);
+  rowAudio.playsInline=true;
+
+  currentPlayingRow=row;
+  row.classList.add("row-playing");
+
   rowAudio.addEventListener("ended",stopRowAudio,{once:true});
-  rowAudio.addEventListener("error",()=>{setStatus(`${name}の音源を読み込めませんでした。`,"error");stopRowAudio()},{once:true});
-  const p=rowAudio.play();
-  row.classList.add("row-playing");if(p)await p;
- }catch(error){console.error("1-9試聴エラー:",error);stopRowAudio();setStatus(`${name}の音源を再生できませんでした。`,"error")}
+  rowAudio.addEventListener("error",()=>{
+   setStatus(`${name}の音源を読み込めませんでした。`,"error");
+   stopRowAudio();
+  },{once:true});
+
+  const promise=rowAudio.play();
+  if(promise)await promise;
+ }catch(error){
+  console.error("1-9試聴エラー:",error);
+  stopRowAudio();
+  setStatus(`${name}の音源を再生できませんでした。`,"error");
+ }
 }
 
 document.addEventListener("visibilitychange",()=>{
