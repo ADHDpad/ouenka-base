@@ -64,7 +64,7 @@ button,input,select{font:inherit} button{cursor:pointer}
  .topbar{min-height:66px;padding:0 10px}.top-brand-title{font-size:16px}.top-brand-sub{font-size:8px;margin-top:5px}.back{min-height:40px;padding:0 11px;font-size:12px}
  .page{padding:9px 7px 22px}.hero{padding:15px 7px}.filters{gap:5px;padding:7px}.control,.chat{min-height:47px;padding:0 4px;font-size:12px}
  .title-row{grid-template-columns:98px 1fr;padding:8px 8px;gap:5px}.title-row label{font-size:13px}.title-row input{font-size:16px}
- .lineup{padding:9px 7px}.player-row{grid-template-columns:43px 88px minmax(0,1fr) 48px 44px;gap:4px;margin-bottom:6px}
+ .lineup{padding:9px 7px}.player-row{grid-template-columns:40px 82px minmax(0,1fr) 32px;gap:4px;margin-bottom:6px}
  .order{height:54px;font-size:22px}.position,.player-search,.clear,.row-play{height:50px}.position{font-size:11px;padding:0 1px}
  .player-search{font-size:16px;padding-left:29px}.search-icon{left:8px;top:25px;font-size:17px}.clear{font-size:10px;padding:0 2px}
  .suggestions{top:53px}.bottom-actions{grid-template-columns:1fr 1fr 1.55fr;gap:5px;padding:2px 7px 11px}.action{min-height:56px;font-size:12px;padding:4px}
@@ -97,6 +97,40 @@ button,input,select{font:inherit} button{cursor:pointer}
  .drag-handle{width:32px;height:38px;font-size:22px}
  .input-clear{right:4px;width:24px;height:24px;font-size:20px}
  .player-search{padding-right:31px!important}
+}
+
+
+/* ===== number tap playback / compact iPhone rows ===== */
+.order{
+ cursor:pointer;user-select:none;-webkit-user-select:none;
+ touch-action:manipulation
+}
+.order:active{transform:scale(.94)}
+.player-row.row-playing .order{
+ box-shadow:0 0 0 3px rgba(11,79,122,.20);
+}
+@media(max-width:520px){
+ .player-row{
+  grid-template-columns:36px 84px minmax(0,1fr) 32px!important;
+  gap:3px!important;
+  margin-bottom:4px!important;
+  min-height:42px!important;
+ }
+ .order{
+  height:42px!important;
+  min-height:42px!important;
+  font-size:18px!important;
+ }
+ .position,.player-search{
+  height:40px!important;
+  min-height:40px!important;
+ }
+ .position{font-size:10px!important}
+ .player-search{font-size:14px!important;padding-left:26px!important;padding-right:28px!important}
+ .search-icon{left:7px!important;top:20px!important;font-size:15px!important}
+ .suggestions{top:42px!important}
+ .drag-handle{height:40px!important;width:30px!important;font-size:20px!important}
+ .input-clear{width:22px!important;height:22px!important;font-size:19px!important;right:3px!important}
 }
 
 </style>
@@ -216,9 +250,16 @@ function createRow(n,data={}){
    <button class="input-clear" type="button" aria-label="${n}番の選手名を消す">×</button>
    <div class="suggestions"></div>
   </div>
-  <button class="row-play" type="button" title="応援歌を再生" aria-label="${n}番の応援歌を再生">▶</button>
   <button class="drag-handle" type="button" title="つかんで並び替え" aria-label="${n}番を並び替え">☰</button>`;
 
+ const orderButton=row.querySelector(".order");
+ orderButton.setAttribute("role","button");
+ orderButton.setAttribute("tabindex","0");
+ orderButton.setAttribute("title",`${n}番の応援歌を再生`);
+ orderButton.setAttribute("aria-label",`${n}番の応援歌を再生`);
+ orderButton.addEventListener("keydown",e=>{
+  if(e.key==="Enter"||e.key===" "){e.preventDefault();playSelectedRow(row)}
+ });
  const input=row.querySelector(".player-search");
  const sug=row.querySelector(".suggestions");
  const pos=row.querySelector(".position");
@@ -245,7 +286,9 @@ function createRow(n,data={}){
   syncClear();saveDraft();updateInputFieldColor(input);
   input.focus();
  });
- row.querySelector(".row-play").addEventListener("click",()=>playSelectedRow(row));
+ row.querySelector(".order").addEventListener("click",()=>{
+  playSelectedRow(row);
+ });
  installRowDrag(row,row.querySelector(".drag-handle"));
  setTimeout(()=>{updateInputFieldColor(input);updateInputFieldColor(pos)},0);
  return row;
@@ -256,16 +299,19 @@ function renumberRows(){
  rows.forEach((row,i)=>{
   const n=i+1;
   row.dataset.row=n;
-  row.querySelector(".order").textContent=n;
+  const order=row.querySelector(".order");
+  order.textContent=n;
+  order.setAttribute("role","button");
+  order.setAttribute("tabindex","0");
+  order.setAttribute("title",`${n}番の応援歌を再生`);
+  order.setAttribute("aria-label",`${n}番の応援歌を再生`);
   const pos=row.querySelector(".position");
   const input=row.querySelector(".player-search");
   const clear=row.querySelector(".input-clear");
-  const play=row.querySelector(".row-play");
   const handle=row.querySelector(".drag-handle");
   pos.setAttribute("aria-label",`${n}番のポジション`);
   input.setAttribute("aria-label",`${n}番の選手検索`);
   clear.setAttribute("aria-label",`${n}番の選手名を消す`);
-  play.setAttribute("aria-label",`${n}番の応援歌を再生`);
   handle.setAttribute("aria-label",`${n}番を並び替え`);
  });
  rowCount=rows.length;
@@ -403,6 +449,7 @@ function resetPlayIcons(){
  document.querySelectorAll(".row-play").forEach(b=>{b.textContent="▶";b.classList.remove("playing")});
 }
 function stopRowAudio(){
+ document.querySelectorAll(".player-row.row-playing").forEach(r=>r.classList.remove("row-playing"));
  if(rowAudio){try{rowAudio.pause();rowAudio.removeAttribute("src");rowAudio.load()}catch(e){}}
  rowAudio=null;currentPlayingRow=null;resetPlayIcons();
 }
@@ -421,7 +468,8 @@ async function playSelectedRow(row){
   rowAudio.addEventListener("playing",()=>setStatus(`♪ ${name} を再生中`,"ok"));
   rowAudio.addEventListener("ended",stopRowAudio,{once:true});
   rowAudio.addEventListener("error",()=>{setStatus(`${name}の音源を読み込めませんでした。`,"error");stopRowAudio()},{once:true});
-  const p=rowAudio.play();if(p)await p;
+  const p=rowAudio.play();
+  row.classList.add("row-playing");if(p)await p;
  }catch(error){console.error("1-9試聴エラー:",error);stopRowAudio();setStatus(`${name}の音源を再生できませんでした。`,"error")}
 }
 
@@ -652,7 +700,7 @@ function loadDraft(){
   const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
   if(!data){renderRows();return}
   document.getElementById("yearSelect").value=data.year||"";
-  document.getElementById("teamSelect").value=data.team||"";
+  document.getElementById("teamSelect").value="";
   document.getElementById("lineupTitle").value=data.title||"";
   renderRows(data.rows||[]);setStatus("前回編集中だった1-9を復元しました。");
  }catch(e){renderRows()}
@@ -686,6 +734,36 @@ function chatGPTSearch(){
  autoTitle();saveDraft();setStatus(`${year}年度・${team}の1-9候補を検索する準備ができました。`);
 }
 
+const TEAM_SELECT_COLORS={
+ "福岡ソフトバンクホークス":{bg:"#FCC800",fg:"#111111"},
+ "北海道日本ハムファイターズ":{bg:"#0076B9",fg:"#FFFFFF"},
+ "オリックス・バファローズ":{bg:"#B08D57",fg:"#111111"},
+ "東北楽天ゴールデンイーグルス":{bg:"#870010",fg:"#FFFFFF"},
+ "埼玉西武ライオンズ":{bg:"#143D79",fg:"#FFFFFF"},
+ "千葉ロッテマリーンズ":{bg:"#111111",fg:"#FFFFFF"},
+ "読売ジャイアンツ":{bg:"#F97709",fg:"#111111"},
+ "阪神タイガース":{bg:"#FFE100",fg:"#111111"},
+ "横浜DeNAベイスターズ":{bg:"#005BAC",fg:"#FFFFFF"},
+ "広島東洋カープ":{bg:"#D50000",fg:"#FFFFFF"},
+ "東京ヤクルトスワローズ":{bg:"#009B6B",fg:"#FFFFFF"},
+ "中日ドラゴンズ":{bg:"#004EA2",fg:"#FFFFFF"}
+};
+
+function paintTeamSelect(){
+ const select=document.getElementById("teamSelect");
+ if(!select)return;
+ const c=TEAM_SELECT_COLORS[select.value];
+ if(c){
+  select.style.setProperty("background",c.bg,"important");
+  select.style.setProperty("color",c.fg,"important");
+  select.style.setProperty("border-color",c.bg,"important");
+ }else{
+  select.style.setProperty("background","#fff","important");
+  select.style.setProperty("color","#0b2b4a","important");
+  select.style.setProperty("border-color","#c4cfda","important");
+ }
+}
+
 function renderTeamSelect(){
  const select=document.getElementById("teamSelect");if(!select)return;
  const current=select.value;
@@ -698,10 +776,17 @@ function renderTeamSelect(){
  const pacific=new Set(fallback.slice(0,6)),other=new Set(["日本代表","近鉄","ブルーウェーブ"]);
  [["パ・リーグ",order.filter(x=>pacific.has(x))],["セ・リーグ",order.filter(x=>!pacific.has(x)&&!other.has(x))],["その他",order.filter(x=>other.has(x))]].forEach(([label,teams])=>{
   const g=document.createElement("optgroup");g.label=label;
-  teams.forEach(team=>{const o=document.createElement("option");o.value=team;o.textContent=team;o.dataset.team=team;g.appendChild(o)});
+  teams.forEach(team=>{
+   const o=document.createElement("option");o.value=team;o.textContent=team;o.dataset.team=team;
+   const c=TEAM_SELECT_COLORS[team];
+   if(c){o.style.backgroundColor=c.bg;o.style.color=c.fg}
+   g.appendChild(o)
+  });
   select.appendChild(g);
  });
- if(current&&order.includes(current))select.value=current;
+ // 初期表示では特定球団（西武など）を自動選択しない。
+ select.value="";
+ paintTeamSelect();
 }
 function fillYears(){
  const s=document.getElementById("yearSelect"),now=new Date().getFullYear();
@@ -713,7 +798,7 @@ document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
-document.getElementById("teamSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
+document.getElementById("teamSelect").addEventListener("change",()=>{paintTeamSelect();autoTitle();saveDraft()});
 document.getElementById("lineupTitle").addEventListener("input",e=>{saveDraft();updateInputFieldColor(e.target)});
 document.addEventListener("click",e=>{if(!e.target.closest(".search-wrap"))document.querySelectorAll(".suggestions").forEach(x=>x.style.display="none")});
 window.addEventListener("ouenka-team-order-change",renderTeamSelect);
