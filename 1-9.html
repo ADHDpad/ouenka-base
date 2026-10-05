@@ -122,7 +122,6 @@ button,input,select{font:inherit} button{cursor:pointer}
    <button id="addButton" class="action add" type="button">＋ 選手追加</button>
    <button id="medleyPlayButton" class="action create" type="button">▶ 1-9を作成・再生</button>
   </div>
-  <div id="status" class="status"></div>
   <section id="previewCard" class="preview-card">
    <div class="preview-head">1-9 プレビュー</div><div id="previewMeta" class="preview-meta"></div><ol id="previewList" class="preview-list"></ol>
   </section>
@@ -175,10 +174,9 @@ function getTeam(p){return p?.team||""}
 function norm(s){return String(s||"").toLowerCase().replace(/[\s　]/g,"")}
 
 function setStatus(message,type="info"){
- const st=document.getElementById("status");
- st.textContent=message;st.style.display="block";
- st.style.background=type==="error"?"#fff0f0":type==="ok"?"#eefaf2":"#eef6ff";
- st.style.color=type==="error"?"#a52b2b":type==="ok"?"#1f6b3b":"#174f7e";
+ // 画面最下部のステータスメッセージは表示しない。
+ // 操作不能につながるエラーだけダイアログで通知する。
+ if(type==="error") alert(message);
 }
 
 function updateInputFieldColor(el){
