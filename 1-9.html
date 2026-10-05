@@ -26,7 +26,7 @@ button,input,select{font:inherit} button{cursor:pointer}
 .title-row label{font-weight:900;font-size:18px}
 .title-row input{width:100%;min-height:47px;border:1px solid #c5d0db;border-radius:9px;padding:0 14px;font-size:16px;color:var(--text);background:#fff}
 .lineup{padding:10px 14px 6px}
-.player-row{display:grid;grid-template-columns:52px 150px minmax(220px,1fr) 72px 52px;gap:6px;align-items:start;margin-bottom:6px}
+.player-row{display:grid;grid-template-columns:52px 150px minmax(220px,1fr) 72px 52px 76px;gap:6px;align-items:start;margin-bottom:6px}
 .order{height:52px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,#0c3c68,#062743);color:#fff;font-size:28px;font-weight:900}
 .position,.player-search,.clear,.row-play{height:52px;border:1px solid #c8d2dc;border-radius:9px;background:#fff;color:var(--text)}
 .position{width:100%;padding:0 9px;font-weight:850}
@@ -36,6 +36,7 @@ button,input,select{font:inherit} button{cursor:pointer}
 .clear{width:100%;font-weight:850;background:#edf3f8}
 .row-play{width:100%;border:0;border-radius:9px;background:#0B2F55;color:#fff;font-size:21px;font-weight:900;display:flex;align-items:center;justify-content:center}
 .row-play.playing{background:#0b84f3}.row-play:disabled{opacity:.35;cursor:not-allowed}
+.move-wrap{height:52px;display:grid;grid-template-columns:1fr 1fr;gap:3px}.move-btn{border:1px solid #9eb2c4;border-radius:8px;background:#eaf2f8;color:#0B2F55;font-weight:900;font-size:17px;padding:0}.move-btn:disabled{opacity:.28}
 .suggestions{display:none;position:absolute;left:0;right:0;top:55px;z-index:60;background:#fff;border:1px solid #c8d2dc;border-radius:9px;max-height:220px;overflow:auto;box-shadow:0 10px 24px rgba(7,29,51,.2)}
 .suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:#174A7A;text-align:left;padding:11px 13px;color:#fff}
 .suggestion:hover,.suggestion:focus{background:#0F3B66}.suggestion strong{color:#fff}.suggestion small{display:block;color:#dbe9f5!important;margin-top:2px}
@@ -65,9 +66,9 @@ button,input,select{font:inherit} button{cursor:pointer}
  .topbar{min-height:66px;padding:0 10px}.top-brand-title{font-size:16px}.top-brand-sub{font-size:8px;margin-top:5px}.back{min-height:40px;padding:0 11px;font-size:12px}
  .page{padding:9px 7px 22px}.hero{padding:15px 7px}.filters{gap:5px;padding:7px}.control,.chat{min-height:47px;padding:0 4px;font-size:12px}
  .title-row{grid-template-columns:98px 1fr;padding:8px 8px;gap:5px}.title-row label{font-size:13px}.title-row input{font-size:16px}
- .lineup{padding:7px 5px 4px}.player-row{grid-template-columns:28px 72px minmax(0,1fr) 28px 34px;gap:3px;margin-bottom:4px}
+ .lineup{padding:7px 5px 4px}.player-row{grid-template-columns:28px 72px minmax(0,1fr) 28px 34px 52px;gap:3px;margin-bottom:4px}
  .order{height:42px;border-radius:7px;font-size:16px}.position,.player-search,.clear,.row-play{height:42px;border-radius:7px}.position{font-size:10px;padding:0 1px}
- .player-search{font-size:14px;padding:0 3px 0 23px}.search-icon{left:6px;top:21px;font-size:14px}.clear{font-size:0;padding:0}.clear::before{content:"×";font-size:18px;font-weight:800}.row-play{font-size:15px}
+ .player-search{font-size:14px;padding:0 3px 0 23px}.search-icon{left:6px;top:21px;font-size:14px}.clear{font-size:0;padding:0}.clear::before{content:"×";font-size:18px;font-weight:800}.row-play{font-size:15px}.move-wrap{height:42px;gap:2px}.move-btn{font-size:13px;border-radius:6px;padding:0}
  .suggestions{top:45px}.add-row-wrap{padding:2px 5px 8px}.add-row{min-height:42px;font-size:13px}.bottom-actions{grid-template-columns:.8fr 1.6fr;gap:5px;padding:2px 5px 11px}.action{min-height:50px;font-size:12px;padding:4px}
  .preview-item{grid-template-columns:30px 70px 1fr;padding:9px 10px}.preview-pos{font-size:11px}
 }
@@ -197,7 +198,11 @@ function createRow(n,data={}){
    <div class="suggestions"></div>
   </div>
   <button class="clear" type="button">クリア</button>
-  <button class="row-play" type="button" title="応援歌を再生" aria-label="${n}番の応援歌を再生">▶</button>`;
+  <button class="row-play" type="button" title="応援歌を再生" aria-label="${n}番の応援歌を再生">▶</button>
+  <div class="move-wrap" aria-label="${n}番を移動">
+   <button class="move-btn move-up" type="button" title="1つ上へ">↑</button>
+   <button class="move-btn move-down" type="button" title="1つ下へ">↓</button>
+  </div>`;
 
  const input=row.querySelector(".player-search");
  const sug=row.querySelector(".suggestions");
@@ -221,14 +226,44 @@ function createRow(n,data={}){
   saveDraft();updateInputFieldColor(input);updateInputFieldColor(pos);
  });
  row.querySelector(".row-play").addEventListener("click",()=>playSelectedRow(row));
- setTimeout(()=>{updateInputFieldColor(input);updateInputFieldColor(pos)},0);
+ row.querySelector(".move-up").addEventListener("click",()=>moveRow(row,-1));
+ row.querySelector(".move-down").addEventListener("click",()=>moveRow(row,1));
+ setTimeout(()=>{updateInputFieldColor(input);updateInputFieldColor(pos);updateMoveButtons()},0);
  return row;
+}
+
+function renumberRows(){
+ const rows=[...document.querySelectorAll(".player-row")];
+ rows.forEach((row,i)=>{
+  const n=i+1; row.dataset.row=n;
+  const order=row.querySelector(".order"); if(order)order.textContent=n;
+  const pos=row.querySelector(".position"); if(pos)pos.setAttribute("aria-label",`${n}番のポジション`);
+  const input=row.querySelector(".player-search"); if(input)input.setAttribute("aria-label",`${n}番の選手検索`);
+  const play=row.querySelector(".row-play"); if(play)play.setAttribute("aria-label",`${n}番の応援歌を再生`);
+ });
+ rowCount=rows.length; updateMoveButtons();
+}
+function updateMoveButtons(){
+ const rows=[...document.querySelectorAll(".player-row")];
+ rows.forEach((row,i)=>{
+  const up=row.querySelector(".move-up"),down=row.querySelector(".move-down");
+  if(up)up.disabled=i===0; if(down)down.disabled=i===rows.length-1;
+ });
+}
+function moveRow(row,direction){
+ const box=document.getElementById("lineup");
+ if(!box||!row)return;
+ if(currentPlayingRow===row)stopRowAudio();
+ if(direction<0){const prev=row.previousElementSibling;if(prev)box.insertBefore(row,prev);}
+ else {const next=row.nextElementSibling;if(next)box.insertBefore(next,row);}
+ renumberRows(); checkDuplicates(); saveDraft();
 }
 
 function renderRows(rows=[]){
  const box=document.getElementById("lineup");box.innerHTML="";
  rowCount=Math.max(9,rows.length||9);
  for(let i=1;i<=rowCount;i++)box.appendChild(createRow(i,rows[i-1]||{}));
+ updateMoveButtons();
 }
 
 async function showSuggestions(row,input,box){
@@ -574,7 +609,7 @@ function loadDraft(){
   const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
   if(!data){renderRows();return}
   document.getElementById("yearSelect").value=data.year||"";
-  document.getElementById("teamSelect").value=data.team||"";
+  document.getElementById("teamSelect").value=data.team||"";applyTeamColor();
   document.getElementById("lineupTitle").value=data.title||"";
   renderRows(data.rows||[]);setStatus("前回編集中だった1-9を復元しました。");
  }catch(e){renderRows()}
@@ -588,7 +623,7 @@ function resetAll(){
  document.getElementById("previewCard").style.display="none";renderRows();setStatus("入力内容をリセットしました。");updateAllInputFieldColors();
 }
 function addPlayer(){
- rowCount++;document.getElementById("lineup").appendChild(createRow(rowCount));saveDraft();setStatus(`${rowCount}人目の選手枠を追加しました。`);
+ rowCount++;document.getElementById("lineup").appendChild(createRow(rowCount));updateMoveButtons();saveDraft();setStatus(`${rowCount}人目の選手枠を追加しました。`);
 }
 function buildPreview(){
  const rows=currentRows(),filled=rows.filter(r=>r.name);
@@ -608,6 +643,23 @@ function chatGPTSearch(){
  autoTitle();saveDraft();setStatus(`${year}年度・${team}の1-9候補を検索する準備ができました。`);
 }
 
+const TEAM_COLORS={
+ "福岡ソフトバンクホークス":"#f5c400","北海道日本ハムファイターズ":"#1f8fbd","オリックス・バファローズ":"#17264d",
+ "東北楽天ゴールデンイーグルス":"#980018","埼玉西武ライオンズ":"#16477e","千葉ロッテマリーンズ":"#171717",
+ "読売ジャイアンツ":"#f58220","阪神タイガース":"#ffd400","横浜DeNAベイスターズ":"#0786c8",
+ "広島東洋カープ":"#e31b2b","東京ヤクルトスワローズ":"#159447","中日ドラゴンズ":"#174ba8",
+ "日本代表":"#153e73","近鉄":"#b51f2e","ブルーウェーブ":"#1b5aa6"
+};
+function contrastText(hex){
+ const h=hex.replace("#","");const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+ return (r*299+g*587+b*114)/1000>155?"#082a4a":"#fff";
+}
+function applyTeamColor(){
+ const select=document.getElementById("teamSelect");if(!select)return;
+ const color=TEAM_COLORS[select.value];
+ if(color){select.style.setProperty("background",color,"important");select.style.setProperty("color",contrastText(color),"important");select.style.setProperty("border-color",color,"important");}
+ else{select.style.setProperty("background","#fff","important");select.style.setProperty("color","#0b2b4a","important");select.style.setProperty("border-color","#c4cfda","important");}
+}
 function renderTeamSelect(){
  const select=document.getElementById("teamSelect");if(!select)return;
  const current=select.value;
@@ -624,6 +676,7 @@ function renderTeamSelect(){
   select.appendChild(g);
  });
  if(current&&order.includes(current))select.value=current;
+ applyTeamColor();
 }
 function fillYears(){
  const s=document.getElementById("yearSelect"),now=new Date().getFullYear();
@@ -635,7 +688,7 @@ document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
-document.getElementById("teamSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
+document.getElementById("teamSelect").addEventListener("change",()=>{applyTeamColor();autoTitle();saveDraft()});
 document.getElementById("lineupTitle").addEventListener("input",e=>{saveDraft();updateInputFieldColor(e.target)});
 document.addEventListener("click",e=>{if(!e.target.closest(".search-wrap"))document.querySelectorAll(".suggestions").forEach(x=>x.style.display="none")});
 window.addEventListener("ouenka-team-order-change",renderTeamSelect);
