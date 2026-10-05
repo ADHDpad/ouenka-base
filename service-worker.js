@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-v11";
+const CACHE_NAME = "ouenka-base-v12";
 
 // 2026-10-05
 // iPhone PWA 音声デバイス起動安定化。表示・音源結合ロジックは変更なし。
