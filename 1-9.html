@@ -25,21 +25,22 @@ button,input,select{font:inherit} button{cursor:pointer}
 .title-row{display:grid;grid-template-columns:190px 1fr;align-items:center;gap:10px;padding:11px 16px;background:#e8eff6}
 .title-row label{font-weight:900;font-size:18px}
 .title-row input{width:100%;min-height:47px;border:1px solid #c5d0db;border-radius:9px;padding:0 14px;font-size:16px;color:var(--text);background:#fff}
-.lineup{padding:14px}
-.player-row{display:grid;grid-template-columns:70px 200px minmax(220px,1fr) 105px 58px;gap:9px;align-items:start;margin-bottom:9px}
-.order{height:62px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,#0c3c68,#062743);color:#fff;font-size:28px;font-weight:900}
-.position,.player-search,.clear,.row-play{height:58px;border:1px solid #c8d2dc;border-radius:9px;background:#fff;color:var(--text)}
+.lineup{padding:10px 14px 6px}
+.player-row{display:grid;grid-template-columns:52px 150px minmax(220px,1fr) 72px 52px;gap:6px;align-items:start;margin-bottom:6px}
+.order{height:52px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,#0c3c68,#062743);color:#fff;font-size:28px;font-weight:900}
+.position,.player-search,.clear,.row-play{height:52px;border:1px solid #c8d2dc;border-radius:9px;background:#fff;color:var(--text)}
 .position{width:100%;padding:0 9px;font-weight:850}
 .search-wrap{position:relative;min-width:0}
 .player-search{width:100%;padding:0 12px 0 40px;font-size:16px}
-.search-icon{position:absolute;left:13px;top:29px;transform:translateY(-50%);font-size:21px;color:#687d91;pointer-events:none}
+.search-icon{position:absolute;left:13px;top:26px;transform:translateY(-50%);font-size:21px;color:#687d91;pointer-events:none}
 .clear{width:100%;font-weight:850;background:#edf3f8}
 .row-play{width:100%;border:0;border-radius:9px;background:#0B2F55;color:#fff;font-size:21px;font-weight:900;display:flex;align-items:center;justify-content:center}
 .row-play.playing{background:#0b84f3}.row-play:disabled{opacity:.35;cursor:not-allowed}
-.suggestions{display:none;position:absolute;left:0;right:0;top:61px;z-index:60;background:#fff;border:1px solid #c8d2dc;border-radius:9px;max-height:220px;overflow:auto;box-shadow:0 10px 24px rgba(7,29,51,.2)}
+.suggestions{display:none;position:absolute;left:0;right:0;top:55px;z-index:60;background:#fff;border:1px solid #c8d2dc;border-radius:9px;max-height:220px;overflow:auto;box-shadow:0 10px 24px rgba(7,29,51,.2)}
 .suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:#174A7A;text-align:left;padding:11px 13px;color:#fff}
 .suggestion:hover,.suggestion:focus{background:#0F3B66}.suggestion strong{color:#fff}.suggestion small{display:block;color:#dbe9f5!important;margin-top:2px}
-.bottom-actions{display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:10px;padding:3px 14px 16px}
+.add-row-wrap{padding:2px 14px 10px}.add-row{width:100%;min-height:48px;border:1.5px dashed #7aa8ca;border-radius:10px;background:#f2f8fc;color:#0B2F55;font-weight:900;font-size:15px}
+.bottom-actions{display:grid;grid-template-columns:.8fr 1.6fr;gap:8px;padding:3px 14px 16px}
 .action{min-height:62px;border:0;border-radius:10px;font-weight:900;font-size:16px}
 .reset{background:#e7eef5;color:var(--text)}.add{background:var(--yellow);color:#082a4a}.create{background:linear-gradient(135deg,#168df5,#0575df);color:#fff}
 .status{display:none;margin:0 14px 15px;padding:11px;border-radius:9px;background:#eef6ff;color:#174f7e}
@@ -64,10 +65,10 @@ button,input,select{font:inherit} button{cursor:pointer}
  .topbar{min-height:66px;padding:0 10px}.top-brand-title{font-size:16px}.top-brand-sub{font-size:8px;margin-top:5px}.back{min-height:40px;padding:0 11px;font-size:12px}
  .page{padding:9px 7px 22px}.hero{padding:15px 7px}.filters{gap:5px;padding:7px}.control,.chat{min-height:47px;padding:0 4px;font-size:12px}
  .title-row{grid-template-columns:98px 1fr;padding:8px 8px;gap:5px}.title-row label{font-size:13px}.title-row input{font-size:16px}
- .lineup{padding:9px 7px}.player-row{grid-template-columns:43px 88px minmax(0,1fr) 48px 44px;gap:4px;margin-bottom:6px}
- .order{height:54px;font-size:22px}.position,.player-search,.clear,.row-play{height:50px}.position{font-size:11px;padding:0 1px}
- .player-search{font-size:16px;padding-left:29px}.search-icon{left:8px;top:25px;font-size:17px}.clear{font-size:10px;padding:0 2px}
- .suggestions{top:53px}.bottom-actions{grid-template-columns:1fr 1fr 1.55fr;gap:5px;padding:2px 7px 11px}.action{min-height:56px;font-size:12px;padding:4px}
+ .lineup{padding:7px 5px 4px}.player-row{grid-template-columns:28px 72px minmax(0,1fr) 28px 34px;gap:3px;margin-bottom:4px}
+ .order{height:42px;border-radius:7px;font-size:16px}.position,.player-search,.clear,.row-play{height:42px;border-radius:7px}.position{font-size:10px;padding:0 1px}
+ .player-search{font-size:14px;padding:0 3px 0 23px}.search-icon{left:6px;top:21px;font-size:14px}.clear{font-size:0;padding:0}.clear::before{content:"×";font-size:18px;font-weight:800}.row-play{font-size:15px}
+ .suggestions{top:45px}.add-row-wrap{padding:2px 5px 8px}.add-row{min-height:42px;font-size:13px}.bottom-actions{grid-template-columns:.8fr 1.6fr;gap:5px;padding:2px 5px 11px}.action{min-height:50px;font-size:12px;padding:4px}
  .preview-item{grid-template-columns:30px 70px 1fr;padding:9px 10px}.preview-pos{font-size:11px}
 }
 </style>
@@ -88,9 +89,9 @@ button,input,select{font:inherit} button{cursor:pointer}
   </div>
   <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など"></div>
   <div id="lineup" class="lineup"></div>
+  <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div>
   <div class="bottom-actions">
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
-   <button id="addButton" class="action add" type="button">＋ 選手追加</button>
    <button id="medleyPlayButton" class="action create" type="button">▶ 1-9を作成・再生</button>
   </div>
   <div id="status" class="status"></div>
