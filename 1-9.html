@@ -26,15 +26,15 @@ button,input,select{font:inherit} button{cursor:pointer}
 .title-row label{font-weight:900;font-size:18px}
 .title-row input{width:100%;min-height:47px;border:1px solid #c5d0db;border-radius:9px;padding:0 14px;font-size:16px;color:var(--text);background:#fff}
 .lineup{padding:10px 14px 6px}
-.player-row{display:grid;grid-template-columns:52px 150px minmax(220px,1fr) 72px 52px;gap:6px;align-items:start;margin-bottom:6px}
+.player-row{display:grid;grid-template-columns:52px 150px minmax(220px,1fr) 52px;gap:6px;align-items:start;margin-bottom:6px}
 .order{height:52px;display:flex;align-items:center;justify-content:center;border:0;border-radius:11px;background:linear-gradient(135deg,#0c3c68,#062743);color:#fff;font-size:28px;font-weight:900;cursor:pointer}.order.playing{background:#0b84f3}
-.position,.player-search,.clear,.move-handle{height:52px;border:1px solid #c8d2dc;border-radius:9px;background:#fff;color:var(--text)}
+.position,.player-search,.move-handle{height:52px;border:1px solid #c8d2dc;border-radius:9px;background:#fff;color:var(--text)}
 .position{width:100%;padding:0 9px;font-size:13px;font-weight:500}
 .search-wrap{position:relative;min-width:0}
 .player-search{width:100%;padding:0 12px 0 40px;font-size:16px}
 .search-icon{position:absolute;left:13px;top:26px;transform:translateY(-50%);font-size:21px;color:#687d91;pointer-events:none}
-.clear{width:100%;font-weight:850;background:#edf3f8}
-.move-handle{width:100%;border:0;background:transparent;color:#41576a;font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.move-handle:active{cursor:grabbing}.player-row.dragging{opacity:.55}
+.clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:transparent;color:#526575;font-size:22px;font-weight:700;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;z-index:3}.player-search{padding-right:40px}
+.move-handle{width:100%;border:0;background:transparent;color:#41576a;font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.move-handle:active{cursor:grabbing}.player-row.dragging{position:relative;z-index:50;opacity:.92;box-shadow:0 12px 26px rgba(7,29,51,.28);background:#fff;border-radius:10px;will-change:transform}.lineup.drag-active{user-select:none;-webkit-user-select:none}.lineup.drag-active .player-row:not(.dragging){transition:transform .08s ease}
 .suggestions{display:none;position:absolute;left:0;right:0;top:55px;z-index:60;background:#fff;border:1px solid #c8d2dc;border-radius:9px;max-height:220px;overflow:auto;box-shadow:0 10px 24px rgba(7,29,51,.2)}
 .suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:#174A7A;text-align:left;padding:11px 13px;color:#fff}
 .suggestion:hover,.suggestion:focus{background:#0F3B66}.suggestion strong{color:#fff}.suggestion small{display:block;color:#dbe9f5!important;margin-top:2px}
@@ -64,9 +64,9 @@ button,input,select{font:inherit} button{cursor:pointer}
  .topbar{min-height:66px;padding:0 10px}.top-brand-title{font-size:16px}.top-brand-sub{font-size:8px;margin-top:5px}.back{min-height:40px;padding:0 11px;font-size:12px}
  .page{padding:9px 7px 22px}.hero{padding:15px 7px}.filters{gap:5px;padding:7px}.control,.chat{min-height:47px;padding:0 4px;font-size:11px;font-weight:500}
  .title-row{grid-template-columns:98px 1fr;padding:8px 8px;gap:5px}.title-row label{font-size:13px}.title-row input{font-size:16px}
- .lineup{padding:7px 5px 4px}.player-row{grid-template-columns:28px 72px minmax(0,1fr) 28px 34px;gap:3px;margin-bottom:4px}
- .order{height:42px;border-radius:7px;font-size:16px}.position,.player-search,.clear,.move-handle{height:42px;border-radius:7px}.position{font-size:9px;font-weight:400;padding:0 1px}
- .player-search{font-size:16px;padding:0 3px 0 23px}.search-icon{left:6px;top:21px;font-size:14px}.clear{font-size:0;padding:0}.clear::before{content:"×";font-size:18px;font-weight:800}.move-handle{font-size:21px}
+ .lineup{padding:7px 5px 4px}.player-row{grid-template-columns:28px 72px minmax(0,1fr) 34px;gap:3px;margin-bottom:4px}
+ .order{height:42px;border-radius:7px;font-size:16px}.position,.player-search,.move-handle{height:42px;border-radius:7px}.position{font-size:9px;font-weight:400;padding:0 1px}
+ .player-search{font-size:16px;padding:0 35px 0 23px}.search-icon{left:6px;top:21px;font-size:14px}.clear{right:3px;width:30px;height:30px;font-size:20px}.move-handle{font-size:21px}
  .suggestions{top:45px}.add-row-wrap{padding:2px 5px 8px}.add-row{min-height:42px;font-size:13px}.bottom-actions{grid-template-columns:.8fr 1.6fr;gap:5px;padding:2px 5px 11px}.action{min-height:50px;font-size:12px;padding:4px}
  .preview-item{grid-template-columns:30px 70px 1fr;padding:9px 10px}.preview-pos{font-size:11px}
 }
@@ -193,9 +193,9 @@ function createRow(n,data={}){
   <div class="search-wrap">
    <span class="search-icon">⌕</span>
    <input class="player-search" type="text" placeholder="選手名を検索" autocomplete="off" aria-label="${n}番の選手検索">
+   <button class="clear" type="button" aria-label="入力をクリア">×</button>
    <div class="suggestions"></div>
   </div>
-  <button class="clear" type="button">クリア</button>
   <button class="move-handle" type="button" title="長押しして並べ替え" aria-label="${n}番を並べ替え">☰</button>`;
 
  const input=row.querySelector(".player-search");
@@ -238,22 +238,69 @@ function renumberRows(){
 }
 function setupRowMove(row){
  const handle=row.querySelector(".move-handle");if(!handle)return;
- let active=false,pointerId=null;
- const move=e=>{
-  if(!active)return;e.preventDefault();
-  const target=document.elementFromPoint(e.clientX,e.clientY)?.closest(".player-row");
-  if(!target||target===row||target.parentElement!==row.parentElement)return;
-  const rect=target.getBoundingClientRect();
-  target.parentElement.insertBefore(row,e.clientY<rect.top+rect.height/2?target:target.nextSibling);
- };
- const end=()=>{
-  if(!active)return;active=false;row.classList.remove("dragging");
-  try{handle.releasePointerCapture(pointerId)}catch(e){}pointerId=null;renumberRows();saveDraft();
- };
- handle.addEventListener("pointerdown",e=>{active=true;pointerId=e.pointerId;row.classList.add("dragging");try{handle.setPointerCapture(pointerId)}catch(x){};e.preventDefault()});
- handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",end);handle.addEventListener("pointercancel",end);
-}
+ const lineup=row.parentElement;
+ let active=false,pointerId=null,startY=0,currentY=0,raf=0;
 
+ const paint=()=>{
+  raf=0;
+  if(!active)return;
+  row.style.transform=`translateY(${currentY-startY}px) scale(1.015)`;
+ };
+
+ const reorderAtPointer=clientY=>{
+  const others=[...lineup.querySelectorAll(".player-row:not(.dragging)")];
+  let target=null;
+  for(const item of others){
+   const r=item.getBoundingClientRect();
+   if(clientY < r.top + r.height/2){target=item;break}
+  }
+  const oldTop=row.getBoundingClientRect().top;
+  if(target){
+   if(target!==row.nextElementSibling)lineup.insertBefore(row,target);
+  }else if(row!==lineup.lastElementChild){
+   lineup.appendChild(row);
+  }
+  const newTop=row.getBoundingClientRect().top;
+  if(newTop!==oldTop)startY+=newTop-oldTop;
+ };
+
+ const move=e=>{
+  if(!active||e.pointerId!==pointerId)return;
+  e.preventDefault();
+  currentY=e.clientY;
+  reorderAtPointer(currentY);
+  if(!raf)raf=requestAnimationFrame(paint);
+ };
+
+ const end=e=>{
+  if(!active)return;
+  if(e && e.pointerId!==undefined && e.pointerId!==pointerId)return;
+  active=false;
+  if(raf){cancelAnimationFrame(raf);raf=0}
+  row.style.transform="";
+  row.classList.remove("dragging");
+  lineup.classList.remove("drag-active");
+  try{if(handle.hasPointerCapture(pointerId))handle.releasePointerCapture(pointerId)}catch(x){}
+  pointerId=null;
+  renumberRows();
+  saveDraft();
+ };
+
+ handle.addEventListener("pointerdown",e=>{
+  if(e.pointerType==="mouse"&&e.button!==0)return;
+  e.preventDefault();
+  active=true;
+  pointerId=e.pointerId;
+  startY=currentY=e.clientY;
+  row.classList.add("dragging");
+  lineup.classList.add("drag-active");
+  try{handle.setPointerCapture(pointerId)}catch(x){}
+ });
+ handle.addEventListener("pointermove",move,{passive:false});
+ handle.addEventListener("pointerup",end);
+ handle.addEventListener("pointercancel",end);
+ handle.addEventListener("lostpointercapture",()=>{if(active)end()});
+}
 function renderRows(rows=[]){
  const box=document.getElementById("lineup");box.innerHTML="";
  rowCount=Math.max(9,rows.length||9);
