@@ -34,7 +34,7 @@ button,input,select{font:inherit} button{cursor:pointer}
 .player-search{width:100%;padding:0 12px 0 40px;font-size:16px}
 .search-icon{position:absolute;left:13px;top:26px;transform:translateY(-50%);font-size:21px;color:#687d91;pointer-events:none}
 .clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:transparent;color:#526575;font-size:22px;font-weight:700;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;z-index:3}.player-search{padding-right:40px}
-.move-handle{width:100%;border:0;background:transparent;color:#41576a;font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.move-handle:active{cursor:grabbing}.player-row.dragging{position:relative;z-index:50;opacity:.92;box-shadow:0 12px 26px rgba(7,29,51,.28);background:#fff;border-radius:10px;will-change:transform}.lineup.drag-active{user-select:none;-webkit-user-select:none}.lineup.drag-active .player-row:not(.dragging){transition:transform .08s ease}
+.move-handle{width:100%;border:0;position:relative;z-index:20;pointer-events:auto;background:transparent;color:#41576a;font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.move-handle:active{cursor:grabbing}.player-row.dragging{position:relative;z-index:50;opacity:.92;box-shadow:0 12px 26px rgba(7,29,51,.28);background:#fff;border-radius:10px;will-change:transform}.lineup.drag-active{user-select:none;-webkit-user-select:none}.lineup.drag-active .player-row:not(.dragging){transition:transform .08s ease}
 .suggestions{display:none;position:absolute;left:0;right:0;top:55px;z-index:60;background:#fff;border:1px solid #c8d2dc;border-radius:9px;max-height:220px;overflow:auto;box-shadow:0 10px 24px rgba(7,29,51,.2)}
 .suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:#174A7A;text-align:left;padding:11px 13px;color:#fff}
 .suggestion:hover,.suggestion:focus{background:#0F3B66}.suggestion strong{color:#fff}.suggestion small{display:block;color:#dbe9f5!important;margin-top:2px}
@@ -70,6 +70,16 @@ button,input,select{font:inherit} button{cursor:pointer}
  .suggestions{top:45px}.add-row-wrap{padding:2px 5px 8px}.add-row{min-height:42px;font-size:13px}.bottom-actions{grid-template-columns:.8fr 1.6fr;gap:5px;padding:2px 5px 11px}.action{min-height:50px;font-size:12px;padding:4px}
  .preview-item{grid-template-columns:30px 70px 1fr;padding:9px 10px}.preview-pos{font-size:11px}
 }
+
+.drag-placeholder{border:2px dashed #6f8496;border-radius:10px;background:rgba(11,47,85,.08);box-sizing:border-box}
+.drag-ghost{opacity:.94;box-shadow:0 14px 30px rgba(7,29,51,.30);background:#fff;border-radius:10px;box-sizing:border-box}
+body.row-dragging{user-select:none;-webkit-user-select:none}
+
+
+.drag-placeholder{border:2px dashed #60788d!important;border-radius:10px!important;background:rgba(11,47,85,.10)!important;box-sizing:border-box}
+.drag-ghost{display:grid!important;opacity:.96!important;box-shadow:0 16px 34px rgba(7,29,51,.38)!important;background:#fff!important;border-radius:10px!important;box-sizing:border-box}
+body.row-dragging{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}
+body.row-dragging *{cursor:grabbing!important}
 </style>
 <script src="team-order.js"></script>
 </head>
@@ -220,7 +230,7 @@ function createRow(n,data={}){
   saveDraft();updateInputFieldColor(input);updateInputFieldColor(pos);
  });
  row.querySelector(".order").addEventListener("click",()=>playSelectedRow(row));
- setupRowMove(row);
+
  setTimeout(()=>{updateInputFieldColor(input);updateInputFieldColor(pos)},0);
  return row;
 }
@@ -236,76 +246,97 @@ function renumberRows(){
  });
  rowCount=document.querySelectorAll(".player-row").length;
 }
-function setupRowMove(row){
- const handle=row.querySelector(".move-handle");if(!handle)return;
- const lineup=row.parentElement;
- let active=false,pointerId=null,startY=0,currentY=0,raf=0;
+function setupRowMove(row){ /* 並べ替えはlineupへのイベント委譲で処理 */ }
 
- const paint=()=>{
-  raf=0;
-  if(!active)return;
-  row.style.transform=`translateY(${currentY-startY}px) scale(1.015)`;
- };
+function installLineupDrag(){
+ const lineup=document.getElementById("lineup");
+ if(!lineup||lineup.dataset.dragInstalled==="1")return;
+ lineup.dataset.dragInstalled="1";
 
- const reorderAtPointer=clientY=>{
-  const others=[...lineup.querySelectorAll(".player-row:not(.dragging)")];
-  let target=null;
-  for(const item of others){
-   const r=item.getBoundingClientRect();
-   if(clientY < r.top + r.height/2){target=item;break}
+ let pointerId=null, source=null, ghost=null, placeholder=null, offsetY=0;
+
+ function finish(){
+  if(!source)return;
+  if(placeholder&&placeholder.parentNode){
+   placeholder.parentNode.insertBefore(source,placeholder);
+   placeholder.remove();
   }
-  const oldTop=row.getBoundingClientRect().top;
-  if(target){
-   if(target!==row.nextElementSibling)lineup.insertBefore(row,target);
-  }else if(row!==lineup.lastElementChild){
-   lineup.appendChild(row);
-  }
-  const newTop=row.getBoundingClientRect().top;
-  if(newTop!==oldTop)startY+=newTop-oldTop;
- };
-
- const move=e=>{
-  if(!active||e.pointerId!==pointerId)return;
-  e.preventDefault();
-  currentY=e.clientY;
-  reorderAtPointer(currentY);
-  if(!raf)raf=requestAnimationFrame(paint);
- };
-
- const end=e=>{
-  if(!active)return;
-  if(e && e.pointerId!==undefined && e.pointerId!==pointerId)return;
-  active=false;
-  if(raf){cancelAnimationFrame(raf);raf=0}
-  row.style.transform="";
-  row.classList.remove("dragging");
+  if(ghost)ghost.remove();
+  source.style.display="";
+  source.classList.remove("drag-source");
+  document.body.classList.remove("row-dragging");
   lineup.classList.remove("drag-active");
-  try{if(handle.hasPointerCapture(pointerId))handle.releasePointerCapture(pointerId)}catch(x){}
-  pointerId=null;
+  pointerId=null;source=null;ghost=null;placeholder=null;
   renumberRows();
   saveDraft();
- };
+  checkDuplicates();
+ }
 
- handle.addEventListener("pointerdown",e=>{
+ lineup.addEventListener("pointerdown",function(e){
+  const handle=e.target.closest(".move-handle");
+  if(!handle||!lineup.contains(handle))return;
   if(e.pointerType==="mouse"&&e.button!==0)return;
+  const row=handle.closest(".player-row");
+  if(!row)return;
+
   e.preventDefault();
-  active=true;
+  e.stopPropagation();
   pointerId=e.pointerId;
-  startY=currentY=e.clientY;
-  row.classList.add("dragging");
+  source=row;
+
+  const r=row.getBoundingClientRect();
+  offsetY=e.clientY-r.top;
+
+  placeholder=document.createElement("div");
+  placeholder.className="drag-placeholder";
+  placeholder.style.height=r.height+"px";
+  placeholder.style.marginBottom=getComputedStyle(row).marginBottom;
+  lineup.insertBefore(placeholder,row);
+
+  ghost=row.cloneNode(true);
+  ghost.classList.add("drag-ghost");
+  Object.assign(ghost.style,{
+   position:"fixed",left:r.left+"px",top:r.top+"px",width:r.width+"px",
+   height:r.height+"px",zIndex:"2147483647",pointerEvents:"none",margin:"0"
+  });
+  document.body.appendChild(ghost);
+
+  row.style.display="none";
+  row.classList.add("drag-source");
   lineup.classList.add("drag-active");
-  try{handle.setPointerCapture(pointerId)}catch(x){}
+  document.body.classList.add("row-dragging");
+
+  try{handle.setPointerCapture(e.pointerId)}catch(err){}
+ },{passive:false});
+
+ window.addEventListener("pointermove",function(e){
+  if(!source||e.pointerId!==pointerId)return;
+  e.preventDefault();
+  if(ghost)ghost.style.top=(e.clientY-offsetY)+"px";
+
+  const rows=[...lineup.querySelectorAll(".player-row")].filter(x=>x!==source);
+  let before=null;
+  for(const item of rows){
+   const r=item.getBoundingClientRect();
+   if(e.clientY<r.top+r.height/2){before=item;break}
+  }
+  if(before)lineup.insertBefore(placeholder,before);
+  else lineup.appendChild(placeholder);
+ },{passive:false});
+
+ window.addEventListener("pointerup",function(e){
+  if(source&&e.pointerId===pointerId)finish();
  });
- handle.addEventListener("pointermove",move,{passive:false});
- handle.addEventListener("pointerup",end);
- handle.addEventListener("pointercancel",end);
- handle.addEventListener("lostpointercapture",()=>{if(active)end()});
+ window.addEventListener("pointercancel",function(e){
+  if(source&&e.pointerId===pointerId)finish();
+ });
 }
 function renderRows(rows=[]){
  const box=document.getElementById("lineup");box.innerHTML="";
  rowCount=Math.max(9,rows.length||9);
  for(let i=1;i<=rowCount;i++)box.appendChild(createRow(i,rows[i-1]||{}));
  renumberRows();
+ installLineupDrag();
 }
 
 async function showSuggestions(row,input,box){
