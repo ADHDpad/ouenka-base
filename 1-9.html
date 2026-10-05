@@ -25,21 +25,22 @@ button,input,select{font:inherit} button{cursor:pointer}
 .title-row{display:grid;grid-template-columns:190px 1fr;align-items:center;gap:10px;padding:11px 16px;background:#e8eff6}
 .title-row label{font-weight:900;font-size:18px}
 .title-row input{width:100%;min-height:47px;border:1px solid #c5d0db;border-radius:9px;padding:0 14px;font-size:16px;color:var(--text);background:#fff}
-.lineup{padding:14px}
-.player-row{display:grid;grid-template-columns:70px 200px minmax(220px,1fr) 105px 58px;gap:9px;align-items:start;margin-bottom:9px}
-.order{height:62px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,#0c3c68,#062743);color:#fff;font-size:28px;font-weight:900}
-.position,.player-search,.clear,.row-play{height:58px;border:1px solid #c8d2dc;border-radius:9px;background:#fff;color:var(--text)}
+.lineup{padding:10px 14px 6px}
+.player-row{display:grid;grid-template-columns:52px 150px minmax(220px,1fr) 72px 52px;gap:6px;align-items:start;margin-bottom:6px}
+.order{height:52px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,#0c3c68,#062743);color:#fff;font-size:28px;font-weight:900}
+.position,.player-search,.clear,.row-play{height:52px;border:1px solid #c8d2dc;border-radius:9px;background:#fff;color:var(--text)}
 .position{width:100%;padding:0 9px;font-weight:850}
 .search-wrap{position:relative;min-width:0}
 .player-search{width:100%;padding:0 12px 0 40px;font-size:16px}
-.search-icon{position:absolute;left:13px;top:29px;transform:translateY(-50%);font-size:21px;color:#687d91;pointer-events:none}
+.search-icon{position:absolute;left:13px;top:26px;transform:translateY(-50%);font-size:21px;color:#687d91;pointer-events:none}
 .clear{width:100%;font-weight:850;background:#edf3f8}
 .row-play{width:100%;border:0;border-radius:9px;background:#0B2F55;color:#fff;font-size:21px;font-weight:900;display:flex;align-items:center;justify-content:center}
 .row-play.playing{background:#0b84f3}.row-play:disabled{opacity:.35;cursor:not-allowed}
-.suggestions{display:none;position:absolute;left:0;right:0;top:61px;z-index:60;background:#fff;border:1px solid #c8d2dc;border-radius:9px;max-height:220px;overflow:auto;box-shadow:0 10px 24px rgba(7,29,51,.2)}
+.suggestions{display:none;position:absolute;left:0;right:0;top:55px;z-index:60;background:#fff;border:1px solid #c8d2dc;border-radius:9px;max-height:220px;overflow:auto;box-shadow:0 10px 24px rgba(7,29,51,.2)}
 .suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:#174A7A;text-align:left;padding:11px 13px;color:#fff}
 .suggestion:hover,.suggestion:focus{background:#0F3B66}.suggestion strong{color:#fff}.suggestion small{display:block;color:#dbe9f5!important;margin-top:2px}
-.bottom-actions{display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:10px;padding:3px 14px 16px}
+.add-row-wrap{padding:2px 14px 10px}.add-row{width:100%;min-height:48px;border:1.5px dashed #7aa8ca;border-radius:10px;background:#f2f8fc;color:#0B2F55;font-weight:900;font-size:15px}
+.bottom-actions{display:grid;grid-template-columns:.8fr 1.6fr;gap:8px;padding:3px 14px 16px}
 .action{min-height:62px;border:0;border-radius:10px;font-weight:900;font-size:16px}
 .reset{background:#e7eef5;color:var(--text)}.add{background:var(--yellow);color:#082a4a}.create{background:linear-gradient(135deg,#168df5,#0575df);color:#fff}
 .status{display:none;margin:0 14px 15px;padding:11px;border-radius:9px;background:#eef6ff;color:#174f7e}
@@ -64,196 +65,14 @@ button,input,select{font:inherit} button{cursor:pointer}
  .topbar{min-height:66px;padding:0 10px}.top-brand-title{font-size:16px}.top-brand-sub{font-size:8px;margin-top:5px}.back{min-height:40px;padding:0 11px;font-size:12px}
  .page{padding:9px 7px 22px}.hero{padding:15px 7px}.filters{gap:5px;padding:7px}.control,.chat{min-height:47px;padding:0 4px;font-size:12px}
  .title-row{grid-template-columns:98px 1fr;padding:8px 8px;gap:5px}.title-row label{font-size:13px}.title-row input{font-size:16px}
- .lineup{padding:9px 7px}.player-row{grid-template-columns:40px 82px minmax(0,1fr) 32px;gap:4px;margin-bottom:6px}
- .order{height:54px;font-size:22px}.position,.player-search,.clear,.row-play{height:50px}.position{font-size:11px;padding:0 1px}
- .player-search{font-size:16px;padding-left:29px}.search-icon{left:8px;top:25px;font-size:17px}.clear{font-size:10px;padding:0 2px}
- .suggestions{top:53px}.bottom-actions{grid-template-columns:1fr 1fr 1.55fr;gap:5px;padding:2px 7px 11px}.action{min-height:56px;font-size:12px;padding:4px}
+ .lineup{padding:7px 5px 4px}.player-row{grid-template-columns:28px 72px minmax(0,1fr) 28px 34px;gap:3px;margin-bottom:4px}
+ .order{height:42px;border-radius:7px;font-size:16px}.position,.player-search,.clear,.row-play{height:42px;border-radius:7px}.position{font-size:10px;padding:0 1px}
+ .player-search{font-size:14px;padding:0 3px 0 23px}.search-icon{left:6px;top:21px;font-size:14px}.clear{font-size:0;padding:0}.clear::before{content:"×";font-size:18px;font-weight:800}.row-play{font-size:15px}
+ .suggestions{top:45px}.add-row-wrap{padding:2px 5px 8px}.add-row{min-height:42px;font-size:13px}.bottom-actions{grid-template-columns:.8fr 1.6fr;gap:5px;padding:2px 5px 11px}.action{min-height:50px;font-size:12px;padding:4px}
  .preview-item{grid-template-columns:30px 70px 1fr;padding:9px 10px}.preview-pos{font-size:11px}
 }
-
-/* ===== 2026-10-05 mobile form controls ===== */
-.search-wrap{position:relative}
-.player-search{padding-right:38px!important}
-.input-clear{
- position:absolute;right:7px;top:50%;transform:translateY(-50%);
- width:26px;height:26px;border:0;border-radius:50%;
- background:transparent;color:#73808c;font-size:22px;line-height:24px;
- display:none;align-items:center;justify-content:center;padding:0;cursor:pointer;
- z-index:4;touch-action:manipulation
-}
-.search-wrap.has-text .input-clear{display:flex}
-.input-clear:active{background:#e8edf2;color:#071d33}
-.drag-handle{
- width:40px;height:42px;border:0;background:transparent;color:#6c7884;
- font-size:25px;font-weight:800;line-height:1;cursor:grab;
- display:flex;align-items:center;justify-content:center;padding:0;
- touch-action:none;user-select:none;-webkit-user-select:none
-}
-.drag-handle:active{cursor:grabbing}
-.player-row.dragging{opacity:.62;box-shadow:0 8px 22px rgba(7,29,51,.18);z-index:20}
-.player-row.drag-over-before{box-shadow:0 -3px 0 #0b2f55}
-.player-row.drag-over-after{box-shadow:0 3px 0 #0b2f55}
-@media(max-width:520px){
- .drag-handle{width:32px;height:38px;font-size:22px}
- .input-clear{right:4px;width:24px;height:24px;font-size:20px}
- .player-search{padding-right:31px!important}
-}
-
-
-/* ===== number tap playback / compact iPhone rows ===== */
-.order{
- cursor:pointer;user-select:none;-webkit-user-select:none;
- touch-action:manipulation
-}
-.order:active{transform:scale(.94)}
-.player-row.row-playing .order{
- box-shadow:0 0 0 3px rgba(11,79,122,.20);
-}
-@media(max-width:520px){
- .player-row{
-  grid-template-columns:36px 72px minmax(0,1fr) 30px!important;
-  gap:3px!important;
-  margin-bottom:4px!important;
-  min-height:42px!important;
- }
- .order{
-  height:42px!important;
-  min-height:42px!important;
-  font-size:18px!important;
- }
- .position,.player-search{
-  height:40px!important;
-  min-height:40px!important;
- }
- .position{font-size:10px!important}
- .player-search{font-size:14px!important;padding-left:26px!important;padding-right:28px!important}
- .search-icon{left:7px!important;top:20px!important;font-size:15px!important}
- .suggestions{top:42px!important}
- .drag-handle{height:40px!important;width:30px!important;font-size:20px!important}
- .input-clear{width:22px!important;height:22px!important;font-size:19px!important;right:3px!important}
-}
-
-
-@media(max-width:390px){
- .player-row{
-  grid-template-columns:34px 66px minmax(0,1fr) 28px!important;
-  gap:2px!important;
- }
- .player-search{
-  font-size:13px!important;
-  padding-left:23px!important;
-  padding-right:26px!important;
- }
- .position{font-size:9px!important}
- .drag-handle{width:28px!important}
-}
-
-
-/* ===== iPhone Safari input auto-zoom prevention ===== */
-@media(max-width:520px){
- .player-search,
- .position,
- #lineupTitle,
- #teamSelect,
- #yearSelect{
-  font-size:16px!important;
- }
-}
-@media(max-width:390px){
- .player-search,
- .position,
- #lineupTitle,
- #teamSelect,
- #yearSelect{
-  font-size:16px!important;
- }
-}
-
-
-/* ===== compact / light control labels ===== */
-/* iPhone Safariの自動ズーム防止のためselect自体は16pxを維持。
-   初期表示は色・ウェイト・縮尺で小さく薄く見せる。 */
-@media(max-width:520px){
- .position{
-  font-size:16px!important;
-  font-weight:400!important;
-  color:#9aa5af!important;
- }
- .position.has-value{
-  color:#243746!important;
-  font-weight:500!important;
- }
-
- #yearSelect,
- #teamSelect{
-  font-size:16px!important;
-  font-weight:400!important;
-  color:#8f9aa4!important;
-  letter-spacing:-0.35px;
- }
- #yearSelect.has-value,
- #teamSelect.has-value{
-  font-weight:500!important;
- }
-
- #chatgptSearchBtn,
- #chatgptBtn,
- .chatgpt-search,
- button[data-action="chatgpt-search"]{
-  font-size:12px!important;
-  font-weight:500!important;
-  letter-spacing:-0.2px!important;
- }
-}
-
-
-
-
-/* ===== title bar / lineup same width ===== */
-/* PC・iPadでは上部タイトル／操作バーと1-9フォームの左右端を揃える */
-@media(min-width:521px){
- #lineup{
-  width:100%!important;
-  max-width:none!important;
-  margin-left:0!important;
-  margin-right:0!important;
-  box-sizing:border-box!important;
- }
- .player-row{
-  width:100%!important;
-  max-width:none!important;
-  box-sizing:border-box!important;
-  grid-template-columns:52px 120px minmax(0,1fr) 44px!important;
-  column-gap:8px!important;
- }
- .search-wrap,
- .player-search{
-  width:100%!important;
-  max-width:none!important;
-  min-width:0!important;
-  box-sizing:border-box!important;
- }
-}
-@media(min-width:521px) and (max-width:1024px){
- .player-row{
-  grid-template-columns:46px 108px minmax(0,1fr) 40px!important;
-  column-gap:6px!important;
- }
-}
-
 </style>
-<script src="team-order.js">
-document.addEventListener("DOMContentLoaded",()=>{
- ["yearSelect","teamSelect"].forEach(id=>{
-  const el=document.getElementById(id);
-  if(el){
-   syncCompactSelectState(el);
-   el.addEventListener("change",()=>syncCompactSelectState(el));
-  }
- });
-});
-
-</script>
+<script src="team-order.js"></script>
 </head>
 <body>
 <header class="topbar">
@@ -270,11 +89,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   </div>
   <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など"></div>
   <div id="lineup" class="lineup"></div>
+  <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div>
   <div class="bottom-actions">
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
-   <button id="addButton" class="action add" type="button">＋ 選手追加</button>
    <button id="medleyPlayButton" class="action create" type="button">▶ 1-9を作成・再生</button>
   </div>
+  <div id="status" class="status"></div>
   <section id="previewCard" class="preview-card">
    <div class="preview-head">1-9 プレビュー</div><div id="previewMeta" class="preview-meta"></div><ol id="previewList" class="preview-list"></ol>
   </section>
@@ -286,7 +106,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 /* =========================================================
    OUENKA BASE / 1-9
-   2026-10-05 ジャッキテスト：重複時は次曲優先
+   2026-10-05 正式ジャッキ方式
 
    【正式仕様】
    ・BPM 170 / 4拍子
@@ -297,7 +117,7 @@ document.addEventListener("DOMContentLoaded",()=>{
    ・前曲9小節目と次曲1小節目は両方の音を残して加算
    ・クロスフェードしない
    ・曲別の音量補正をしない
-   ・重複区間のSmartOverlap補正をしない
+   ・重複音は両方残し、最終ミックスだけ自動音量調整
    ・最終出力のクリップ防止だけ ±0.98 で制限
 ========================================================= */
 
@@ -309,7 +129,7 @@ const MAX_SUGGESTIONS=10;
 const MEDLEY_BPM=170;
 const MEDLEY_BEATS_PER_BAR=4;
 const MEDLEY_BAR_SEC=(60/MEDLEY_BPM)*MEDLEY_BEATS_PER_BAR;
-const MEDLEY_INTERVAL_SEC=MEDLEY_BAR_SEC*8; // 9小節目の頭 = 11.294117647...秒
+const MEDLEY_INTERVAL_SEC=MEDLEY_BAR_SEC*8; // 9小節目の頭
 const MEDLEY_LIMIT=0.98;
 
 const positions=["ポジション選択","投手","捕手","一塁手","二塁手","三塁手","遊撃手","左翼手","中堅手","右翼手","指名打者","代打"];
@@ -321,24 +141,23 @@ let completedMedleyUrl=null;
 let completedMedleyAudio=null;
 let medleyBuilding=false;
 
-
-function songHasJacking(song){
- // 登録データに明示的な「なし」がある時だけ false。
- // 既存データで項目未登録の場合は従来互換のため true。
- const raw=song?.jacking ?? song?.has_jacking ?? song?.hasJacking ?? song?.弱起 ?? song?.pickup;
- if(raw===undefined||raw===null||raw==="")return true;
- if(raw===false||raw===0)return false;
- const v=String(raw).trim().toLowerCase();
- return !["false","0","なし","無","no","off"].includes(v);
-}
-
 function getName(p){return p?.player_name||p?.name||""}
 function getReading(p){return p?.reading||""}
 function getTeam(p){return p?.team||""}
 function norm(s){return String(s||"").toLowerCase().replace(/[\s　]/g,"")}
 
+function hideStatus(){
+ const st=document.getElementById("status");
+ if(!st)return;
+ st.textContent="";
+ st.style.display="none";
+}
+
 function setStatus(message,type="info"){
- if(type==="error")alert(message);
+ const st=document.getElementById("status");
+ st.textContent=message;st.style.display="block";
+ st.style.background=type==="error"?"#fff0f0":type==="ok"?"#eefaf2":"#eef6ff";
+ st.style.color=type==="error"?"#a52b2b":type==="ok"?"#1f6b3b":"#174f7e";
 }
 
 function updateInputFieldColor(el){
@@ -349,12 +168,6 @@ function updateAllInputFieldColors(){
  document.querySelectorAll("#lineupTitle,.position,.player-search").forEach(updateInputFieldColor);
 }
 
-
-function syncCompactSelectState(select){
- if(!select)return;
- select.classList.toggle("has-value",!!select.value);
-}
-
 function createRow(n,data={}){
  const row=document.createElement("div");
  row.className="player-row";row.dataset.row=n;
@@ -363,7 +176,6 @@ function createRow(n,data={}){
  row.dataset.team=data.team||"";
  row.dataset.audioUrl=data.audioUrl||"";
  row.dataset.medleyUrl=data.medleyUrl||"";
- row.dataset.jacking=(data.jacking===false||data.jacking==="false"||data.jacking===0||data.jacking==="0")?"false":"true";
 
  const options=positions.map((p,i)=>{
   let cls="";
@@ -382,151 +194,35 @@ function createRow(n,data={}){
   <div class="search-wrap">
    <span class="search-icon">⌕</span>
    <input class="player-search" type="text" placeholder="選手名を検索" autocomplete="off" aria-label="${n}番の選手検索">
-   <button class="input-clear" type="button" aria-label="${n}番の選手名を消す">×</button>
    <div class="suggestions"></div>
   </div>
-  <button class="drag-handle" type="button" title="つかんで並び替え" aria-label="${n}番を並び替え">☰</button>`;
+  <button class="clear" type="button">クリア</button>
+  <button class="row-play" type="button" title="応援歌を再生" aria-label="${n}番の応援歌を再生">▶</button>`;
 
- const orderButton=row.querySelector(".order");
- orderButton.setAttribute("role","button");
- orderButton.setAttribute("tabindex","0");
- orderButton.setAttribute("title",`${n}番の応援歌を再生`);
- orderButton.setAttribute("aria-label",`${n}番の応援歌を再生`);
- orderButton.addEventListener("keydown",e=>{
-  if(e.key==="Enter"||e.key===" "){e.preventDefault();playSelectedRow(row)}
- });
  const input=row.querySelector(".player-search");
  const sug=row.querySelector(".suggestions");
  const pos=row.querySelector(".position");
- const wrap=row.querySelector(".search-wrap");
  pos.value=data.position||"";
  input.value=data.name||"";
 
- function syncClear(){wrap.classList.toggle("has-text",input.value.trim()!=="")}
- syncClear();
-
  input.addEventListener("input",()=>{
   row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
-  row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.jacking="true";
-  syncClear();showSuggestions(row,input,sug);checkDuplicates();saveDraft();updateInputFieldColor(input);
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";
+  showSuggestions(row,input,sug);checkDuplicates();saveDraft();updateInputFieldColor(input);
  });
  input.addEventListener("focus",()=>showSuggestions(row,input,sug));
- syncCompactSelectState(pos);
- pos.addEventListener("change",()=>{
-  syncCompactSelectState(pos);
-  saveDraft();updateInputFieldColor(pos);
- });
- row.querySelector(".input-clear").addEventListener("click",()=>{
-  input.value="";
+ pos.addEventListener("change",()=>{saveDraft();updateInputFieldColor(pos)});
+ row.querySelector(".clear").addEventListener("click",()=>{
+  input.value="";pos.value="";
   row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
-  row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.jacking="true";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";
   sug.style.display="none";row.classList.remove("row-warning");
   if(currentPlayingRow===row)stopRowAudio();
-  syncClear();saveDraft();updateInputFieldColor(input);
-  input.focus();
+  saveDraft();updateInputFieldColor(input);updateInputFieldColor(pos);
  });
- row.querySelector(".order").addEventListener("click",()=>{
-  playSelectedRow(row);
- });
- installRowDrag(row,row.querySelector(".drag-handle"));
+ row.querySelector(".row-play").addEventListener("click",()=>playSelectedRow(row));
  setTimeout(()=>{updateInputFieldColor(input);updateInputFieldColor(pos)},0);
  return row;
-}
-
-function renumberRows(){
- const rows=[...document.querySelectorAll("#lineup .player-row")];
- rows.forEach((row,i)=>{
-  const n=i+1;
-  row.dataset.row=n;
-  const order=row.querySelector(".order");
-  order.textContent=n;
-  order.setAttribute("role","button");
-  order.setAttribute("tabindex","0");
-  order.setAttribute("title",`${n}番の応援歌を再生`);
-  order.setAttribute("aria-label",`${n}番の応援歌を再生`);
-  const pos=row.querySelector(".position");
-  const input=row.querySelector(".player-search");
-  const clear=row.querySelector(".input-clear");
-  const handle=row.querySelector(".drag-handle");
-  pos.setAttribute("aria-label",`${n}番のポジション`);
-  input.setAttribute("aria-label",`${n}番の選手検索`);
-  clear.setAttribute("aria-label",`${n}番の選手名を消す`);
-  handle.setAttribute("aria-label",`${n}番を並び替え`);
- });
- rowCount=rows.length;
- checkDuplicates();
- saveDraft();
-}
-
-let dragState=null;
-
-function clearDragMarks(){
- document.querySelectorAll(".player-row").forEach(r=>{
-  r.classList.remove("drag-over-before","drag-over-after");
- });
-}
-
-function installRowDrag(row,handle){
- handle.addEventListener("pointerdown",e=>{
-  if(e.button!==undefined && e.button!==0)return;
-  e.preventDefault();
-  handle.setPointerCapture?.(e.pointerId);
-  dragState={row,handle,pointerId:e.pointerId,lastY:e.clientY};
-  row.classList.add("dragging");
- });
-
- handle.addEventListener("pointermove",e=>{
-  if(!dragState || dragState.handle!==handle)return;
-  e.preventDefault();
-  dragState.lastY=e.clientY;
-  const lineup=document.getElementById("lineup");
-  const others=[...lineup.querySelectorAll(".player-row")].filter(r=>r!==row);
-  clearDragMarks();
-  let target=null,before=false;
-  for(const r of others){
-   const rect=r.getBoundingClientRect();
-   if(e.clientY>=rect.top && e.clientY<=rect.bottom){
-    target=r;before=e.clientY<rect.top+rect.height/2;break;
-   }
-  }
-  if(!target){
-   if(others.length && e.clientY<others[0].getBoundingClientRect().top){
-    target=others[0];before=true;
-   }else if(others.length && e.clientY>others[others.length-1].getBoundingClientRect().bottom){
-    target=others[others.length-1];before=false;
-   }
-  }
-  if(target)target.classList.add(before?"drag-over-before":"drag-over-after");
- });
-
- function finishDrag(e){
-  if(!dragState || dragState.handle!==handle)return;
-  const y=dragState.lastY;
-  const lineup=document.getElementById("lineup");
-  const others=[...lineup.querySelectorAll(".player-row")].filter(r=>r!==row);
-  let target=null,before=false;
-  for(const r of others){
-   const rect=r.getBoundingClientRect();
-   if(y>=rect.top && y<=rect.bottom){
-    target=r;before=y<rect.top+rect.height/2;break;
-   }
-  }
-  if(!target && others.length){
-   if(y<others[0].getBoundingClientRect().top){target=others[0];before=true}
-   else if(y>others[others.length-1].getBoundingClientRect().bottom){target=others[others.length-1];before=false}
-  }
-  if(target){
-   if(before)lineup.insertBefore(row,target);
-   else lineup.insertBefore(row,target.nextSibling);
-  }
-  row.classList.remove("dragging");
-  clearDragMarks();
-  try{handle.releasePointerCapture?.(dragState.pointerId)}catch(_){}
-  dragState=null;
-  renumberRows();
- }
- handle.addEventListener("pointerup",finishDrag);
- handle.addEventListener("pointercancel",finishDrag);
 }
 
 function renderRows(rows=[]){
@@ -570,7 +266,6 @@ async function showSuggestions(row,input,box){
     const basePath="データ/"+encodeURIComponent(song.player_name||"")+"/"+encodeURIComponent(song.production_number||"")+"/";
     row.dataset.audioUrl=basePath+encodeURIComponent(song.audio_filename||"audio.m4a");
     row.dataset.medleyUrl=basePath+encodeURIComponent(song.medley_filename||"medley.m4a");
-    row.dataset.jacking=songHasJacking(song)?"true":"false";
     box.innerHTML="";box.style.display="none";
     checkDuplicates();saveDraft();updateInputFieldColor(input);
    });
@@ -586,49 +281,29 @@ async function showSuggestions(row,input,box){
 }
 
 function resetPlayIcons(){
- document.querySelectorAll(".player-row").forEach(r=>r.classList.remove("row-playing"));
+ document.querySelectorAll(".row-play").forEach(b=>{b.textContent="▶";b.classList.remove("playing")});
 }
 function stopRowAudio(){
- document.querySelectorAll(".player-row.row-playing").forEach(r=>r.classList.remove("row-playing"));
  if(rowAudio){try{rowAudio.pause();rowAudio.removeAttribute("src");rowAudio.load()}catch(e){}}
  rowAudio=null;currentPlayingRow=null;resetPlayIcons();
 }
 async function playSelectedRow(row){
- if(currentPlayingRow===row&&rowAudio&&!rowAudio.paused){
-  stopRowAudio();
-  return;
- }
+ const button=row.querySelector(".row-play");
+ if(currentPlayingRow===row&&rowAudio&&!rowAudio.paused){stopRowAudio();return}
  const name=row.querySelector(".player-search").value.trim();
  if(!name){setStatus("先に再生する選手を選択してください。","error");return}
  const audioValue=row.dataset.audioUrl||"";
  if(!audioValue){setStatus(`${name}の再生用音源を取得できませんでした。`,"error");return}
-
  stopRowAudio();
-
  try{
-  rowAudio=new Audio();
-  rowAudio.preload="auto";
-  rowAudio.volume=1;
-  rowAudio.muted=false;
-  rowAudio.src=toPublicAudioUrl(audioValue);
-  rowAudio.playsInline=true;
-
-  currentPlayingRow=row;
-  row.classList.add("row-playing");
-
+  rowAudio=new Audio();rowAudio.preload="auto";rowAudio.volume=1;rowAudio.muted=false;
+  rowAudio.src=toPublicAudioUrl(audioValue);rowAudio.playsInline=true;
+  currentPlayingRow=row;button.textContent="■";button.classList.add("playing");
+  rowAudio.addEventListener("playing",hideStatus);
   rowAudio.addEventListener("ended",stopRowAudio,{once:true});
-  rowAudio.addEventListener("error",()=>{
-   setStatus(`${name}の音源を読み込めませんでした。`,"error");
-   stopRowAudio();
-  },{once:true});
-
-  const promise=rowAudio.play();
-  if(promise)await promise;
- }catch(error){
-  console.error("1-9試聴エラー:",error);
-  stopRowAudio();
-  setStatus(`${name}の音源を再生できませんでした。`,"error");
- }
+  rowAudio.addEventListener("error",()=>{setStatus(`${name}の音源を読み込めませんでした。`,"error");stopRowAudio()},{once:true});
+  const p=rowAudio.play();if(p)await p;
+ }catch(error){console.error("1-9試聴エラー:",error);stopRowAudio();setStatus(`${name}の音源を再生できませんでした。`,"error")}
 }
 
 document.addEventListener("visibilitychange",()=>{
@@ -685,7 +360,7 @@ async function getSelectedMedleyPlayers(){
   if(!name)continue;
   if(!productionNumber)throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。`);
   if(row.dataset.audioUrl&&row.dataset.medleyUrl){
-   selected.push({name,productionNumber,audioUrl:row.dataset.audioUrl,medleyUrl:row.dataset.medleyUrl,jacking:row.dataset.jacking!=="false"});continue;
+   selected.push({name,productionNumber,audioUrl:row.dataset.audioUrl,medleyUrl:row.dataset.medleyUrl});continue;
   }
   setStatus(`♪ 登録データを確認中… ${name}`,"ok");
   const song=await getRegisteredSongFor19(name,productionNumber);
@@ -693,8 +368,7 @@ async function getSelectedMedleyPlayers(){
   const urls=registeredSongUrls(song,name,productionNumber);
   if(!urls)throw new Error(`${name} の登録音源情報を作成できません。`);
   row.dataset.audioUrl=urls.audioUrl;row.dataset.medleyUrl=urls.medleyUrl;
-  row.dataset.jacking=songHasJacking(song)?"true":"false";
-  selected.push({name:urls.playerName,productionNumber:urls.productionNumber,audioUrl:urls.audioUrl,medleyUrl:urls.medleyUrl,jacking:row.dataset.jacking!=="false"});
+  selected.push({name:urls.playerName,productionNumber:urls.productionNumber,audioUrl:urls.audioUrl,medleyUrl:urls.medleyUrl});
  }
  return selected;
 }
@@ -718,88 +392,76 @@ async function fetchDecodeAudio(ctx,path){
 }
 
 /* =========================================================
-   正式ジャッキ合成
+   正式ジャッキ合成 + マスター音量調整
    0秒 / 11.294117...秒 / 22.588235...秒 ... に配置。
-   各曲は一切フェード・ゲイン補正しない。
-   同じ時刻に存在するサンプルは単純加算する。
-========================================================= */
-function mixBuffersJacking(ctx,buffers,items=[]){
- if(!buffers.length)throw new Error("結合する音源がありません。");
 
+   【重要】
+   ・前曲9小節目と次曲1小節目は両方とも残す
+   ・曲別のフェード／固定ゲイン補正はしない
+   ・重なって合成音量が上がった瞬間だけ、最終ミックス側で
+     自動的にゲインを下げる
+   ・重なりが終わると約70msで自然に元の音量へ戻す
+
+   これにより、弱起が重なっても急に音量が大きくならず、
+   ChatGPTで作成した確認用m4aと同じ考え方でつながる。
+========================================================= */
+function applyJackingMasterLimiter(output,sampleRate){
+ const channels=output.numberOfChannels;
+ const length=output.length;
+ const releaseSec=0.070;
+ const releaseCoef=Math.exp(-1/(sampleRate*releaseSec));
+ let gain=1;
+
+ const channelData=[];
+ for(let ch=0;ch<channels;ch++){
+  channelData.push(output.getChannelData(ch));
+ }
+
+ for(let i=0;i<length;i++){
+  let peak=0;
+  for(let ch=0;ch<channels;ch++){
+   const a=Math.abs(channelData[ch][i]);
+   if(a>peak)peak=a;
+  }
+
+  const targetGain=peak>MEDLEY_LIMIT
+   ? MEDLEY_LIMIT/peak
+   : 1;
+
+  // 音が重なって大きくなった瞬間は即座に抑える。
+  // 戻すときだけ滑らかにしてポンピング感を防ぐ。
+  if(targetGain<gain){
+   gain=targetGain;
+  }else{
+   gain=1-(1-gain)*releaseCoef;
+  }
+
+  for(let ch=0;ch<channels;ch++){
+   channelData[ch][i]*=gain;
+  }
+ }
+}
+
+function mixBuffersJacking(ctx,buffers){
+ if(!buffers.length)throw new Error("結合する音源がありません。");
  const sampleRate=buffers[0].sampleRate;
  const channels=Math.max(...buffers.map(b=>b.numberOfChannels));
  const starts=buffers.map((_,i)=>Math.round(i*MEDLEY_INTERVAL_SEC*sampleRate));
  const totalFrames=Math.max(...buffers.map((b,i)=>starts[i]+b.length));
  const output=ctx.createBuffer(channels,totalFrames,sampleRate);
- const SOUND_THRESHOLD=0.0005;
 
- // 1曲目はそのまま配置。
- {
-  const b=buffers[0],startFrame=starts[0];
+ // まず前曲・次曲をそのまま加算。重複音は消さない。
+ for(let i=0;i<buffers.length;i++){
+  const b=buffers[i],start=starts[i];
   for(let ch=0;ch<channels;ch++){
    const out=output.getChannelData(ch);
    const src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
-   for(let f=0;f<b.length;f++)out[startFrame+f]=src[f];
+   for(let f=0;f<b.length;f++)out[start+f]+=src[f];
   }
  }
 
- // 2曲目以降：
- // jacking=true  → 前曲と次曲を両方残して加算。
- // jacking=false → 次曲に実音がある瞬間だけ前曲を削除し、次曲を優先。
- for(let i=1;i<buffers.length;i++){
-  const b=buffers[i],startFrame=starts[i];
-  const hasJacking=items[i]?.jacking!==false;
-  const firstBarFrames=Math.round(MEDLEY_BAR_SEC*sampleRate);
-
-  for(let f=0;f<b.length;f++){
-   let nextHasSound=false;
-   if(!hasJacking){
-    for(let ch=0;ch<b.numberOfChannels;ch++){
-     if(Math.abs(b.getChannelData(ch)[f])>SOUND_THRESHOLD){
-      nextHasSound=true;break;
-     }
-    }
-   }
-
-   for(let ch=0;ch<channels;ch++){
-    const out=output.getChannelData(ch);
-    const src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
-    const pos=startFrame+f;
-
-    if(hasJacking){
-     // 弱起あり：次曲1小節目だけ70%。2小節目から100%。
-     const incomingGain=f<firstBarFrames?0.70:1.0;
-     out[pos]+=src[f]*incomingGain;
-    }else if(nextHasSound){
-     out[pos]=src[f];
-    }
-    // ジャッキなし＋次曲無音なら前曲を保持。
-   }
-  }
- }
-
- /*
-   ジャッキ有りの重複でピークが上がった場合だけに備え、
-   最終マスターを滑らかに制御。
-   ジャッキ無しは置換方式なので基本的にこの補正を必要としない。
- */
- const attackSec=0.005;
- const releaseSec=0.050;
- const attackCoeff=Math.exp(-1/(sampleRate*attackSec));
- const releaseCoeff=Math.exp(-1/(sampleRate*releaseSec));
- let gain=1;
-
- for(let f=0;f<totalFrames;f++){
-  let peak=0;
-  for(let ch=0;ch<channels;ch++){
-   const v=Math.abs(output.getChannelData(ch)[f]);
-   if(v>peak)peak=v;
-  }
-  const target=peak>MEDLEY_LIMIT?MEDLEY_LIMIT/peak:1;
-  const coeff=target<gain?attackCoeff:releaseCoeff;
-  gain=target+(gain-target)*coeff;
-  for(let ch=0;ch<channels;ch++)output.getChannelData(ch)[f]*=gain;
- }
+ // 最後に合成音全体だけを自動音量調整する。
+ applyJackingMasterLimiter(output,sampleRate);
 
  return output;
 }
@@ -827,37 +489,72 @@ function stopOneNineMedley(){
  if(btn)btn.textContent="▶ 1-9を作成・再生";
 }
 
+/* iPhone / iPad のホーム画面Webアプリ向け音声起動補助。
+   必ずボタンタップ直後に呼び、AudioContext を先に起こしておく。 */
+async function prepareOneNineAudioContext(){
+ const AC=window.AudioContext||window.webkitAudioContext;
+ if(!AC)throw new Error("このブラウザは音源結合に対応していません。");
+ let ctx=new AC();
+ try{
+  if(ctx.state==="suspended")await ctx.resume();
+  // iOS PWAで音声デバイスの初期化をユーザー操作中に確定させる。
+  const oscillator=ctx.createOscillator();
+  const gain=ctx.createGain();
+  gain.gain.value=0;
+  oscillator.connect(gain);gain.connect(ctx.destination);
+  oscillator.start();oscillator.stop(ctx.currentTime+0.001);
+  if(ctx.state==="suspended")await ctx.resume();
+  return ctx;
+ }catch(error){
+  try{await ctx.close()}catch(e){}
+  throw error;
+ }
+}
+
 async function buildAndPlayOneNineMedley(){
  if(medleyBuilding)return;
  if(completedMedleyAudio&&!completedMedleyAudio.paused){
-  stopOneNineMedley();setStatus("1-9の再生を停止しました。");return;
+  stopOneNineMedley();hideStatus();return;
  }
  stopRowAudio();
+ hideStatus();
+
+ // 重要：選手データ取得などの await より前、タップ直後に音声デバイスを起こす。
+ let ctx=null;
+ try{ctx=await prepareOneNineAudioContext()}
+ catch(error){
+  console.error("1-9音声デバイス起動エラー:",error);
+  setStatus("音声デバイスを起動できませんでした。Webアプリを開き直して、もう一度お試しください。","error");
+  return;
+ }
+
  let selected;
  try{selected=await getSelectedMedleyPlayers()}
- catch(error){setStatus(error.message||String(error),"error");return}
- if(!selected.length){setStatus("選手を1人以上選択してください。9人すべて埋める必要はありません。","error");return}
+ catch(error){
+  try{await ctx.close()}catch(e){}
+  setStatus(error.message||String(error),"error");return
+ }
+ if(!selected.length){
+  try{await ctx.close()}catch(e){}
+  setStatus("選手を1人以上選択してください。9人すべて埋める必要はありません。","error");return
+ }
 
  medleyBuilding=true;
  const btn=document.getElementById("medleyPlayButton");
  if(btn){btn.disabled=true;btn.textContent="作成中…"}
- let ctx=null;
  try{
-  const AC=window.AudioContext||window.webkitAudioContext;
-  if(!AC)throw new Error("このブラウザは音源結合に対応していません。");
-  ctx=new AC();
+  // バックグラウンド復帰などで停止していた場合も、結合直前にもう一度復帰させる。
   if(ctx.state==="suspended")await ctx.resume();
 
   const buffers=[];
   for(let i=0;i<selected.length;i++){
    const item=selected[i],url=makeMedleySongPath(item,i);
-   setStatus(`♪ 完成音源を作成中… ${i+1}/${selected.length} ${item.name}`,"ok");
+
    buffers.push(await fetchDecodeAudio(ctx,url));
   }
 
-  setStatus(`♪ ジャッキ方式で結合中… 9小節目＋次曲1小節目（${MEDLEY_INTERVAL_SEC.toFixed(6)}秒間隔）`,"ok");
-  const completed=mixBuffersJacking(ctx,buffers,selected);
-  setStatus("♪ 完成音源を書き出しています…","ok");
+  const completed=mixBuffersJacking(ctx,buffers);
+
   const wavBlob=audioBufferToWav(completed);
 
   if(completedMedleyUrl)URL.revokeObjectURL(completedMedleyUrl);
@@ -867,11 +564,11 @@ async function buildAndPlayOneNineMedley(){
   completedMedleyAudio.playsInline=true;completedMedleyAudio.volume=1;
   completedMedleyAudio.addEventListener("ended",()=>{
    const b=document.getElementById("medleyPlayButton");if(b)b.textContent="▶ 1-9を作成・再生";
-   setStatus("1-9の再生が終了しました。","ok");
+
   },{once:true});
 
   if(btn){btn.disabled=false;btn.textContent="■ 1-9を停止"}
-  setStatus(`♪ ${selected.length}人のジャッキ式メドレーを再生します。`,"ok");
+
   const p=completedMedleyAudio.play();if(p)await p;
  }catch(error){
   console.error("1-9ジャッキ音源作成エラー:",error);
@@ -889,7 +586,7 @@ function currentRows(){
   position:row.querySelector(".position").value,
   name:row.querySelector(".player-search").value.trim(),
   songId:row.dataset.songId||"",productionNumber:row.dataset.productionNumber||"",team:row.dataset.team||"",
-  audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||"",jacking:row.dataset.jacking!=="false"
+  audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||""
  }));
 }
 function checkDuplicates(){
@@ -912,7 +609,7 @@ function loadDraft(){
   const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
   if(!data){renderRows();return}
   document.getElementById("yearSelect").value=data.year||"";
-  document.getElementById("teamSelect").value="";
+  document.getElementById("teamSelect").value=data.team||"";
   document.getElementById("lineupTitle").value=data.title||"";
   renderRows(data.rows||[]);setStatus("前回編集中だった1-9を復元しました。");
  }catch(e){renderRows()}
@@ -946,36 +643,6 @@ function chatGPTSearch(){
  autoTitle();saveDraft();setStatus(`${year}年度・${team}の1-9候補を検索する準備ができました。`);
 }
 
-const TEAM_SELECT_COLORS={
- "福岡ソフトバンクホークス":{bg:"#FCC800",fg:"#111111"},
- "北海道日本ハムファイターズ":{bg:"#0076B9",fg:"#FFFFFF"},
- "オリックス・バファローズ":{bg:"#B08D57",fg:"#111111"},
- "東北楽天ゴールデンイーグルス":{bg:"#870010",fg:"#FFFFFF"},
- "埼玉西武ライオンズ":{bg:"#143D79",fg:"#FFFFFF"},
- "千葉ロッテマリーンズ":{bg:"#111111",fg:"#FFFFFF"},
- "読売ジャイアンツ":{bg:"#F97709",fg:"#111111"},
- "阪神タイガース":{bg:"#FFE100",fg:"#111111"},
- "横浜DeNAベイスターズ":{bg:"#005BAC",fg:"#FFFFFF"},
- "広島東洋カープ":{bg:"#D50000",fg:"#FFFFFF"},
- "東京ヤクルトスワローズ":{bg:"#009B6B",fg:"#FFFFFF"},
- "中日ドラゴンズ":{bg:"#004EA2",fg:"#FFFFFF"}
-};
-
-function paintTeamSelect(){
- const select=document.getElementById("teamSelect");
- if(!select)return;
- const c=TEAM_SELECT_COLORS[select.value];
- if(c){
-  select.style.setProperty("background",c.bg,"important");
-  select.style.setProperty("color",c.fg,"important");
-  select.style.setProperty("border-color",c.bg,"important");
- }else{
-  select.style.setProperty("background","#fff","important");
-  select.style.setProperty("color","#0b2b4a","important");
-  select.style.setProperty("border-color","#c4cfda","important");
- }
-}
-
 function renderTeamSelect(){
  const select=document.getElementById("teamSelect");if(!select)return;
  const current=select.value;
@@ -988,17 +655,10 @@ function renderTeamSelect(){
  const pacific=new Set(fallback.slice(0,6)),other=new Set(["日本代表","近鉄","ブルーウェーブ"]);
  [["パ・リーグ",order.filter(x=>pacific.has(x))],["セ・リーグ",order.filter(x=>!pacific.has(x)&&!other.has(x))],["その他",order.filter(x=>other.has(x))]].forEach(([label,teams])=>{
   const g=document.createElement("optgroup");g.label=label;
-  teams.forEach(team=>{
-   const o=document.createElement("option");o.value=team;o.textContent=team;o.dataset.team=team;
-   const c=TEAM_SELECT_COLORS[team];
-   if(c){o.style.backgroundColor=c.bg;o.style.color=c.fg}
-   g.appendChild(o)
-  });
+  teams.forEach(team=>{const o=document.createElement("option");o.value=team;o.textContent=team;o.dataset.team=team;g.appendChild(o)});
   select.appendChild(g);
  });
- // 初期表示では特定球団（西武など）を自動選択しない。
- select.value="";
- paintTeamSelect();
+ if(current&&order.includes(current))select.value=current;
 }
 function fillYears(){
  const s=document.getElementById("yearSelect"),now=new Date().getFullYear();
@@ -1010,10 +670,7 @@ document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
-document.getElementById("teamSelect").addEventListener("change",e=>{
- syncCompactSelectState(e.currentTarget);
- paintTeamSelect();autoTitle();saveDraft();
-});
+document.getElementById("teamSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
 document.getElementById("lineupTitle").addEventListener("input",e=>{saveDraft();updateInputFieldColor(e.target)});
 document.addEventListener("click",e=>{if(!e.target.closest(".search-wrap"))document.querySelectorAll(".suggestions").forEach(x=>x.style.display="none")});
 window.addEventListener("ouenka-team-order-change",renderTeamSelect);

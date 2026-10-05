@@ -1,6 +1,7 @@
-const CACHE_NAME = "ouenka-base-v10";
+const CACHE_NAME = "ouenka-base-v11";
 
 // 2026-10-05
+// iPhone PWA 音声デバイス起動安定化。表示・音源結合ロジックは変更なし。
 // ジャッキ正式版 v3（重複時マスター音量調整＋再生メッセージ非表示）。
 // 音楽ファイルはキャッシュせず、HTML/JS/CSSも常にネットワーク最新版を優先する。
 
