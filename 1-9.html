@@ -169,8 +169,93 @@ button,input,select{font:inherit} button{cursor:pointer}
  }
 }
 
+
+/* ===== compact / light control labels ===== */
+/* iPhone Safariの自動ズーム防止のためselect自体は16pxを維持。
+   初期表示は色・ウェイト・縮尺で小さく薄く見せる。 */
+@media(max-width:520px){
+ .position{
+  font-size:16px!important;
+  font-weight:400!important;
+  color:#9aa5af!important;
+ }
+ .position.has-value{
+  color:#243746!important;
+  font-weight:500!important;
+ }
+
+ #yearSelect,
+ #teamSelect{
+  font-size:16px!important;
+  font-weight:400!important;
+  color:#8f9aa4!important;
+  letter-spacing:-0.35px;
+ }
+ #yearSelect.has-value,
+ #teamSelect.has-value{
+  font-weight:500!important;
+ }
+
+ #chatgptSearchBtn,
+ #chatgptBtn,
+ .chatgpt-search,
+ button[data-action="chatgpt-search"]{
+  font-size:12px!important;
+  font-weight:500!important;
+  letter-spacing:-0.2px!important;
+ }
+}
+
+
+/* ===== PC / iPad lineup width balance ===== */
+/* PC: 選手名欄を必要以上に横長にせず、フォーム全体を中央寄せ */
+@media(min-width:1025px){
+ #lineup{
+  max-width:920px;
+  margin-left:auto;
+  margin-right:auto;
+ }
+ .player-row{
+  grid-template-columns:52px 120px minmax(300px,1fr) 44px!important;
+  column-gap:8px!important;
+ }
+ .player-search{
+  width:100%!important;
+  max-width:none!important;
+ }
+}
+
+/* iPad / tablet: PCより少し詰め、選手名欄を十分確保 */
+@media(min-width:521px) and (max-width:1024px){
+ #lineup{
+  width:100%;
+  max-width:780px;
+  margin-left:auto;
+  margin-right:auto;
+ }
+ .player-row{
+  grid-template-columns:46px 108px minmax(240px,1fr) 40px!important;
+  column-gap:6px!important;
+ }
+ .player-search{
+  width:100%!important;
+  max-width:none!important;
+ }
+}
+
 </style>
-<script src="team-order.js"></script>
+<script src="team-order.js">
+document.addEventListener("DOMContentLoaded",()=>{
+ ["yearSelect","teamSelect"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){
+   syncCompactSelectState(el);
+   el.addEventListener("change",()=>syncCompactSelectState(el));
+  }
+ });
+});
+
+</script>
 </head>
 <body>
 <header class="topbar">
@@ -257,6 +342,12 @@ function updateAllInputFieldColors(){
  document.querySelectorAll("#lineupTitle,.position,.player-search").forEach(updateInputFieldColor);
 }
 
+
+function syncCompactSelectState(select){
+ if(!select)return;
+ select.classList.toggle("has-value",!!select.value);
+}
+
 function createRow(n,data={}){
  const row=document.createElement("div");
  row.className="player-row";row.dataset.row=n;
@@ -312,7 +403,11 @@ function createRow(n,data={}){
   syncClear();showSuggestions(row,input,sug);checkDuplicates();saveDraft();updateInputFieldColor(input);
  });
  input.addEventListener("focus",()=>showSuggestions(row,input,sug));
- pos.addEventListener("change",()=>{saveDraft();updateInputFieldColor(pos)});
+ syncCompactSelectState(pos);
+ pos.addEventListener("change",()=>{
+  syncCompactSelectState(pos);
+  saveDraft();updateInputFieldColor(pos);
+ });
  row.querySelector(".input-clear").addEventListener("click",()=>{
   input.value="";
   row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
@@ -852,7 +947,10 @@ document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
-document.getElementById("teamSelect").addEventListener("change",()=>{paintTeamSelect();autoTitle();saveDraft()});
+document.getElementById("teamSelect").addEventListener("change",e=>{
+ syncCompactSelectState(e.currentTarget);
+ paintTeamSelect();autoTitle();saveDraft();
+});
 document.getElementById("lineupTitle").addEventListener("input",e=>{saveDraft();updateInputFieldColor(e.target)});
 document.addEventListener("click",e=>{if(!e.target.closest(".search-wrap"))document.querySelectorAll(".suggestions").forEach(x=>x.style.display="none")});
 window.addEventListener("ouenka-team-order-change",renderTeamSelect);
