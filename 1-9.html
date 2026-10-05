@@ -286,7 +286,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 /* =========================================================
    OUENKA BASE / 1-9
-   2026-10-05 正式ジャッキ方式
+   2026-10-05 ジャッキテスト：重複時は次曲優先
 
    【正式仕様】
    ・BPM 170 / 4拍子
@@ -309,7 +309,7 @@ const MAX_SUGGESTIONS=10;
 const MEDLEY_BPM=170;
 const MEDLEY_BEATS_PER_BAR=4;
 const MEDLEY_BAR_SEC=(60/MEDLEY_BPM)*MEDLEY_BEATS_PER_BAR;
-const MEDLEY_INTERVAL_SEC=MEDLEY_BAR_SEC*8; // 9小節目の頭
+const MEDLEY_INTERVAL_SEC=MEDLEY_BAR_SEC*8; // 9小節目の頭 = 11.294117647...秒
 const MEDLEY_LIMIT=0.98;
 
 const positions=["ポジション選択","投手","捕手","一塁手","二塁手","三塁手","遊撃手","左翼手","中堅手","右翼手","指名打者","代打"];
@@ -321,15 +321,24 @@ let completedMedleyUrl=null;
 let completedMedleyAudio=null;
 let medleyBuilding=false;
 
+
+function songHasJacking(song){
+ // 登録データに明示的な「なし」がある時だけ false。
+ // 既存データで項目未登録の場合は従来互換のため true。
+ const raw=song?.jacking ?? song?.has_jacking ?? song?.hasJacking ?? song?.弱起 ?? song?.pickup;
+ if(raw===undefined||raw===null||raw==="")return true;
+ if(raw===false||raw===0)return false;
+ const v=String(raw).trim().toLowerCase();
+ return !["false","0","なし","無","no","off"].includes(v);
+}
+
 function getName(p){return p?.player_name||p?.name||""}
 function getReading(p){return p?.reading||""}
 function getTeam(p){return p?.team||""}
 function norm(s){return String(s||"").toLowerCase().replace(/[\s　]/g,"")}
 
 function setStatus(message,type="info"){
- // 画面最下部のステータスメッセージは表示しない。
- // 操作不能につながるエラーだけダイアログで通知する。
- if(type==="error") alert(message);
+ if(type==="error")alert(message);
 }
 
 function updateInputFieldColor(el){
@@ -354,6 +363,7 @@ function createRow(n,data={}){
  row.dataset.team=data.team||"";
  row.dataset.audioUrl=data.audioUrl||"";
  row.dataset.medleyUrl=data.medleyUrl||"";
+ row.dataset.jacking=(data.jacking===false||data.jacking==="false"||data.jacking===0||data.jacking==="0")?"false":"true";
 
  const options=positions.map((p,i)=>{
   let cls="";
@@ -397,7 +407,7 @@ function createRow(n,data={}){
 
  input.addEventListener("input",()=>{
   row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
-  row.dataset.audioUrl="";row.dataset.medleyUrl="";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.jacking="true";
   syncClear();showSuggestions(row,input,sug);checkDuplicates();saveDraft();updateInputFieldColor(input);
  });
  input.addEventListener("focus",()=>showSuggestions(row,input,sug));
@@ -409,7 +419,7 @@ function createRow(n,data={}){
  row.querySelector(".input-clear").addEventListener("click",()=>{
   input.value="";
   row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
-  row.dataset.audioUrl="";row.dataset.medleyUrl="";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.jacking="true";
   sug.style.display="none";row.classList.remove("row-warning");
   if(currentPlayingRow===row)stopRowAudio();
   syncClear();saveDraft();updateInputFieldColor(input);
@@ -560,6 +570,7 @@ async function showSuggestions(row,input,box){
     const basePath="データ/"+encodeURIComponent(song.player_name||"")+"/"+encodeURIComponent(song.production_number||"")+"/";
     row.dataset.audioUrl=basePath+encodeURIComponent(song.audio_filename||"audio.m4a");
     row.dataset.medleyUrl=basePath+encodeURIComponent(song.medley_filename||"medley.m4a");
+    row.dataset.jacking=songHasJacking(song)?"true":"false";
     box.innerHTML="";box.style.display="none";
     checkDuplicates();saveDraft();updateInputFieldColor(input);
    });
@@ -674,7 +685,7 @@ async function getSelectedMedleyPlayers(){
   if(!name)continue;
   if(!productionNumber)throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。`);
   if(row.dataset.audioUrl&&row.dataset.medleyUrl){
-   selected.push({name,productionNumber,audioUrl:row.dataset.audioUrl,medleyUrl:row.dataset.medleyUrl});continue;
+   selected.push({name,productionNumber,audioUrl:row.dataset.audioUrl,medleyUrl:row.dataset.medleyUrl,jacking:row.dataset.jacking!=="false"});continue;
   }
   setStatus(`♪ 登録データを確認中… ${name}`,"ok");
   const song=await getRegisteredSongFor19(name,productionNumber);
@@ -682,7 +693,8 @@ async function getSelectedMedleyPlayers(){
   const urls=registeredSongUrls(song,name,productionNumber);
   if(!urls)throw new Error(`${name} の登録音源情報を作成できません。`);
   row.dataset.audioUrl=urls.audioUrl;row.dataset.medleyUrl=urls.medleyUrl;
-  selected.push({name:urls.playerName,productionNumber:urls.productionNumber,audioUrl:urls.audioUrl,medleyUrl:urls.medleyUrl});
+  row.dataset.jacking=songHasJacking(song)?"true":"false";
+  selected.push({name:urls.playerName,productionNumber:urls.productionNumber,audioUrl:urls.audioUrl,medleyUrl:urls.medleyUrl,jacking:row.dataset.jacking!=="false"});
  }
  return selected;
 }
@@ -711,31 +723,84 @@ async function fetchDecodeAudio(ctx,path){
    各曲は一切フェード・ゲイン補正しない。
    同じ時刻に存在するサンプルは単純加算する。
 ========================================================= */
-function mixBuffersJacking(ctx,buffers){
+function mixBuffersJacking(ctx,buffers,items=[]){
  if(!buffers.length)throw new Error("結合する音源がありません。");
+
  const sampleRate=buffers[0].sampleRate;
  const channels=Math.max(...buffers.map(b=>b.numberOfChannels));
  const starts=buffers.map((_,i)=>Math.round(i*MEDLEY_INTERVAL_SEC*sampleRate));
  const totalFrames=Math.max(...buffers.map((b,i)=>starts[i]+b.length));
  const output=ctx.createBuffer(channels,totalFrames,sampleRate);
+ const SOUND_THRESHOLD=0.0005;
 
- for(let i=0;i<buffers.length;i++){
-  const b=buffers[i],start=starts[i];
+ // 1曲目はそのまま配置。
+ {
+  const b=buffers[0],startFrame=starts[0];
   for(let ch=0;ch<channels;ch++){
    const out=output.getChannelData(ch);
    const src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
-   for(let f=0;f<b.length;f++)out[start+f]+=src[f];
+   for(let f=0;f<b.length;f++)out[startFrame+f]=src[f];
   }
  }
 
- /* 最終ミックスだけをリミット。前曲・次曲個別の音量は下げない。 */
- for(let ch=0;ch<channels;ch++){
-  const data=output.getChannelData(ch);
-  for(let i=0;i<data.length;i++){
-   if(data[i]>MEDLEY_LIMIT)data[i]=MEDLEY_LIMIT;
-   else if(data[i]<-MEDLEY_LIMIT)data[i]=-MEDLEY_LIMIT;
+ // 2曲目以降：
+ // jacking=true  → 前曲と次曲を両方残して加算。
+ // jacking=false → 次曲に実音がある瞬間だけ前曲を削除し、次曲を優先。
+ for(let i=1;i<buffers.length;i++){
+  const b=buffers[i],startFrame=starts[i];
+  const hasJacking=items[i]?.jacking!==false;
+  const firstBarFrames=Math.round(MEDLEY_BAR_SEC*sampleRate);
+
+  for(let f=0;f<b.length;f++){
+   let nextHasSound=false;
+   if(!hasJacking){
+    for(let ch=0;ch<b.numberOfChannels;ch++){
+     if(Math.abs(b.getChannelData(ch)[f])>SOUND_THRESHOLD){
+      nextHasSound=true;break;
+     }
+    }
+   }
+
+   for(let ch=0;ch<channels;ch++){
+    const out=output.getChannelData(ch);
+    const src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
+    const pos=startFrame+f;
+
+    if(hasJacking){
+     // 弱起あり：次曲1小節目だけ70%。2小節目から100%。
+     const incomingGain=f<firstBarFrames?0.70:1.0;
+     out[pos]+=src[f]*incomingGain;
+    }else if(nextHasSound){
+     out[pos]=src[f];
+    }
+    // ジャッキなし＋次曲無音なら前曲を保持。
+   }
   }
  }
+
+ /*
+   ジャッキ有りの重複でピークが上がった場合だけに備え、
+   最終マスターを滑らかに制御。
+   ジャッキ無しは置換方式なので基本的にこの補正を必要としない。
+ */
+ const attackSec=0.005;
+ const releaseSec=0.050;
+ const attackCoeff=Math.exp(-1/(sampleRate*attackSec));
+ const releaseCoeff=Math.exp(-1/(sampleRate*releaseSec));
+ let gain=1;
+
+ for(let f=0;f<totalFrames;f++){
+  let peak=0;
+  for(let ch=0;ch<channels;ch++){
+   const v=Math.abs(output.getChannelData(ch)[f]);
+   if(v>peak)peak=v;
+  }
+  const target=peak>MEDLEY_LIMIT?MEDLEY_LIMIT/peak:1;
+  const coeff=target<gain?attackCoeff:releaseCoeff;
+  gain=target+(gain-target)*coeff;
+  for(let ch=0;ch<channels;ch++)output.getChannelData(ch)[f]*=gain;
+ }
+
  return output;
 }
 
@@ -791,7 +856,7 @@ async function buildAndPlayOneNineMedley(){
   }
 
   setStatus(`♪ ジャッキ方式で結合中… 9小節目＋次曲1小節目（${MEDLEY_INTERVAL_SEC.toFixed(6)}秒間隔）`,"ok");
-  const completed=mixBuffersJacking(ctx,buffers);
+  const completed=mixBuffersJacking(ctx,buffers,selected);
   setStatus("♪ 完成音源を書き出しています…","ok");
   const wavBlob=audioBufferToWav(completed);
 
@@ -824,7 +889,7 @@ function currentRows(){
   position:row.querySelector(".position").value,
   name:row.querySelector(".player-search").value.trim(),
   songId:row.dataset.songId||"",productionNumber:row.dataset.productionNumber||"",team:row.dataset.team||"",
-  audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||""
+  audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||"",jacking:row.dataset.jacking!=="false"
  }));
 }
 function checkDuplicates(){
