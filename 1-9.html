@@ -10,32 +10,11 @@
 :root{--navy:#071d33;--navy2:#0B2F55;--blue:#0b84f3;--line:#cbd5df;--soft:#eef3f7;--text:#0b2b4a;--yellow:#ffd93d}
 html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:#fff;color:var(--text)}
 button,input,select{font:inherit} button{cursor:pointer}
-.topbar{
-  position:sticky;top:0;z-index:100;
-  min-height:70px;
-  padding:0 20px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  background:#071d33;
-  color:#fff;
-  border-bottom:1px solid rgba(255,255,255,.10)
-}
+.topbar{position:sticky;top:0;z-index:100;min-height:70px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#071d33;color:#fff;border-bottom:1px solid rgba(255,255,255,.10)}
 .top-brand{display:flex;flex-direction:column;justify-content:center;min-width:0}
 .top-brand-title{font-size:18px;font-weight:900;letter-spacing:.02em;line-height:1.15}
 .top-brand-sub{margin-top:7px;font-size:9px;font-weight:700;letter-spacing:.12em;color:#c9d5df}
-.back{
-  min-height:42px;
-  padding:0 15px;
-  border:1px solid #61778c;
-  border-radius:7px;
-  background:transparent;
-  color:#fff;
-  font-size:13px;
-  font-weight:900;
-  white-space:nowrap
-}
+.back{min-height:42px;padding:0 15px;border:1px solid #61778c;border-radius:7px;background:transparent;color:#fff;font-size:13px;font-weight:900;white-space:nowrap}
 .page{max-width:1060px;margin:auto;padding:16px 12px 32px}
 .hero{border:2px solid #58b7ff;border-radius:16px;padding:20px 12px;text-align:center;color:#fff;background:linear-gradient(135deg,#0d477a,#0b3158)}
 .hero h1{font-size:clamp(23px,5vw,37px);margin:0 0 7px;font-weight:900}
@@ -56,176 +35,59 @@ button,input,select{font:inherit} button{cursor:pointer}
 .search-icon{position:absolute;left:13px;top:29px;transform:translateY(-50%);font-size:21px;color:#687d91;pointer-events:none}
 .clear{width:100%;font-weight:850;background:#edf3f8}
 .row-play{width:100%;border:0;border-radius:9px;background:#0B2F55;color:#fff;font-size:21px;font-weight:900;display:flex;align-items:center;justify-content:center}
-.row-play.playing{background:#0b84f3}
-.row-play:disabled{opacity:.35;cursor:not-allowed}
+.row-play.playing{background:#0b84f3}.row-play:disabled{opacity:.35;cursor:not-allowed}
 .suggestions{display:none;position:absolute;left:0;right:0;top:61px;z-index:60;background:#fff;border:1px solid #c8d2dc;border-radius:9px;max-height:220px;overflow:auto;box-shadow:0 10px 24px rgba(7,29,51,.2)}
 .suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:#174A7A;text-align:left;padding:11px 13px;color:#fff}
-.suggestion:hover,.suggestion:focus{background:#0F3B66}
-.suggestion strong{color:#fff}
-.suggestion small{color:#dbe9f5 !important}
-.suggestion small{display:block;color:#6c7d8d;margin-top:2px}
+.suggestion:hover,.suggestion:focus{background:#0F3B66}.suggestion strong{color:#fff}.suggestion small{display:block;color:#dbe9f5!important;margin-top:2px}
 .bottom-actions{display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:10px;padding:3px 14px 16px}
 .action{min-height:62px;border:0;border-radius:10px;font-weight:900;font-size:16px}
-.reset{background:#e7eef5;color:var(--text)} .add{background:var(--yellow);color:#082a4a}.create{background:linear-gradient(135deg,#168df5,#0575df);color:#fff}
+.reset{background:#e7eef5;color:var(--text)}.add{background:var(--yellow);color:#082a4a}.create{background:linear-gradient(135deg,#168df5,#0575df);color:#fff}
 .status{display:none;margin:0 14px 15px;padding:11px;border-radius:9px;background:#eef6ff;color:#174f7e}
-@media(max-width:760px){
- .topbar{min-height:66px;padding:0 10px}.top-brand-title{font-size:16px}.top-brand-sub{font-size:8px;margin-top:5px}.back{min-height:40px;padding:0 11px;font-size:12px}
- .page{padding:9px 7px 22px}.hero{padding:15px 7px}
- .filters{gap:5px;padding:7px}.control,.chat{min-height:47px;padding:0 4px;font-size:12px}
- .title-row{grid-template-columns:98px 1fr;padding:8px 8px;gap:5px}.title-row label{font-size:13px}.title-row input{font-size:16px}
- .lineup{padding:9px 7px}.player-row{grid-template-columns:43px 88px minmax(0,1fr) 48px 44px;gap:4px;margin-bottom:6px}
- .order{height:54px;font-size:22px}.position,.player-search,.clear,.row-play{height:50px}
- .position{font-size:11px;padding:0 1px}.player-search{font-size:16px;padding-left:29px}.search-icon{left:8px;top:25px;font-size:17px}.clear{font-size:10px;padding:0 2px}
- .suggestions{top:53px}.bottom-actions{grid-template-columns:1fr 1fr 1.55fr;gap:5px;padding:2px 7px 11px}.action{min-height:56px;font-size:12px;padding:4px}
-}
-
 .preview-card{display:none;margin:0 14px 16px;border:1px solid #cbd8e3;border-radius:12px;overflow:hidden;background:#fff}
 .preview-head{padding:13px 15px;background:#0B2F55;color:#fff;font-weight:900}
 .preview-meta{padding:10px 15px;background:#eef4f9;font-size:13px;color:#4c6275}
 .preview-list{margin:0;padding:0;list-style:none}
 .preview-item{display:grid;grid-template-columns:42px 90px 1fr;gap:8px;padding:10px 14px;border-top:1px solid #edf1f4;align-items:center}
-.preview-num{font-weight:900;color:#0B2F55}
-.preview-pos{font-size:12px;font-weight:800;color:#536b80}
-.preview-name{font-weight:900}
+.preview-num{font-weight:900;color:#0B2F55}.preview-pos{font-size:12px;font-weight:800;color:#536b80}.preview-name{font-weight:900}
 .row-warning{outline:2px solid #e0a000;outline-offset:2px;border-radius:10px}
-.save-note{font-size:11px;opacity:.8;margin-top:3px}
-@media(max-width:760px){
- .preview-item{grid-template-columns:30px 70px 1fr;padding:9px 10px}
- .preview-pos{font-size:11px}
-}
-
-/* 年度・球団の選択欄そのものは白 */
-#yearSelect,#teamSelect{
-  background:#fff;
-  border:1px solid #c4cfda;
-  color:#0b2b4a;
-}
-
-/* ポジション欄そのものは白。候補(option)だけ色分け */
-.position{background:#fff!important;color:#0b2b4a!important}
+#yearSelect,#teamSelect{background:#fff!important;border:1px solid #c4cfda;color:#0b2b4a}
+.position{background:#EAF6FF!important;color:#0b2b4a!important;border-color:#A9CDE8!important}
+.player-search,#lineupTitle{background:#EAF6FF!important;border-color:#A9CDE8!important}
+.position.has-value,.player-search.has-value,#lineupTitle.has-value{background:#fff!important}
+.position:focus,.player-search:focus,#lineupTitle:focus{background:#F3FAFF!important;border-color:#4E91C4!important;outline:none;box-shadow:0 0 0 3px rgba(78,145,196,.12)}
 .position option{background:#fff;color:#0b2b4a}
-.position option.opt-pitcher{background:#FDE2E2;color:#8B1E1E}
-.position option.opt-catcher{background:#E0ECFF;color:#174C91}
-.position option.opt-infield{background:#E1F4E5;color:#27643A}
-.position option.opt-outfield{background:#FFF4C7;color:#715B00}
-.position option.opt-dh{background:#EFE3FA;color:#5D3480}
-.position option.opt-pinch{background:#FCE3EF;color:#8C2E5B}
-
-
-/* 球団は候補一覧だけ色分け。選択後の枠は白のまま */
-#teamSelect optgroup{background:#0B2F55;color:#fff;font-weight:800}
-#teamSelect option.team-option-1{background:#E8F2FF;color:#174C91}
-#teamSelect option.team-option-2{background:#FFF3D6;color:#6F5200}
-#teamSelect option.team-option-3{background:#EEF1F4;color:#263746}
-#teamSelect option.team-option-4{background:#FBE3E7;color:#8A2435}
-#teamSelect option.team-option-5{background:#E9E2F5;color:#4D3570}
-#teamSelect option.team-option-6{background:#E2F1FF;color:#15588C}
-#teamSelect option.team-option-7{background:#FFE9D7;color:#8A4200}
-#teamSelect option.team-option-8{background:#FFF7BF;color:#665A00}
-#teamSelect option.team-option-9{background:#DFF2FF;color:#12628F}
-#teamSelect option.team-option-10{background:#FDE1E1;color:#9A2222}
-#teamSelect option.team-option-11{background:#E1F3E7;color:#28633A}
-#teamSelect option.team-option-12{background:#E3EBFF;color:#294E9B}
-
-
-/* 1-9 球団検索候補だけ球団カラー */
-#teamSelect option[data-team="福岡ソフトバンクホークス"]{background:#FFF3C8;color:#5D4A00}
-#teamSelect option[data-team="北海道日本ハムファイターズ"]{background:#DFF1FF;color:#174C78}
-#teamSelect option[data-team="オリックス・バファローズ"]{background:#EAE2F5;color:#4D3570}
-#teamSelect option[data-team="東北楽天ゴールデンイーグルス"]{background:#F9DFE4;color:#85283A}
-#teamSelect option[data-team="埼玉西武ライオンズ"]{background:#DDEFFF;color:#15588C}
-#teamSelect option[data-team="千葉ロッテマリーンズ"]{background:#ECEFF2;color:#263746}
-#teamSelect option[data-team="読売ジャイアンツ"]{background:#FFE6D0;color:#844000}
-#teamSelect option[data-team="阪神タイガース"]{background:#FFF4B8;color:#635700}
-#teamSelect option[data-team="横浜DeNAベイスターズ"]{background:#DDF2FF;color:#12628F}
-#teamSelect option[data-team="広島東洋カープ"]{background:#FADDDD;color:#962323}
-#teamSelect option[data-team="東京ヤクルトスワローズ"]{background:#DFF3E5;color:#28633A}
-#teamSelect option[data-team="中日ドラゴンズ"]{background:#E1E9FF;color:#294E9B}
-
-#teamSelect option[data-team="日本代表"]{background:#E8EEF8;color:#173B67}
-#teamSelect option[data-team="近鉄"]{background:#F2E7D9;color:#6B4322}
-#teamSelect option[data-team="ブルーウェーブ"]{background:#DCEEFF;color:#164D82}
-
-/* ===== 1-9 入力・選択欄 ===== */
-#titleInput,
-.position,
-.player-search{
-  background:#EAF6FF !important;
-  border-color:#A9CDE8 !important;
-}
-
-/* 入力中は少しだけ強調 */
-#titleInput:focus,
-.position:focus,
-.player-search:focus{
-  background:#F3FAFF !important;
-  border-color:#4E91C4 !important;
-  outline:none;
-  box-shadow:0 0 0 3px rgba(78,145,196,.12);
-}
-
-/* 候補リストは従来の色を維持 */
-.suggestions,
-.suggestion{
-  /* 既存デザインを優先 */
-}
-
-
-/* 入力済み・選択済みは白 */
-#titleInput.has-value,
-.position.has-value,
-.player-search.has-value{
-  background:#fff !important;
-}
-
-
-/* 年度・球団は任意項目なので常に白 */
-#yearSelect,#teamSelect{
-  background:#fff !important;
-}
-
-#medleyPlayButton{
-  background:#0B4F7A;
-  color:#fff;
+.position option.opt-pitcher{background:#FDE2E2;color:#8B1E1E}.position option.opt-catcher{background:#E0ECFF;color:#174C91}
+.position option.opt-infield{background:#E1F4E5;color:#27643A}.position option.opt-outfield{background:#FFF4C7;color:#715B00}
+.position option.opt-dh{background:#EFE3FA;color:#5D3480}.position option.opt-pinch{background:#FCE3EF;color:#8C2E5B}
+#medleyPlayButton{background:#0B4F7A;color:#fff}
+@media(max-width:760px){
+ .topbar{min-height:66px;padding:0 10px}.top-brand-title{font-size:16px}.top-brand-sub{font-size:8px;margin-top:5px}.back{min-height:40px;padding:0 11px;font-size:12px}
+ .page{padding:9px 7px 22px}.hero{padding:15px 7px}.filters{gap:5px;padding:7px}.control,.chat{min-height:47px;padding:0 4px;font-size:12px}
+ .title-row{grid-template-columns:98px 1fr;padding:8px 8px;gap:5px}.title-row label{font-size:13px}.title-row input{font-size:16px}
+ .lineup{padding:9px 7px}.player-row{grid-template-columns:43px 88px minmax(0,1fr) 48px 44px;gap:4px;margin-bottom:6px}
+ .order{height:54px;font-size:22px}.position,.player-search,.clear,.row-play{height:50px}.position{font-size:11px;padding:0 1px}
+ .player-search{font-size:16px;padding-left:29px}.search-icon{left:8px;top:25px;font-size:17px}.clear{font-size:10px;padding:0 2px}
+ .suggestions{top:53px}.bottom-actions{grid-template-columns:1fr 1fr 1.55fr;gap:5px;padding:2px 7px 11px}.action{min-height:56px;font-size:12px;padding:4px}
+ .preview-item{grid-template-columns:30px 70px 1fr;padding:9px 10px}.preview-pos{font-size:11px}
 }
 </style>
-<script src="team-order.js">
-window.addEventListener("ouenka-team-order-change",renderTeamSelect);
-</script>
+<script src="team-order.js"></script>
 </head>
 <body>
 <header class="topbar">
-  <div class="top-brand">
-    <div class="top-brand-title">OUENKA BASE</div>
-    <div class="top-brand-sub">DATA REGISTER SYSTEM</div>
-  </div>
-  <button class="back" type="button" onclick="location.href='./index.html'">← BASEに戻る</button>
+ <div class="top-brand"><div class="top-brand-title">OUENKA BASE</div><div class="top-brand-sub">DATA REGISTER SYSTEM</div></div>
+ <button class="back" type="button" onclick="location.href='./index.html'">← BASEに戻る</button>
 </header>
-
 <main class="page">
- <section class="hero">
-  <h1>1-9作成</h1>
-  <p>選手を検索して1-9を作成できます。</p>
- </section>
-
+ <section class="hero"><h1>1-9作成</h1><p>選手を検索して1-9を作成できます。</p></section>
  <section class="panel">
   <div class="filters">
-   <select id="yearSelect" class="control" aria-label="年度選択">
-    <option value="" selected disabled hidden>📅 年度選択</option>
-   </select>
-   <select id="teamSelect" class="control" aria-label="球団選択">
-    <option value="" selected disabled hidden>⚾ 球団選択</option>
-   </select>
+   <select id="yearSelect" class="control"><option value="" selected disabled hidden>📅 年度選択</option></select>
+   <select id="teamSelect" class="control"><option value="" selected disabled hidden>⚾ 球団選択</option></select>
    <button id="chatSearch" class="chat" type="button">✦ ChatGPTで検索</button>
   </div>
-
-  <div class="title-row">
-   <label for="lineupTitle">1-9タイトル</label>
-   <input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など">
-  </div>
-
+  <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など"></div>
   <div id="lineup" class="lineup"></div>
-
   <div class="bottom-actions">
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
    <button id="addButton" class="action add" type="button">＋ 選手追加</button>
@@ -233,50 +95,98 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
   </div>
   <div id="status" class="status"></div>
   <section id="previewCard" class="preview-card">
-   <div class="preview-head">1-9 プレビュー</div>
-   <div id="previewMeta" class="preview-meta"></div>
-   <ol id="previewList" class="preview-list"></ol>
+   <div class="preview-head">1-9 プレビュー</div><div id="previewMeta" class="preview-meta"></div><ol id="previewList" class="preview-list"></ol>
   </section>
  </section>
 </main>
 
 <script>
-const positions=["ポジション選択","投手","捕手","一塁手","二塁手","三塁手","遊撃手","左翼手","中堅手","右翼手","指名打者","代打"];
-const STORAGE_KEY="ouenkaBaseOneNineDraftV1";
-let rowCount=9;
+"use strict";
+
+/* =========================================================
+   OUENKA BASE / 1-9
+   2026-10-05 正式ジャッキ方式
+
+   【正式仕様】
+   ・BPM 170 / 4拍子
+   ・1小節 = 60 / 170 * 4 = 1.41176470588秒
+   ・次曲は前曲の9小節目の頭から開始
+   ・したがって開始間隔 = 8小節 = 11.2941176471秒
+   ・次曲の1小節目が無音でも削らない
+   ・前曲9小節目と次曲1小節目は両方の音を残して加算
+   ・クロスフェードしない
+   ・曲別の音量補正をしない
+   ・重複音は両方残し、最終ミックスだけ自動音量調整
+   ・最終出力のクリップ防止だけ ±0.98 で制限
+========================================================= */
 
 const DATA_API="https://ouenka-base-data.ninzin5600.workers.dev";
+const OUENKA_PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
+const STORAGE_KEY="ouenkaBaseOneNineDraftV1";
 const MAX_SUGGESTIONS=10;
+
+const MEDLEY_BPM=170;
+const MEDLEY_BEATS_PER_BAR=4;
+const MEDLEY_BAR_SEC=(60/MEDLEY_BPM)*MEDLEY_BEATS_PER_BAR;
+const MEDLEY_INTERVAL_SEC=MEDLEY_BAR_SEC*8; // 9小節目の頭
+const MEDLEY_LIMIT=0.98;
+
+const positions=["ポジション選択","投手","捕手","一塁手","二塁手","三塁手","遊撃手","左翼手","中堅手","右翼手","指名打者","代打"];
 const rowSearchRequests={};
+let rowCount=9;
+let rowAudio=null;
+let currentPlayingRow=null;
+let completedMedleyUrl=null;
+let completedMedleyAudio=null;
+let medleyBuilding=false;
 
 function getName(p){return p?.player_name||p?.name||""}
 function getReading(p){return p?.reading||""}
 function getTeam(p){return p?.team||""}
 function norm(s){return String(s||"").toLowerCase().replace(/[\s　]/g,"")}
 
+function hideStatus(){
+ const st=document.getElementById("status");
+ if(!st)return;
+ st.textContent="";
+ st.style.display="none";
+}
+
 function setStatus(message,type="info"){
  const st=document.getElementById("status");
- st.textContent=message; st.style.display="block";
+ st.textContent=message;st.style.display="block";
  st.style.background=type==="error"?"#fff0f0":type==="ok"?"#eefaf2":"#eef6ff";
  st.style.color=type==="error"?"#a52b2b":type==="ok"?"#1f6b3b":"#174f7e";
 }
+
+function updateInputFieldColor(el){
+ if(!el)return;
+ el.classList.toggle("has-value",String(el.value||"").trim()!=="");
+}
+function updateAllInputFieldColors(){
+ document.querySelectorAll("#lineupTitle,.position,.player-search").forEach(updateInputFieldColor);
+}
+
 function createRow(n,data={}){
- const row=document.createElement("div"); row.className="player-row"; row.dataset.row=n;
+ const row=document.createElement("div");
+ row.className="player-row";row.dataset.row=n;
  row.dataset.songId=data.songId||"";
  row.dataset.productionNumber=data.productionNumber||"";
  row.dataset.team=data.team||"";
  row.dataset.audioUrl=data.audioUrl||"";
  row.dataset.medleyUrl=data.medleyUrl||"";
+
  const options=positions.map((p,i)=>{
-   let cls="";
-   if(p==="投手")cls="opt-pitcher";
-   else if(p==="捕手")cls="opt-catcher";
-   else if(["一塁手","二塁手","三塁手","遊撃手"].includes(p))cls="opt-infield";
-   else if(["左翼手","中堅手","右翼手"].includes(p))cls="opt-outfield";
-   else if(p==="指名打者")cls="opt-dh";
-   else if(p==="代打")cls="opt-pinch";
-   return `<option class="${cls}" value="${i?p:""}">${p}</option>`;
+  let cls="";
+  if(p==="投手")cls="opt-pitcher";
+  else if(p==="捕手")cls="opt-catcher";
+  else if(["一塁手","二塁手","三塁手","遊撃手"].includes(p))cls="opt-infield";
+  else if(["左翼手","中堅手","右翼手"].includes(p))cls="opt-outfield";
+  else if(p==="指名打者")cls="opt-dh";
+  else if(p==="代打")cls="opt-pinch";
+  return `<option class="${cls}" value="${i?p:""}">${p}</option>`;
  }).join("");
+
  row.innerHTML=`
   <div class="order">${n}</div>
   <select class="position" aria-label="${n}番のポジション">${options}</select>
@@ -287,40 +197,35 @@ function createRow(n,data={}){
   </div>
   <button class="clear" type="button">クリア</button>
   <button class="row-play" type="button" title="応援歌を再生" aria-label="${n}番の応援歌を再生">▶</button>`;
- const input=row.querySelector(".player-search"), sug=row.querySelector(".suggestions");
- row.querySelector(".position").value=data.position||"";
+
+ const input=row.querySelector(".player-search");
+ const sug=row.querySelector(".suggestions");
+ const pos=row.querySelector(".position");
+ pos.value=data.position||"";
  input.value=data.name||"";
+
  input.addEventListener("input",()=>{
-   row.dataset.songId="";
-   row.dataset.productionNumber="";
-   row.dataset.team="";
-   row.dataset.audioUrl="";
-   row.dataset.medleyUrl="";
-   showSuggestions(row,input,sug);
-   checkDuplicates();
-   saveDraft();
+  row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";
+  showSuggestions(row,input,sug);checkDuplicates();saveDraft();updateInputFieldColor(input);
  });
  input.addEventListener("focus",()=>showSuggestions(row,input,sug));
- row.querySelector(".position").addEventListener("change",saveDraft);
+ pos.addEventListener("change",()=>{saveDraft();updateInputFieldColor(pos)});
  row.querySelector(".clear").addEventListener("click",()=>{
-   input.value="";
-   row.querySelector(".position").value="";
-   row.dataset.songId="";
-   row.dataset.productionNumber="";
-   row.dataset.team="";
-   row.dataset.audioUrl="";
-   row.dataset.medleyUrl="";
-   sug.style.display="none";
-   row.classList.remove("row-warning");
-   if(currentPlayingRow===row) stopRowAudio();
-   saveDraft();
+  input.value="";pos.value="";
+  row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";
+  sug.style.display="none";row.classList.remove("row-warning");
+  if(currentPlayingRow===row)stopRowAudio();
+  saveDraft();updateInputFieldColor(input);updateInputFieldColor(pos);
  });
-
  row.querySelector(".row-play").addEventListener("click",()=>playSelectedRow(row));
+ setTimeout(()=>{updateInputFieldColor(input);updateInputFieldColor(pos)},0);
  return row;
 }
+
 function renderRows(rows=[]){
- const box=document.getElementById("lineup"); box.innerHTML="";
+ const box=document.getElementById("lineup");box.innerHTML="";
  rowCount=Math.max(9,rows.length||9);
  for(let i=1;i<=rowCount;i++)box.appendChild(createRow(i,rows[i-1]||{}));
 }
@@ -329,79 +234,42 @@ async function showSuggestions(row,input,box){
  const keyword=input.value.trim();
  box.innerHTML="";
  if(!keyword){box.style.display="none";return}
-
  const rowNo=row.dataset.row;
  const requestNo=(rowSearchRequests[rowNo]||0)+1;
  rowSearchRequests[rowNo]=requestNo;
-
  try{
-  const response=await fetch(
-    DATA_API+"/songs/search?q="+encodeURIComponent(keyword),
-    {cache:"no-store"}
-  );
+  const response=await fetch(DATA_API+"/songs/search?q="+encodeURIComponent(keyword),{cache:"no-store"});
   if(!response.ok)throw new Error("検索データを取得できませんでした");
   const data=await response.json();
-
   if(rowSearchRequests[rowNo]!==requestNo)return;
-
   let songs=Array.isArray(data.songs)?data.songs:[];
   const selectedTeam=document.getElementById("teamSelect").value;
-
-  // 球団を選択している場合は、その球団を優先して表示。
   if(selectedTeam){
-    const same=songs.filter(s=>!s.team||s.team===selectedTeam);
-    if(same.length)songs=same;
+   const same=songs.filter(s=>!s.team||s.team===selectedTeam);
+   if(same.length)songs=same;
   }
-
   songs=songs.slice(0,MAX_SUGGESTIONS);
-  box.innerHTML="";
-
   if(!songs.length){
-    const no=document.createElement("div");
-    no.className="suggestion";
-    no.textContent="該当する選手はいません";
-    box.appendChild(no);
-    box.style.display="block";
-    return;
+   const no=document.createElement("div");no.className="suggestion";no.textContent="該当する選手はいません";
+   box.appendChild(no);box.style.display="block";return;
   }
-
   songs.forEach(song=>{
-    const b=document.createElement("button");
-    b.type="button";
-    b.className="suggestion";
-
-    // 本体検索と同様、候補の主表示は選手名。
-    // 同一選手に複数曲がある場合だけ制作番号を補助表示する。
-    const name=getName(song);
-    const prod=song.production_number||"";
-    b.innerHTML=`<strong>${name}</strong>${prod?`<small>${getTeam(song)||""}${getTeam(song)?" / ":""}制作番号 ${prod}</small>`:""}`;
-
-    b.addEventListener("click",()=>{
-      input.value=name;
-      row.dataset.songId=song.id||"";
-      row.dataset.productionNumber=prod;
-      row.dataset.team=getTeam(song);
-
-      // D1の登録レコードを唯一の基準にする。
-      // 新しい選手を追加しても1-9側のコード変更は不要。
-      const basePath=
-        "データ/" +
-        encodeURIComponent(song.player_name || "") +
-        "/" +
-        encodeURIComponent(song.production_number || "") +
-        "/";
-      const audioFilename=song.audio_filename || "audio.m4a";
-      const medleyFilename=song.medley_filename || "medley.m4a";
-      row.dataset.audioUrl=basePath+encodeURIComponent(audioFilename);
-      row.dataset.medleyUrl=basePath+encodeURIComponent(medleyFilename);
-      box.innerHTML="";
-      box.style.display="none";
-      checkDuplicates();
-      saveDraft();
-    });
-    box.appendChild(b);
+   const b=document.createElement("button");b.type="button";b.className="suggestion";
+   const name=getName(song),prod=song.production_number||"";
+   b.innerHTML=`<strong>${name}</strong>${prod?`<small>${getTeam(song)||""}${getTeam(song)?" / ":""}制作番号 ${prod}</small>`:""}`;
+   b.addEventListener("click",()=>{
+    input.value=name;
+    row.dataset.songId=song.id||"";
+    row.dataset.productionNumber=prod;
+    row.dataset.team=getTeam(song);
+    const basePath="データ/"+encodeURIComponent(song.player_name||"")+"/"+encodeURIComponent(song.production_number||"")+"/";
+    row.dataset.audioUrl=basePath+encodeURIComponent(song.audio_filename||"audio.m4a");
+    row.dataset.medleyUrl=basePath+encodeURIComponent(song.medley_filename||"medley.m4a");
+    box.innerHTML="";box.style.display="none";
+    checkDuplicates();saveDraft();updateInputFieldColor(input);
+   });
+   box.appendChild(b);
   });
-
   box.style.display="block";
  }catch(error){
   console.error("D1検索エラー:",error);
@@ -411,578 +279,293 @@ async function showSuggestions(row,input,box){
  }
 }
 
-let rowAudio=null;
-let currentPlayingRow=null;
-
 function resetPlayIcons(){
- document.querySelectorAll(".row-play").forEach(b=>{
-   b.textContent="▶";
-   b.classList.remove("playing");
- });
+ document.querySelectorAll(".row-play").forEach(b=>{b.textContent="▶";b.classList.remove("playing")});
 }
 function stopRowAudio(){
- if(rowAudio){
-   try{
-     rowAudio.pause();
-     rowAudio.removeAttribute("src");
-     rowAudio.load();
-   }catch(e){}
- }
- rowAudio=null;
- currentPlayingRow=null;
- resetPlayIcons();
+ if(rowAudio){try{rowAudio.pause();rowAudio.removeAttribute("src");rowAudio.load()}catch(e){}}
+ rowAudio=null;currentPlayingRow=null;resetPlayIcons();
 }
 async function playSelectedRow(row){
  const button=row.querySelector(".row-play");
- if(currentPlayingRow===row&&rowAudio&&!rowAudio.paused){
-   stopRowAudio();
-   return;
- }
-
+ if(currentPlayingRow===row&&rowAudio&&!rowAudio.paused){stopRowAudio();return}
  const name=row.querySelector(".player-search").value.trim();
- if(!name){
-   setStatus("先に再生する選手を選択してください。","error");
-   return;
- }
-
- let audioValue=row.dataset.audioUrl||"";
-
- if(!audioValue){
-   setStatus(`${name}の再生用音源を取得できませんでした。`,"error");
-   return;
- }
-
+ if(!name){setStatus("先に再生する選手を選択してください。","error");return}
+ const audioValue=row.dataset.audioUrl||"";
+ if(!audioValue){setStatus(`${name}の再生用音源を取得できませんでした。`,"error");return}
  stopRowAudio();
-
  try{
-   // iPhoneで他アプリから復帰した古いAudioを再利用しない
-   // 応援歌BASE本体 player.js と同じ方式
-   rowAudio=new Audio();
-   rowAudio.preload="auto";
-   rowAudio.volume=1;
-   rowAudio.muted=false;
-   rowAudio.src=audioValue;
-
-   currentPlayingRow=row;
-   button.textContent="■";
-   button.classList.add("playing");
-
-   rowAudio.addEventListener("playing",()=>{
-     setStatus(`♪ ${name} を再生中`,"ok");
-   });
-
-   rowAudio.addEventListener("ended",stopRowAudio,{once:true});
-   rowAudio.addEventListener("error",()=>{
-     console.error("Audioエラー:",rowAudio ? rowAudio.error : null,audioValue);
-     setStatus(`${name}の音源を読み込めませんでした。`,"error");
-     stopRowAudio();
-   },{once:true});
-
-   const promise=rowAudio.play();
-   if(promise) await promise;
- }catch(error){
-   console.error("1-9試聴エラー:",error);
-   stopRowAudio();
-   setStatus(`${name}の音源を再生できませんでした。`,"error");
- }
+  rowAudio=new Audio();rowAudio.preload="auto";rowAudio.volume=1;rowAudio.muted=false;
+  rowAudio.src=toPublicAudioUrl(audioValue);rowAudio.playsInline=true;
+  currentPlayingRow=row;button.textContent="■";button.classList.add("playing");
+  rowAudio.addEventListener("playing",hideStatus);
+  rowAudio.addEventListener("ended",stopRowAudio,{once:true});
+  rowAudio.addEventListener("error",()=>{setStatus(`${name}の音源を読み込めませんでした。`,"error");stopRowAudio()},{once:true});
+  const p=rowAudio.play();if(p)await p;
+ }catch(error){console.error("1-9試聴エラー:",error);stopRowAudio();setStatus(`${name}の音源を再生できませんでした。`,"error")}
 }
 
-// 他アプリへ移動した場合は、iOSで中断されたAudioを破棄
 document.addEventListener("visibilitychange",()=>{
- if(document.visibilityState==="hidden"){
-   stopRowAudio();
-   stopOneNineMedley();
- }
+ if(document.visibilityState==="hidden"){stopRowAudio();stopOneNineMedley()}
 });
 window.addEventListener("pageshow",()=>stopRowAudio());
 
-
-
-// ========================================
-// 登録済み曲データ取得
-// 検索APIには音源情報を要求せず、選択後にDATA APIから取得する。
-// ========================================
-const DATA_API_FOR_19 = "https://ouenka-base-data.ninzin5600.workers.dev";
-
-async function getRegisteredSongFor19(playerName, productionNumber){
-  const name = String(playerName || "").trim();
-  const no = String(productionNumber || "").trim();
-
-  if(!name || !no) return null;
-
-  const candidates = [
-    `${DATA_API_FOR_19}/song?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`,
-    `${DATA_API_FOR_19}/songs?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`,
-    `${DATA_API_FOR_19}/search?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`
-  ];
-
-  for(const url of candidates){
-    try{
-      const res = await fetch(url,{cache:"no-store"});
-      if(!res.ok) continue;
-      const data = await res.json();
-
-      let song = null;
-      if(data && data.song) song = data.song;
-      else if(data && Array.isArray(data.songs)) {
-        song = data.songs.find(x =>
-          String(x.player_name||x.name||"") === name &&
-          String(x.production_number||x.productionNumber||"") === no
-        ) || data.songs[0] || null;
-      }
-      else if(Array.isArray(data)) {
-        song = data.find(x =>
-          String(x.player_name||x.name||"") === name &&
-          String(x.production_number||x.productionNumber||"") === no
-        ) || data[0] || null;
-      }
-      else if(data && (data.player_name || data.name)) song = data;
-
-      if(song) return song;
-    }catch(e){}
-  }
-
-  // DATA APIの一覧エンドポイントも試す。
+async function getRegisteredSongFor19(playerName,productionNumber){
+ const name=String(playerName||"").trim(),no=String(productionNumber||"").trim();
+ if(!name||!no)return null;
+ const candidates=[
+  `${DATA_API}/song?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`,
+  `${DATA_API}/songs?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`,
+  `${DATA_API}/search?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`
+ ];
+ for(const url of candidates){
   try{
-    const res = await fetch(`${DATA_API_FOR_19}/songs`,{cache:"no-store"});
-    if(res.ok){
-      const data = await res.json();
-      const list = Array.isArray(data) ? data :
-        Array.isArray(data.songs) ? data.songs :
-        Array.isArray(data.items) ? data.items : [];
-
-      return list.find(x =>
-        String(x.player_name||x.name||"") === name &&
-        String(x.production_number||x.productionNumber||"") === no
-      ) || null;
-    }
+   const res=await fetch(url,{cache:"no-store"});if(!res.ok)continue;
+   const data=await res.json();let song=null;
+   if(data?.song)song=data.song;
+   else if(Array.isArray(data?.songs))song=data.songs.find(x=>String(x.player_name||x.name||"")===name&&String(x.production_number||x.productionNumber||"")===no)||data.songs[0]||null;
+   else if(Array.isArray(data))song=data.find(x=>String(x.player_name||x.name||"")===name&&String(x.production_number||x.productionNumber||"")===no)||data[0]||null;
+   else if(data&&(data.player_name||data.name))song=data;
+   if(song)return song;
   }catch(e){}
-
-  return null;
-}
-
-function registeredSongUrls(song, playerName, productionNumber){
-  if(!song) return null;
-
-  const name = String(song.player_name || song.name || playerName || "").trim();
-  const no = String(song.production_number || song.productionNumber || productionNumber || "").trim();
-
-  const audioFile = String(song.audio_filename || song.audioFilename || "audio.m4a").trim();
-  const medleyFile = String(song.medley_filename || song.medleyFilename || "medley.m4a").trim();
-
-  if(!name || !no) return null;
-
-  const base = OUENKA_PUBLIC_BASE +
-    "%E3%83%87%E3%83%BC%E3%82%BF/" +
-    encodeURIComponent(name) + "/" +
-    encodeURIComponent(no) + "/";
-
-  return {
-    playerName:name,
-    productionNumber:no,
-    audioUrl:base + encodeURIComponent(audioFile),
-    medleyUrl:base + encodeURIComponent(medleyFile)
-  };
-}
-
-// ========================================
-// 1-9 完成音源方式【完成版】
-// ・リアルタイム複数Audio再生はしない
-// ・全曲をAudioBufferへ読み込み
-// ・0 / 11.293 / 22.586 ... 秒へ波形を配置
-// ・重複で音圧が増えた区間だけ自動補正
-// ・完成した1本の音源だけを再生
-// ========================================
-const MEDLEY_INTERVAL_SEC = 11.293;
-const MEDLEY_INTERVAL_MS = 11293;
-let completedMedleyUrl = null;
-let completedMedleyAudio = null;
-let medleyBuilding = false;
-
-function stopOneNineMedley(){
-  if(completedMedleyAudio){
-    try{
-      completedMedleyAudio.pause();
-      completedMedleyAudio.currentTime = 0;
-    }catch(e){}
+ }
+ try{
+  const res=await fetch(`${DATA_API}/songs`,{cache:"no-store"});
+  if(res.ok){
+   const data=await res.json();
+   const list=Array.isArray(data)?data:Array.isArray(data.songs)?data.songs:Array.isArray(data.items)?data.items:[];
+   return list.find(x=>String(x.player_name||x.name||"")===name&&String(x.production_number||x.productionNumber||"")===no)||null;
   }
-  const btn=document.getElementById("medleyPlayButton");
-  if(btn) btn.textContent="▶ 1-9を作成・再生";
+ }catch(e){}
+ return null;
+}
+
+function registeredSongUrls(song,playerName,productionNumber){
+ if(!song)return null;
+ const name=String(song.player_name||song.name||playerName||"").trim();
+ const no=String(song.production_number||song.productionNumber||productionNumber||"").trim();
+ const audioFile=String(song.audio_filename||song.audioFilename||"audio.m4a").trim();
+ const medleyFile=String(song.medley_filename||song.medleyFilename||"medley.m4a").trim();
+ if(!name||!no)return null;
+ const base=OUENKA_PUBLIC_BASE+"%E3%83%87%E3%83%BC%E3%82%BF/"+encodeURIComponent(name)+"/"+encodeURIComponent(no)+"/";
+ return{playerName:name,productionNumber:no,audioUrl:base+encodeURIComponent(audioFile),medleyUrl:base+encodeURIComponent(medleyFile)};
 }
 
 async function getSelectedMedleyPlayers(){
-  const rows = [...document.querySelectorAll(".player-row")];
-  const selected = [];
-
-  for(const row of rows){
-    const input = row.querySelector(".player-search");
-    const name = (input?.value || "").trim();
-    const productionNumber = String(row.dataset.productionNumber || "").trim();
-
-    if(!name) continue;
-
-    if(!productionNumber){
-      throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。`);
-    }
-
-    // すでに行に音源URLが保持されていれば再利用。
-    if(row.dataset.audioUrl && row.dataset.medleyUrl){
-      selected.push({
-        name,
-        productionNumber,
-        audioUrl:row.dataset.audioUrl,
-        medleyUrl:row.dataset.medleyUrl
-      });
-      continue;
-    }
-
-    setStatus(`♪ 登録データを確認中… ${name}`,"ok");
-
-    const song = await getRegisteredSongFor19(name, productionNumber);
-    if(!song){
-      throw new Error(`${name}（制作番号 ${productionNumber}）の登録データが見つかりません。`);
-    }
-
-    const urls = registeredSongUrls(song, name, productionNumber);
-    if(!urls){
-      throw new Error(`${name} の登録音源情報を作成できません。`);
-    }
-
-    row.dataset.audioUrl = urls.audioUrl;
-    row.dataset.medleyUrl = urls.medleyUrl;
-
-    selected.push({
-      name: urls.playerName,
-      productionNumber: urls.productionNumber,
-      audioUrl: urls.audioUrl,
-      medleyUrl: urls.medleyUrl
-    });
+ const rows=[...document.querySelectorAll(".player-row")],selected=[];
+ for(const row of rows){
+  const name=(row.querySelector(".player-search")?.value||"").trim();
+  const productionNumber=String(row.dataset.productionNumber||"").trim();
+  if(!name)continue;
+  if(!productionNumber)throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。`);
+  if(row.dataset.audioUrl&&row.dataset.medleyUrl){
+   selected.push({name,productionNumber,audioUrl:row.dataset.audioUrl,medleyUrl:row.dataset.medleyUrl});continue;
   }
-
-  return selected;
+  setStatus(`♪ 登録データを確認中… ${name}`,"ok");
+  const song=await getRegisteredSongFor19(name,productionNumber);
+  if(!song)throw new Error(`${name}（制作番号 ${productionNumber}）の登録データが見つかりません。`);
+  const urls=registeredSongUrls(song,name,productionNumber);
+  if(!urls)throw new Error(`${name} の登録音源情報を作成できません。`);
+  row.dataset.audioUrl=urls.audioUrl;row.dataset.medleyUrl=urls.medleyUrl;
+  selected.push({name:urls.playerName,productionNumber:urls.productionNumber,audioUrl:urls.audioUrl,medleyUrl:urls.medleyUrl});
+ }
+ return selected;
 }
 
-function makeMedleySongPath(item,index){
-  // 1曲目は通常音源、2曲目以降はメドレー音源。
-  // URLはDATA APIの登録レコードから解決済み。
-  return index===0 ? item.audioUrl : item.medleyUrl;
-}
-
-const OUENKA_PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
+/* 1曲目は通常音源。2曲目以降は「1小節目の空白を含む」メドレー用音源。 */
+function makeMedleySongPath(item,index){return index===0?item.audioUrl:item.medleyUrl}
 
 function toPublicAudioUrl(path){
-  if(!path)return "";
-  if(/^https?:\/\//i.test(path))return path;
-  return new URL(path,OUENKA_PUBLIC_BASE).href;
+ if(!path)return "";
+ if(/^https?:\/\//i.test(path))return path;
+ return new URL(path,OUENKA_PUBLIC_BASE).href;
 }
 
 async function fetchDecodeAudio(ctx,path){
-  if(!path)throw new Error("登録音源情報を取得できませんでした。");
-  const url=toPublicAudioUrl(path);
-  const response=await fetch(url,{cache:"no-store",credentials:"omit"});
-  if(!response.ok) throw new Error(`音源取得失敗 (${response.status})：${url}`);
-  const arrayBuffer=await response.arrayBuffer();
-  return await ctx.decodeAudioData(arrayBuffer.slice(0));
+ if(!path)throw new Error("登録音源情報を取得できませんでした。");
+ const url=toPublicAudioUrl(path);
+ const response=await fetch(url,{cache:"no-store",credentials:"omit"});
+ if(!response.ok)throw new Error(`音源取得失敗 (${response.status})：${url}`);
+ const arrayBuffer=await response.arrayBuffer();
+ return await ctx.decodeAudioData(arrayBuffer.slice(0));
 }
 
-function rmsRange(buffer,startFrame,endFrame){
-  const s=Math.max(0,Math.floor(startFrame));
-  const e=Math.min(buffer.length,Math.ceil(endFrame));
-  if(e<=s)return 0;
+/* =========================================================
+   正式ジャッキ合成 + マスター音量調整
+   0秒 / 11.294117...秒 / 22.588235...秒 ... に配置。
 
-  let sum=0;
-  let count=0;
-  for(let ch=0;ch<buffer.numberOfChannels;ch++){
-    const data=buffer.getChannelData(ch);
-    for(let i=s;i<e;i++){
-      const v=data[i];
-      sum+=v*v;
-      count++;
-    }
-  }
-  return count ? Math.sqrt(sum/count) : 0;
-}
+   【重要】
+   ・前曲9小節目と次曲1小節目は両方とも残す
+   ・曲別のフェード／固定ゲイン補正はしない
+   ・重なって合成音量が上がった瞬間だけ、最終ミックス側で
+     自動的にゲインを下げる
+   ・重なりが終わると約70msで自然に元の音量へ戻す
 
-function mixBuffersWithSmartOverlap(ctx,buffers){
-  const sampleRate=buffers[0].sampleRate;
-  const channels=Math.max(...buffers.map(b=>b.numberOfChannels));
+   これにより、弱起が重なっても急に音量が大きくならず、
+   ChatGPTで作成した確認用m4aと同じ考え方でつながる。
+========================================================= */
+function applyJackingMasterLimiter(output,sampleRate){
+ const channels=output.numberOfChannels;
+ const length=output.length;
+ const releaseSec=0.070;
+ const releaseCoef=Math.exp(-1/(sampleRate*releaseSec));
+ let gain=1;
 
-  const starts=buffers.map((_,i)=>Math.round(i*MEDLEY_INTERVAL_SEC*sampleRate));
-  const totalFrames=Math.max(...buffers.map((b,i)=>starts[i]+b.length));
+ const channelData=[];
+ for(let ch=0;ch<channels;ch++){
+  channelData.push(output.getChannelData(ch));
+ }
 
-  const output=ctx.createBuffer(channels,totalFrames,sampleRate);
-
-  // まず全曲をそのまま配置するための曲別ゲイン配列を用意。
-  const gains=buffers.map(b=>new Float32Array(b.length).fill(1));
-
-  // 各つなぎで「重なったことで増えた音圧」を計測。
-  // 増加が小さい通常曲は補正しない。
-  // 増加が明確な重なりだけ、その増加分を最大4.5dBまで抑える。
-  for(let i=1;i<buffers.length;i++){
-    const prev=buffers[i-1];
-    const cur=buffers[i];
-
-    const overlapStartGlobal=starts[i];
-    const overlapEndGlobal=Math.min(starts[i-1]+prev.length,starts[i]+cur.length);
-    const overlapFrames=Math.max(0,overlapEndGlobal-overlapStartGlobal);
-    if(overlapFrames<=0)continue;
-
-    const prevLocalStart=overlapStartGlobal-starts[i-1];
-    const curLocalStart=0;
-
-    const prevRms=rmsRange(prev,prevLocalStart,prevLocalStart+overlapFrames);
-    const curRms=rmsRange(cur,curLocalStart,curLocalStart+overlapFrames);
-
-    // 無相関音源の合成RMSを推定。
-    const estimatedMix=Math.sqrt(prevRms*prevRms+curRms*curRms);
-    const base=Math.max(prevRms,curRms);
-
-    if(base<=0 || estimatedMix<=0)continue;
-
-    const increaseDb=20*Math.log10(estimatedMix/base);
-
-    // 通常の重なりはそのまま。
-    // 音圧増加が約2dBを超えた場合のみ必要分を補正。
-    if(increaseDb<=2.0)continue;
-
-    const reduceDb=Math.min(4.5,increaseDb);
-    const gain=Math.pow(10,-reduceDb/20);
-
-    // 境目を自然にするため約120msで補正へ入り、
-    // 前曲終了後は約120msで現在曲を通常音量へ戻す。
-    const fadeFrames=Math.max(1,Math.round(sampleRate*0.12));
-
-    for(let f=0;f<overlapFrames;f++){
-      const t=Math.min(1,f/fadeFrames);
-      const g=1+(gain-1)*t;
-
-      const pi=prevLocalStart+f;
-      const ci=curLocalStart+f;
-      if(pi>=0 && pi<gains[i-1].length)gains[i-1][pi]*=g;
-      if(ci>=0 && ci<gains[i].length)gains[i][ci]*=g;
-    }
-
-    // 現在曲は前曲終了直後から120msかけて1へ戻す。
-    const restoreStart=overlapFrames;
-    for(let f=0;f<fadeFrames;f++){
-      const ci=restoreStart+f;
-      if(ci>=gains[i].length)break;
-      const t=f/fadeFrames;
-      const g=gain+(1-gain)*t;
-      gains[i][ci]*=g;
-    }
-  }
-
-  // 実際に波形を1本へ加算。
-  for(let i=0;i<buffers.length;i++){
-    const b=buffers[i];
-    const start=starts[i];
-
-    for(let ch=0;ch<channels;ch++){
-      const out=output.getChannelData(ch);
-      const src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
-      const gain=gains[i];
-
-      for(let f=0;f<b.length;f++){
-        out[start+f]+=src[f]*gain[f];
-      }
-    }
-  }
-
-  // クリップだけ防止。全体音量を常時変えるのではなく、
-  // 1.0を超えた場合のみ全体を同率で収める。
+ for(let i=0;i<length;i++){
   let peak=0;
   for(let ch=0;ch<channels;ch++){
-    const data=output.getChannelData(ch);
-    for(let i=0;i<data.length;i++){
-      const a=Math.abs(data[i]);
-      if(a>peak)peak=a;
-    }
+   const a=Math.abs(channelData[ch][i]);
+   if(a>peak)peak=a;
   }
 
-  if(peak>1){
-    const scale=0.99/peak;
-    for(let ch=0;ch<channels;ch++){
-      const data=output.getChannelData(ch);
-      for(let i=0;i<data.length;i++)data[i]*=scale;
-    }
+  const targetGain=peak>MEDLEY_LIMIT
+   ? MEDLEY_LIMIT/peak
+   : 1;
+
+  // 音が重なって大きくなった瞬間は即座に抑える。
+  // 戻すときだけ滑らかにしてポンピング感を防ぐ。
+  if(targetGain<gain){
+   gain=targetGain;
+  }else{
+   gain=1-(1-gain)*releaseCoef;
   }
 
-  return output;
+  for(let ch=0;ch<channels;ch++){
+   channelData[ch][i]*=gain;
+  }
+ }
 }
 
-function writeAscii(view,offset,text){
-  for(let i=0;i<text.length;i++)view.setUint8(offset+i,text.charCodeAt(i));
+function mixBuffersJacking(ctx,buffers){
+ if(!buffers.length)throw new Error("結合する音源がありません。");
+ const sampleRate=buffers[0].sampleRate;
+ const channels=Math.max(...buffers.map(b=>b.numberOfChannels));
+ const starts=buffers.map((_,i)=>Math.round(i*MEDLEY_INTERVAL_SEC*sampleRate));
+ const totalFrames=Math.max(...buffers.map((b,i)=>starts[i]+b.length));
+ const output=ctx.createBuffer(channels,totalFrames,sampleRate);
+
+ // まず前曲・次曲をそのまま加算。重複音は消さない。
+ for(let i=0;i<buffers.length;i++){
+  const b=buffers[i],start=starts[i];
+  for(let ch=0;ch<channels;ch++){
+   const out=output.getChannelData(ch);
+   const src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
+   for(let f=0;f<b.length;f++)out[start+f]+=src[f];
+  }
+ }
+
+ // 最後に合成音全体だけを自動音量調整する。
+ applyJackingMasterLimiter(output,sampleRate);
+
+ return output;
 }
 
+function writeAscii(view,offset,text){for(let i=0;i<text.length;i++)view.setUint8(offset+i,text.charCodeAt(i))}
 function audioBufferToWav(buffer){
-  const channels=buffer.numberOfChannels;
-  const sampleRate=buffer.sampleRate;
-  const bytesPerSample=2;
-  const dataLength=buffer.length*channels*bytesPerSample;
-  const ab=new ArrayBuffer(44+dataLength);
-  const view=new DataView(ab);
+ const channels=buffer.numberOfChannels,sampleRate=buffer.sampleRate,bytesPerSample=2;
+ const dataLength=buffer.length*channels*bytesPerSample;
+ const ab=new ArrayBuffer(44+dataLength),view=new DataView(ab);
+ writeAscii(view,0,"RIFF");view.setUint32(4,36+dataLength,true);writeAscii(view,8,"WAVE");writeAscii(view,12,"fmt ");
+ view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,channels,true);view.setUint32(24,sampleRate,true);
+ view.setUint32(28,sampleRate*channels*bytesPerSample,true);view.setUint16(32,channels*bytesPerSample,true);view.setUint16(34,16,true);
+ writeAscii(view,36,"data");view.setUint32(40,dataLength,true);
+ let offset=44;
+ for(let i=0;i<buffer.length;i++)for(let ch=0;ch<channels;ch++){
+  let sample=Math.max(-1,Math.min(1,buffer.getChannelData(ch)[i]||0));
+  view.setInt16(offset,sample<0?sample*0x8000:sample*0x7fff,true);offset+=2;
+ }
+ return new Blob([view],{type:"audio/wav"});
+}
 
-  writeAscii(view,0,"RIFF");
-  view.setUint32(4,36+dataLength,true);
-  writeAscii(view,8,"WAVE");
-  writeAscii(view,12,"fmt ");
-  view.setUint32(16,16,true);
-  view.setUint16(20,1,true);
-  view.setUint16(22,channels,true);
-  view.setUint32(24,sampleRate,true);
-  view.setUint32(28,sampleRate*channels*bytesPerSample,true);
-  view.setUint16(32,channels*bytesPerSample,true);
-  view.setUint16(34,16,true);
-  writeAscii(view,36,"data");
-  view.setUint32(40,dataLength,true);
-
-  let offset=44;
-  for(let i=0;i<buffer.length;i++){
-    for(let ch=0;ch<channels;ch++){
-      let sample=buffer.getChannelData(ch)[i]||0;
-      sample=Math.max(-1,Math.min(1,sample));
-      view.setInt16(
-        offset,
-        sample<0 ? sample*0x8000 : sample*0x7fff,
-        true
-      );
-      offset+=2;
-    }
-  }
-
-  return new Blob([view],{type:"audio/wav"});
+function stopOneNineMedley(){
+ if(completedMedleyAudio){try{completedMedleyAudio.pause();completedMedleyAudio.currentTime=0}catch(e){}}
+ const btn=document.getElementById("medleyPlayButton");
+ if(btn)btn.textContent="▶ 1-9を作成・再生";
 }
 
 async function buildAndPlayOneNineMedley(){
-  if(medleyBuilding)return;
+ if(medleyBuilding)return;
+ if(completedMedleyAudio&&!completedMedleyAudio.paused){
+  stopOneNineMedley();hideStatus();return;
+ }
+ stopRowAudio();
+ hideStatus();
+ let selected;
+ try{selected=await getSelectedMedleyPlayers()}
+ catch(error){setStatus(error.message||String(error),"error");return}
+ if(!selected.length){setStatus("選手を1人以上選択してください。9人すべて埋める必要はありません。","error");return}
 
-  // 完成音源が再生中なら停止。
-  if(completedMedleyAudio && !completedMedleyAudio.paused){
-    stopOneNineMedley();
-    setStatus("1-9の再生を停止しました。");
-    return;
+ medleyBuilding=true;
+ const btn=document.getElementById("medleyPlayButton");
+ if(btn){btn.disabled=true;btn.textContent="作成中…"}
+ let ctx=null;
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)throw new Error("このブラウザは音源結合に対応していません。");
+  ctx=new AC();
+  if(ctx.state==="suspended")await ctx.resume();
+
+  const buffers=[];
+  for(let i=0;i<selected.length;i++){
+   const item=selected[i],url=makeMedleySongPath(item,i);
+
+   buffers.push(await fetchDecodeAudio(ctx,url));
   }
 
-  stopRowAudio();
+  const completed=mixBuffersJacking(ctx,buffers);
 
-  const selected=await getSelectedMedleyPlayers();
-  if(!selected.length){
-    setStatus("選手を1人以上選択してください。9人すべて埋める必要はありません。","error");
-    return;
-  }
+  const wavBlob=audioBufferToWav(completed);
 
-  medleyBuilding=true;
-  const btn=document.getElementById("medleyPlayButton");
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="作成中…";
-  }
+  if(completedMedleyUrl)URL.revokeObjectURL(completedMedleyUrl);
+  completedMedleyUrl=URL.createObjectURL(wavBlob);
+  if(completedMedleyAudio){try{completedMedleyAudio.pause()}catch(e){}}
+  completedMedleyAudio=new Audio(completedMedleyUrl);
+  completedMedleyAudio.playsInline=true;completedMedleyAudio.volume=1;
+  completedMedleyAudio.addEventListener("ended",()=>{
+   const b=document.getElementById("medleyPlayButton");if(b)b.textContent="▶ 1-9を作成・再生";
 
-  try{
-    const AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC)throw new Error("このブラウザは音源結合に対応していません。");
+  },{once:true});
 
-    const ctx=new AC();
-    const buffers=[];
+  if(btn){btn.disabled=false;btn.textContent="■ 1-9を停止"}
 
-    for(let i=0;i<selected.length;i++){
-      const item=selected[i];
-      const url=makeMedleySongPath(item,i);
-      setStatus(`♪ 完成音源を作成中… ${i+1}/${selected.length} ${item.name}`,"ok");
-      const decoded=await fetchDecodeAudio(ctx,url);
-      buffers.push(decoded);
-    }
-
-    setStatus("♪ 音源を11.293秒間隔で結合しています…","ok");
-    const completed=mixBuffersWithSmartOverlap(ctx,buffers);
-
-    setStatus("♪ 完成音源を書き出しています…","ok");
-    const wavBlob=audioBufferToWav(completed);
-
-    if(completedMedleyUrl)URL.revokeObjectURL(completedMedleyUrl);
-    completedMedleyUrl=URL.createObjectURL(wavBlob);
-
-    if(completedMedleyAudio){
-      try{completedMedleyAudio.pause();}catch(e){}
-    }
-
-    completedMedleyAudio=new Audio(completedMedleyUrl);
-    completedMedleyAudio.playsInline=true;
-    completedMedleyAudio.volume=1;
-
-    completedMedleyAudio.addEventListener("ended",()=>{
-      const b=document.getElementById("medleyPlayButton");
-      if(b)b.textContent="▶ 1-9を作成・再生";
-      setStatus("1-9の再生が終了しました。","ok");
-    },{once:true});
-
-    if(btn){
-      btn.disabled=false;
-      btn.textContent="■ 1-9を停止";
-    }
-
-    setStatus(`♪ ${selected.length}人の完成メドレーを再生します。`,"ok");
-    const p=completedMedleyAudio.play();
-    if(p)await p;
-
-    try{await ctx.close();}catch(e){}
-
-  }catch(error){
-    console.error("1-9完成音源作成エラー:",error);
-    setStatus("1-9の完成音源を作成できませんでした："+(error.message||error),"error");
-
-    if(btn){
-      btn.disabled=false;
-      btn.textContent="▶ 1-9を作成・再生";
-    }
-  }finally{
-    medleyBuilding=false;
-  }
+  const p=completedMedleyAudio.play();if(p)await p;
+ }catch(error){
+  console.error("1-9ジャッキ音源作成エラー:",error);
+  setStatus("1-9の完成音源を作成できませんでした："+(error.message||error),"error");
+  if(btn){btn.disabled=false;btn.textContent="▶ 1-9を作成・再生"}
+ }finally{
+  medleyBuilding=false;
+  if(ctx){try{await ctx.close()}catch(e){}}
+ }
 }
-
-// 既存コードから呼ばれても完成音源方式へ統一。
-async function playOneNineMedley(){
-  return buildAndPlayOneNineMedley();
-}
+async function playOneNineMedley(){return buildAndPlayOneNineMedley()}
 
 function currentRows(){
- return [...document.querySelectorAll(".player-row")].map(row=>({
+ return[...document.querySelectorAll(".player-row")].map(row=>({
   position:row.querySelector(".position").value,
   name:row.querySelector(".player-search").value.trim(),
-  songId:row.dataset.songId||"",
-  productionNumber:row.dataset.productionNumber||"",
-  team:row.dataset.team||"",
-  audioUrl:row.dataset.audioUrl||"",
-  medleyUrl:row.dataset.medleyUrl||""
+  songId:row.dataset.songId||"",productionNumber:row.dataset.productionNumber||"",team:row.dataset.team||"",
+  audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||""
  }));
 }
 function checkDuplicates(){
- const rows=[...document.querySelectorAll(".player-row")];
- const counts={};
- rows.forEach(r=>{
-   const n=norm(r.querySelector(".player-search").value);
-   if(n)counts[n]=(counts[n]||0)+1;
- });
- rows.forEach(r=>{
-   const n=norm(r.querySelector(".player-search").value);
-   r.classList.toggle("row-warning",!!n&&counts[n]>1);
- });
+ const rows=[...document.querySelectorAll(".player-row")],counts={};
+ rows.forEach(r=>{const n=norm(r.querySelector(".player-search").value);if(n)counts[n]=(counts[n]||0)+1});
+ rows.forEach(r=>{const n=norm(r.querySelector(".player-search").value);r.classList.toggle("row-warning",!!n&&counts[n]>1)});
  return Object.values(counts).some(v=>v>1);
 }
 function autoTitle(){
- const year=document.getElementById("yearSelect").value;
- const team=document.getElementById("teamSelect").value;
- const title=document.getElementById("lineupTitle");
+ const year=document.getElementById("yearSelect").value,team=document.getElementById("teamSelect").value,title=document.getElementById("lineupTitle");
  if(!title.value.trim()&&year&&team)title.value=`${year} ${team} 1-9`;
+ updateInputFieldColor(title);
 }
 function saveDraft(){
- const data={
-  year:document.getElementById("yearSelect").value,
-  team:document.getElementById("teamSelect").value,
-  title:document.getElementById("lineupTitle").value,
-  rows:currentRows()
- };
+ const data={year:document.getElementById("yearSelect").value,team:document.getElementById("teamSelect").value,title:document.getElementById("lineupTitle").value,rows:currentRows()};
  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
 }
 function loadDraft(){
@@ -992,143 +575,71 @@ function loadDraft(){
   document.getElementById("yearSelect").value=data.year||"";
   document.getElementById("teamSelect").value=data.team||"";
   document.getElementById("lineupTitle").value=data.title||"";
-  renderRows(data.rows||[]);
-  setStatus("前回編集中だった1-9を復元しました。");
+  renderRows(data.rows||[]);setStatus("前回編集中だった1-9を復元しました。");
  }catch(e){renderRows()}
+ setTimeout(updateAllInputFieldColors,0);
 }
 function resetAll(){
  stopOneNineMedley();
  if(!confirm("1-9の入力内容をすべてリセットしますか？"))return;
  localStorage.removeItem(STORAGE_KEY);
- document.getElementById("yearSelect").value="";
- document.getElementById("teamSelect").value="";
- document.getElementById("lineupTitle").value="";
- document.getElementById("previewCard").style.display="none";
- renderRows();
- setStatus("入力内容をリセットしました。");
+ document.getElementById("yearSelect").value="";document.getElementById("teamSelect").value="";document.getElementById("lineupTitle").value="";
+ document.getElementById("previewCard").style.display="none";renderRows();setStatus("入力内容をリセットしました。");updateAllInputFieldColors();
 }
 function addPlayer(){
- rowCount++;
- document.getElementById("lineup").appendChild(createRow(rowCount));
- saveDraft();
- setStatus(`${rowCount}人目の選手枠を追加しました。`);
+ rowCount++;document.getElementById("lineup").appendChild(createRow(rowCount));saveDraft();setStatus(`${rowCount}人目の選手枠を追加しました。`);
 }
 function buildPreview(){
- const rows=currentRows();
- const filled=rows.filter(r=>r.name);
+ const rows=currentRows(),filled=rows.filter(r=>r.name);
  if(filled.length<9){setStatus(`選手が${filled.length}人です。1-9作成には9人以上選択してください。`,"error");return}
  if(checkDuplicates()){setStatus("同じ選手が複数選択されています。黄色枠の選手を確認してください。","error");return}
- const noPosition=filled.filter(r=>!r.position);
- if(noPosition.length){setStatus("ポジションが未選択の選手がいます。ポジションを選択してください。","error");return}
+ const noPosition=filled.filter(r=>!r.position);if(noPosition.length){setStatus("ポジションが未選択の選手がいます。","error");return}
  autoTitle();
- const title=document.getElementById("lineupTitle").value.trim()||"無題の1-9";
- const year=document.getElementById("yearSelect").value||"年度未選択";
- const team=document.getElementById("teamSelect").value||"球団未選択";
+ const title=document.getElementById("lineupTitle").value.trim()||"無題の1-9",year=document.getElementById("yearSelect").value||"年度未選択",team=document.getElementById("teamSelect").value||"球団未選択";
  document.getElementById("previewMeta").textContent=`${title}　｜　${year}年度　｜　${team}`;
  const list=document.getElementById("previewList");list.innerHTML="";
- filled.forEach((r,i)=>{
-  const li=document.createElement("li");li.className="preview-item";
-  li.innerHTML=`<span class="preview-num">${i+1}</span><span class="preview-pos">${r.position}</span><span class="preview-name">${r.name}</span>`;
-  list.appendChild(li);
- });
- document.getElementById("previewCard").style.display="block";
- saveDraft();
- setStatus("1-9の並びを作成しました。内容を確認して、次に応援歌メドレー処理を接続できます。","ok");
- document.getElementById("previewCard").scrollIntoView({behavior:"smooth",block:"nearest"});
+ filled.forEach((r,i)=>{const li=document.createElement("li");li.className="preview-item";li.innerHTML=`<span class="preview-num">${i+1}</span><span class="preview-pos">${r.position}</span><span class="preview-name">${r.name}</span>`;list.appendChild(li)});
+ document.getElementById("previewCard").style.display="block";saveDraft();setStatus("1-9の並びを作成しました。","ok");
 }
 function chatGPTSearch(){
- const year=document.getElementById("yearSelect").value;
- const team=document.getElementById("teamSelect").value;
+ const year=document.getElementById("yearSelect").value,team=document.getElementById("teamSelect").value;
  if(!year||!team){setStatus("ChatGPTで検索する前に「年度」と「球団」を選択してください。","error");return}
- autoTitle();
- saveDraft();
- setStatus(`${year}年度・${team}の1-9候補を検索する準備ができました。次の工程でYouTube優先検索→見つからなければ代表スタメン作成を接続します。`);
+ autoTitle();saveDraft();setStatus(`${year}年度・${team}の1-9候補を検索する準備ができました。`);
 }
 
 function renderTeamSelect(){
- const select=document.getElementById("teamSelect");
- if(!select)return;
+ const select=document.getElementById("teamSelect");if(!select)return;
  const current=select.value;
- select.innerHTML='<option value="" disabled hidden>⚾ 球団選択</option>';
- const order=window.OUENKA_TEAM_ORDER ? OUENKA_TEAM_ORDER.get() : [];
- const pacific=new Set(["福岡ソフトバンクホークス","北海道日本ハムファイターズ","オリックス・バファローズ","東北楽天ゴールデンイーグルス","埼玉西武ライオンズ","千葉ロッテマリーンズ"]);
- const other=new Set(["日本代表","近鉄","ブルーウェーブ"]);
- const groups=[
-   ["パ・リーグ",order.filter(x=>pacific.has(x))],
-   ["セ・リーグ",order.filter(x=>!pacific.has(x)&&!other.has(x))],
-   ["その他",order.filter(x=>other.has(x))]
+ select.innerHTML='<option value="" selected disabled hidden>⚾ 球団選択</option>';
+ const fallback=[
+  "福岡ソフトバンクホークス","北海道日本ハムファイターズ","オリックス・バファローズ","東北楽天ゴールデンイーグルス","埼玉西武ライオンズ","千葉ロッテマリーンズ",
+  "読売ジャイアンツ","阪神タイガース","横浜DeNAベイスターズ","広島東洋カープ","東京ヤクルトスワローズ","中日ドラゴンズ","日本代表","近鉄","ブルーウェーブ"
  ];
- groups.forEach(([label,teams])=>{
-   const g=document.createElement("optgroup");g.label=label;
-   teams.forEach(team=>{
-     const o=document.createElement("option");
-     o.value=team;o.textContent=team;o.dataset.team=team;
-     const colors={
-       "福岡ソフトバンクホークス":["#FFF3C8","#5D4A00"],
-       "北海道日本ハムファイターズ":["#DFF1FF","#174C78"],
-       "オリックス・バファローズ":["#EAE2F5","#4D3570"],
-       "東北楽天ゴールデンイーグルス":["#F9DFE4","#85283A"],
-       "埼玉西武ライオンズ":["#DDEFFF","#15588C"],
-       "千葉ロッテマリーンズ":["#ECEFF2","#263746"],
-       "読売ジャイアンツ":["#FFE6D0","#844000"],
-       "阪神タイガース":["#FFF4B8","#635700"],
-       "横浜DeNAベイスターズ":["#DDF2FF","#12628F"],
-       "広島東洋カープ":["#FADDDD","#962323"],
-       "東京ヤクルトスワローズ":["#DFF3E5","#28633A"],
-       "中日ドラゴンズ":["#E1E9FF","#294E9B"],
-       "日本代表":["#E8EEF8","#173B67"],
-       "近鉄":["#F2E7D9","#6B4322"],
-       "ブルーウェーブ":["#DCEEFF","#164D82"]
-     };
-     if(colors[team]){o.style.background=colors[team][0];o.style.color=colors[team][1]}
-     g.appendChild(o)
-   });
-   select.appendChild(g);
+ const order=window.OUENKA_TEAM_ORDER?OUENKA_TEAM_ORDER.get():fallback;
+ const pacific=new Set(fallback.slice(0,6)),other=new Set(["日本代表","近鉄","ブルーウェーブ"]);
+ [["パ・リーグ",order.filter(x=>pacific.has(x))],["セ・リーグ",order.filter(x=>!pacific.has(x)&&!other.has(x))],["その他",order.filter(x=>other.has(x))]].forEach(([label,teams])=>{
+  const g=document.createElement("optgroup");g.label=label;
+  teams.forEach(team=>{const o=document.createElement("option");o.value=team;o.textContent=team;o.dataset.team=team;g.appendChild(o)});
+  select.appendChild(g);
  });
- if(current && order.includes(current))select.value=current;
- else select.selectedIndex=0;
+ if(current&&order.includes(current))select.value=current;
 }
-
 function fillYears(){
- const s=document.getElementById("yearSelect");
- const now=new Date().getFullYear();
+ const s=document.getElementById("yearSelect"),now=new Date().getFullYear();
  for(let y=now;y>=1950;y--){const o=document.createElement("option");o.value=y;o.textContent=y+"年度";s.appendChild(o)}
 }
+
 document.getElementById("resetButton").addEventListener("click",resetAll);
 document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
-// 再生は9人必須チェックを通さず、選択済みの選手だけで開始
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
 document.getElementById("teamSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
-document.getElementById("lineupTitle").addEventListener("input",saveDraft);
+document.getElementById("lineupTitle").addEventListener("input",e=>{saveDraft();updateInputFieldColor(e.target)});
 document.addEventListener("click",e=>{if(!e.target.closest(".search-wrap"))document.querySelectorAll(".suggestions").forEach(x=>x.style.display="none")});
-fillYears();renderTeamSelect();loadDraft();
-</script>
-<script>
+window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
-/* ===== 未入力=水色 / 入力済み=白 ===== */
-function updateInputFieldColor(el){
-  if(!el)return;
-  const hasValue=String(el.value||"").trim()!=="";
-  el.classList.toggle("has-value",hasValue);
-}
-function updateAllInputFieldColors(){
-  document.querySelectorAll("#titleInput,.position,.player-search")
-    .forEach(updateInputFieldColor);
-}
-document.addEventListener("input",e=>{
-  if(e.target.matches("#titleInput,.player-search"))updateInputFieldColor(e.target);
-});
-document.addEventListener("change",e=>{
-  if(e.target.matches(".position"))updateInputFieldColor(e.target);
-});
-document.addEventListener("click",()=>{
-  /* 候補選択・クリアなどJSで値が変わった場合も反映 */
-  setTimeout(updateAllInputFieldColors,0);
-});
-window.addEventListener("load",updateAllInputFieldColors);
-
+fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
 </body>
 </html>
