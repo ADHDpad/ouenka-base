@@ -149,6 +149,9 @@ let currentPlayingRow=null;
 let completedMedleyUrl=null;
 let completedMedleyAudio=null;
 let medleyBuilding=false;
+let liveMedleyContext=null;
+let liveMedleySources=[];
+let liveMedleyStopTimer=null;
 
 function getName(p){return p?.player_name||p?.name||""}
 function getReading(p){return p?.reading||""}
@@ -633,115 +636,119 @@ function audioBufferToWav(buffer){
 
 function stopOneNineMedley(){
  if(completedMedleyAudio){try{completedMedleyAudio.pause();completedMedleyAudio.currentTime=0}catch(e){}}
+ if(liveMedleyStopTimer){clearTimeout(liveMedleyStopTimer);liveMedleyStopTimer=null}
+ for(const source of liveMedleySources){try{source.stop()}catch(e){}}
+ liveMedleySources=[];
+ if(liveMedleyContext){try{liveMedleyContext.close()}catch(e){} liveMedleyContext=null}
  const btn=document.getElementById("medleyPlayButton");
  if(btn)btn.textContent="▶ 1-9を作成・再生";
 }
 
-/* iPhone / iPad のホーム画面Webアプリ向け音声起動補助。
-   必ずボタンタップ直後に呼び、AudioContext を先に起こしておく。 */
 async function prepareOneNineAudioContext(){
  const AC=window.AudioContext||window.webkitAudioContext;
- if(!AC)throw new Error("このブラウザは音源結合に対応していません。");
- let ctx=new AC();
- try{
-  if(ctx.state==="suspended")await ctx.resume();
-  // iOS PWAで音声デバイスの初期化をユーザー操作中に確定させる。
-  const oscillator=ctx.createOscillator();
-  const gain=ctx.createGain();
-  gain.gain.value=0;
-  oscillator.connect(gain);gain.connect(ctx.destination);
-  oscillator.start();oscillator.stop(ctx.currentTime+0.001);
-  if(ctx.state==="suspended")await ctx.resume();
-  return ctx;
- }catch(error){
-  try{await ctx.close()}catch(e){}
-  throw error;
+ if(!AC)throw new Error("このブラウザは音源再生に対応していません。");
+ const ctx=new AC();
+ if(ctx.state==="suspended")await ctx.resume();
+ const oscillator=ctx.createOscillator(),gain=ctx.createGain();
+ gain.gain.value=0;oscillator.connect(gain);gain.connect(ctx.destination);
+ oscillator.start();oscillator.stop(ctx.currentTime+0.001);
+ return ctx;
+}
+
+function scheduleBuffer(ctx,buffer,when,gainNode=null){
+ const source=ctx.createBufferSource();
+ source.buffer=buffer;
+ source.connect(gainNode||ctx.destination);
+ source.start(when);
+ liveMedleySources.push(source);
+ return source;
+}
+
+/* 次曲メロディーと実際に重なる短い区間だけ前曲メロディーをOFF。
+   曲全体は走査しないので、従来の巨大WAV生成より軽い。 */
+function applyBoundarySuppression(ctx,gainNode,cur,next,curStart,nextStart,playBase){
+ const overlapStart=Math.max(curStart,nextStart);
+ const overlapEnd=Math.min(curStart+cur.duration,nextStart+next.duration);
+ if(overlapEnd<=overlapStart)return;
+ const step=0.006,threshold=Math.pow(10,-42/20),sr=cur.sampleRate;
+ const a=cur.getChannelData(0),b=next.getChannelData(0);
+ for(let t=overlapStart;t<overlapEnd;t+=step){
+  const ai=Math.max(0,Math.min(a.length-1,Math.floor((t-curStart)*sr)));
+  const bi=Math.max(0,Math.min(b.length-1,Math.floor((t-nextStart)*next.sampleRate)));
+  const ar=Math.abs(a[ai]),br=Math.abs(b[bi]);
+  const at=playBase+t;
+  gainNode.gain.setValueAtTime((ar>threshold&&br>threshold)?0:1,at);
  }
+ gainNode.gain.setValueAtTime(1,playBase+overlapEnd);
 }
 
 async function buildAndPlayOneNineMedley(){
  if(medleyBuilding)return;
- if(completedMedleyAudio&&!completedMedleyAudio.paused){
-  stopOneNineMedley();hideStatus();return;
- }
- stopRowAudio();
- hideStatus();
-
- // 重要：選手データ取得などの await より前、タップ直後に音声デバイスを起こす。
+ if(liveMedleyContext){stopOneNineMedley();hideStatus();return}
+ stopRowAudio();hideStatus();
  let ctx=null;
- try{ctx=await prepareOneNineAudioContext()}
- catch(error){
-  console.error("1-9音声デバイス起動エラー:",error);
-  setStatus("音声デバイスを起動できませんでした。Webアプリを開き直して、もう一度お試しください。","error");
-  return;
- }
-
+ try{ctx=await prepareOneNineAudioContext()}catch(error){setStatus("音声デバイスを起動できませんでした。","error");return}
  let selected;
- try{selected=await getSelectedMedleyPlayers()}
- catch(error){
-  try{await ctx.close()}catch(e){}
-  setStatus(error.message||String(error),"error");return
- }
- if(!selected.length){
-  try{await ctx.close()}catch(e){}
-  setStatus("選手を1人以上選択してください。9人すべて埋める必要はありません。","error");return
- }
-
+ try{selected=await getSelectedMedleyPlayers()}catch(error){try{await ctx.close()}catch(e){} setStatus(error.message||String(error),"error");return}
+ if(!selected.length){try{await ctx.close()}catch(e){} setStatus("選手を1人以上選択してください。","error");return}
  medleyBuilding=true;
  const btn=document.getElementById("medleyPlayButton");
- if(btn){btn.disabled=true;btn.textContent="作成中…"}
+ if(btn){btn.disabled=true;btn.textContent="読み込み中…"}
  try{
-  // バックグラウンド復帰などで停止していた場合も、結合直前にもう一度復帰させる。
-  if(ctx.state==="suspended")await ctx.resume();
-
-  const separated=[];
-  for(let i=0;i<selected.length;i++){
-   const item=selected[i];
+  // 9人分を直列ではなく一括並列取得。
+  const separated=await Promise.all(selected.map(async item=>{
    try{
     const [melody,accompaniment]=await Promise.all([
      fetchFirstExistingAudio(ctx,item,"melody.m4a"),
      fetchFirstExistingAudio(ctx,item,"accompaniment.m4a")
     ]);
-    separated.push({melody,accompaniment});
-   }catch(e){
-    throw new Error(`${item.name} の melody.m4a / accompaniment.m4a を公開データフォルダから読み込めませんでした。ファイル配置を確認してください。`);
-   }
-  }
+    return{melody,accompaniment};
+   }catch(e){throw new Error(`${item.name} の分離音源を読み込めませんでした。`)}
+  }));
 
   let intro=null;
-  if(selected[0]?.introMelodyUrl&&selected[0]?.introAccompanimentUrl){
-   const [introMelody,introAccompaniment]=await Promise.all([
-    fetchFirstExistingAudio(ctx,selected[0],"intro_melody.m4a",true),
-    fetchFirstExistingAudio(ctx,selected[0],"intro_accompaniment.m4a",true)
-   ]);
-   // 2本そろった場合だけ前奏として使用。片方だけなら安全のため前奏なし。
-   if(introMelody&&introAccompaniment)intro={melody:introMelody,accompaniment:introAccompaniment};
+  const first=selected[0];
+  const [im,ia]=await Promise.all([
+   fetchFirstExistingAudio(ctx,first,"intro_melody.m4a",true),
+   fetchFirstExistingAudio(ctx,first,"intro_accompaniment.m4a",true)
+  ]);
+  if(im&&ia)intro={melody:im,accompaniment:ia};
+
+  liveMedleyContext=ctx;
+  const base=ctx.currentTime+0.06;
+  const introDuration=intro?Math.max(intro.melody.duration,intro.accompaniment.duration):0;
+  const starts=separated.map((_,i)=>introDuration+i*MEDLEY_INTERVAL_SEC);
+
+  if(intro){
+   const ig=ctx.createGain();ig.connect(ctx.destination);
+   applyBoundarySuppression(ctx,ig,intro.melody,separated[0].melody,0,starts[0],base);
+   scheduleBuffer(ctx,intro.melody,base,ig);
+   scheduleBuffer(ctx,intro.accompaniment,base);
   }
-  const completed=mixSeparatedMedley(ctx,separated,intro);
 
-  const wavBlob=audioBufferToWav(completed);
+  separated.forEach((song,i)=>{
+   const mg=ctx.createGain();mg.connect(ctx.destination);
+   if(i<separated.length-1){
+    applyBoundarySuppression(ctx,mg,song.melody,separated[i+1].melody,starts[i],starts[i+1],base);
+   }
+   scheduleBuffer(ctx,song.melody,base+starts[i],mg);
+   scheduleBuffer(ctx,song.accompaniment,base+starts[i]);
+  });
 
-  if(completedMedleyUrl)URL.revokeObjectURL(completedMedleyUrl);
-  completedMedleyUrl=URL.createObjectURL(wavBlob);
-  if(completedMedleyAudio){try{completedMedleyAudio.pause()}catch(e){}}
-  completedMedleyAudio=new Audio(completedMedleyUrl);
-  completedMedleyAudio.playsInline=true;completedMedleyAudio.volume=1;
-  completedMedleyAudio.addEventListener("ended",()=>{
-   const b=document.getElementById("medleyPlayButton");if(b)b.textContent="▶ 1-9を作成・再生";
-
-  },{once:true});
-
+  const total=Math.max(...separated.map((s,i)=>starts[i]+Math.max(s.melody.duration,s.accompaniment.duration)));
   if(btn){btn.disabled=false;btn.textContent="■ 1-9を停止"}
-
-  const p=completedMedleyAudio.play();if(p)await p;
+  liveMedleyStopTimer=setTimeout(()=>{
+   liveMedleyStopTimer=null;liveMedleySources=[];
+   if(liveMedleyContext){try{liveMedleyContext.close()}catch(e){} liveMedleyContext=null}
+   const b=document.getElementById("medleyPlayButton");if(b)b.textContent="▶ 1-9を作成・再生";
+  },Math.ceil((total+0.2)*1000));
  }catch(error){
-  console.error("1-9ジャッキ音源作成エラー:",error);
-  setStatus("1-9の完成音源を作成できませんでした："+(error.message||error),"error");
+  console.error("1-9高速再生エラー:",error);
+  try{await ctx.close()}catch(e){}
+  liveMedleyContext=null;liveMedleySources=[];
+  setStatus("1-9を再生できませんでした："+(error.message||error),"error");
   if(btn){btn.disabled=false;btn.textContent="▶ 1-9を作成・再生"}
- }finally{
-  medleyBuilding=false;
-  if(ctx){try{await ctx.close()}catch(e){}}
- }
+ }finally{medleyBuilding=false}
 }
 async function playOneNineMedley(){return buildAndPlayOneNineMedley()}
 
