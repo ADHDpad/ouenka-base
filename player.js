@@ -98,6 +98,9 @@ async function playSongData(player) {
     const label=player.name||"";
     let ctx=null;
 
+    // 音源候補を探している間は失敗表示にしない
+    setNowPlaying("音源を検索中…");
+
     try{
         ctx=new (window.AudioContext||window.webkitAudioContext)();
         await ctx.resume();
@@ -209,7 +212,7 @@ async function playSongData(player) {
         console.error("トップ個人再生エラー:",error);
         if(ctx){try{await ctx.close()}catch(e){}}
         if(attemptId===playAttemptId){
-            setNowPlaying("音源を再生できませんでした");
+            setNowPlaying("音源が見つからないため再生できませんでした");
         }
     }
 }
