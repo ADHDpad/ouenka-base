@@ -825,17 +825,14 @@ NPBから取得
 <div
   id="productionNumberDisplay"
   class="auto-number"
+  style="display:none"
 >
 1
 </div>
 
-<div class="auto-note" id="productionAutoNote">
-同じ選手名の登録数から自動採番
-</div>
-
-<div class="production-edit-wrap" id="productionEditWrap">
-  <input type="number" id="productionNumberEdit" min="1" inputmode="numeric" placeholder="制作番号">
-  <div class="auto-note">編集時は制作番号を変更できます。</div>
+<div class="production-edit-wrap" id="productionEditWrap" style="display:block">
+  <input type="number" id="productionNumberEdit" min="1" inputmode="numeric" value="1" placeholder="制作番号">
+  <div class="auto-note" id="productionAutoNote">同じ選手名から自動採番します。必要なら登録前・編集時とも変更できます。</div>
 </div>
 
 </div>
@@ -927,21 +924,25 @@ m4aが選択されていません
 <div class="form-group">
 <label class="form-label" for="melodyAudioFile">メロディー音源（m4a） <span class="required">*</span></label>
 <input type="file" id="melodyAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
+<div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedMelodyAudioName">メロディーm4aが選択されていません</div>
 </div>
 <div class="form-group">
 <label class="form-label" for="accompanimentAudioFile">コード進行＋ベース音源（m4a） <span class="required">*</span></label>
 <input type="file" id="accompanimentAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
+<div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedAccompanimentAudioName">コード＋ベースm4aが選択されていません</div>
 </div>
 <div class="form-group">
 <label class="form-label" for="introMelodyAudioFile">前奏メロディー（m4a・任意）</label>
 <input type="file" id="introMelodyAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
+<div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedIntroMelodyAudioName">前奏なし</div>
 </div>
 <div class="form-group">
 <label class="form-label" for="introAccompanimentAudioFile">前奏コード進行＋ベース（m4a・任意）</label>
 <input type="file" id="introAccompanimentAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
+<div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedIntroAccompanimentAudioName">前奏なし</div>
 </div>
 <div class="file-result">前奏は任意です。1-9では先頭選手に前奏が登録されている場合だけ、前奏→1番本編の順で再生します。</div>
@@ -1359,19 +1360,13 @@ async function localSameNameCount(name){
 async function updateProductionNumber(){
 
   /*
-    編集中は制作番号を変更しない
+    編集中は入力中の制作番号を維持する
   */
   if(editingSong){
-
-    $("productionNumberDisplay")
-      .textContent =
-      String(
-        editingSong.production_number
-      );
-
-    return Number(
-      editingSong.production_number
-    );
+    const current = Number($("productionNumberEdit").value);
+    return Number.isInteger(current) && current >= 1
+      ? current
+      : Number(editingSong.production_number || 1);
   }
 
   const name =
@@ -1384,6 +1379,7 @@ async function updateProductionNumber(){
     $("productionNumberDisplay")
       .textContent =
       "1";
+    $("productionNumberEdit").value = "1";
 
     return 1;
   }
@@ -1422,6 +1418,7 @@ async function updateProductionNumber(){
       $("productionNumberDisplay")
         .textContent =
         String(n);
+      $("productionNumberEdit").value = String(n);
 
       return n;
     }
@@ -1446,6 +1443,7 @@ async function updateProductionNumber(){
   $("productionNumberDisplay")
     .textContent =
     String(n);
+  $("productionNumberEdit").value = String(n);
 
   return n;
 }
@@ -2050,6 +2048,14 @@ async function registerPlayer(){
       .value
       .trim();
 
+  const requestedProductionNumber =
+    Number($("productionNumberEdit").value);
+
+  if(!Number.isInteger(requestedProductionNumber) || requestedProductionNumber < 1){
+    showError("制作番号は1以上の整数で入力してください。");
+    return;
+  }
+
 
   if(!selectedZipFile){
 
@@ -2143,6 +2149,7 @@ async function registerPlayer(){
                 ? null
                 : Number(number),
             lyrics:lyrics,
+            production_number:requestedProductionNumber,
             audio_filename:
               "audio.m4a",
             garageband_filename:
@@ -2184,7 +2191,7 @@ async function registerPlayer(){
     */
     const productionNumber =
       Number(
-        serverData.production_number
+        serverData.production_number ?? requestedProductionNumber
       );
 
 
@@ -2382,8 +2389,12 @@ function startEditSong(song){
 
     selectedZipFile = null;
     selectedAudioFile = null;
-    $("zipFile").value = "";
-    $("audioFile").value = "";
+    selectedMelodyAudioFile = null;
+    selectedAccompanimentAudioFile = null;
+    selectedIntroMelodyAudioFile = null;
+    selectedIntroAccompanimentAudioFile = null;
+    ["zipFile","audioFile","melodyAudioFile","accompanimentAudioFile","introMelodyAudioFile","introAccompanimentAudioFile"]
+      .forEach(id => { $(id).value = ""; });
 
     $("registerArea")
       .style
@@ -2470,6 +2481,11 @@ function startEditSong(song){
       song.audio_filename ||
       "登録済みm4a";
 
+    $("selectedMelodyAudioName").textContent = "登録済み（変更する場合だけ選択）";
+    $("selectedAccompanimentAudioName").textContent = "登録済み（変更する場合だけ選択）";
+    $("selectedIntroMelodyAudioName").textContent = "既存データを維持（変更する場合だけ選択）";
+    $("selectedIntroAccompanimentAudioName").textContent = "既存データを維持（変更する場合だけ選択）";
+
     $("registerArea")
       .scrollIntoView({
         behavior:"smooth",
@@ -2499,6 +2515,33 @@ function startEditSong(song){
 /* =========================================
    既存データ更新
 ========================================= */
+
+
+async function downloadPcPatchZip(
+  name, productionNumber,
+  audioFile, zipFile, melodyFile, accompanimentFile,
+  introMelodyFile, introAccompanimentFile
+){
+  const zip = new JSZip();
+  const folderName = `${name}_${productionNumber}_差分更新`;
+  const folder = zip.folder(folderName);
+  if(audioFile) folder.file("audio.m4a", audioFile);
+  if(zipFile) folder.file("garageband.zip", zipFile);
+  if(melodyFile) folder.file("melody.m4a", melodyFile);
+  if(accompanimentFile) folder.file("accompaniment.m4a", accompanimentFile);
+  if(introMelodyFile) folder.file("intro_melody.m4a", introMelodyFile);
+  if(introAccompanimentFile) folder.file("intro_accompaniment.m4a", introAccompanimentFile);
+  folder.file("差分更新.txt",
+    "このZIPには今回変更したファイルだけが入っています。未添付の既存ファイルはそのまま維持してください。"
+  );
+  const blob = await zip.generateAsync({type:"blob"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${folderName}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+}
 
 async function updateExistingSong(){
 
@@ -2581,10 +2624,6 @@ async function updateExistingSong(){
     return;
   }
 
-  if(changingFiles && !(selectedZipFile && selectedAudioFile && selectedMelodyAudioFile && selectedAccompanimentAudioFile)){
-    showError("応援歌データを差し替える場合は、再生用m4a・メロディーm4a・コード進行＋ベースm4a・GarageBand ZIPを選択してください。");
-    return;
-  }
 
   $("registerButton")
     .disabled =
@@ -2701,6 +2740,23 @@ async function updateExistingSong(){
           local.originalZip = selectedZipFile;
         }
 
+        if(selectedMelodyAudioFile){
+          local.melodyAudioFileName = "melody.m4a";
+          local.melodyAudioFile = selectedMelodyAudioFile;
+        }
+        if(selectedAccompanimentAudioFile){
+          local.accompanimentAudioFileName = "accompaniment.m4a";
+          local.accompanimentAudioFile = selectedAccompanimentAudioFile;
+        }
+        if(selectedIntroMelodyAudioFile){
+          local.introMelodyAudioFileName = "intro_melody.m4a";
+          local.introMelodyAudioFile = selectedIntroMelodyAudioFile;
+        }
+        if(selectedIntroAccompanimentAudioFile){
+          local.introAccompanimentAudioFileName = "intro_accompaniment.m4a";
+          local.introAccompanimentAudioFile = selectedIntroAccompanimentAudioFile;
+        }
+
         local.savedAt =
           new Date()
             .toISOString();
@@ -2719,7 +2775,7 @@ async function updateExistingSong(){
     }
 
     if(changingFiles){
-      await downloadPcDataZip(
+      await downloadPcPatchZip(
         name,
         productionNumber,
         selectedAudioFile,
@@ -2836,10 +2892,10 @@ function cancelEditMode(
     false;
 
 
-  $("productionNumberDisplay").style.display = "block";
+  $("productionNumberDisplay").style.display = "none";
   $("productionAutoNote").style.display = "block";
-  $("productionEditWrap").style.display = "none";
-  $("productionNumberEdit").value = "";
+  $("productionEditWrap").style.display = "block";
+  $("productionNumberEdit").value = "1";
 
   $("zipEditNote").style.display = "none";
   $("audioEditNote").style.display = "none";
@@ -2853,11 +2909,15 @@ function cancelEditMode(
       "";
 
 
-    selectedZipFile =
-      null;
+    selectedZipFile = null;
+    selectedAudioFile = null;
+    selectedMelodyAudioFile = null;
+    selectedAccompanimentAudioFile = null;
+    selectedIntroMelodyAudioFile = null;
+    selectedIntroAccompanimentAudioFile = null;
 
-    selectedAudioFile =
-      null;
+    ["melodyAudioFile","accompanimentAudioFile","introMelodyAudioFile","introAccompanimentAudioFile"]
+      .forEach(id => { $(id).value = ""; });
 
 
     $("selectedFileName")
