@@ -502,6 +502,37 @@ async function fetchOptionalDecodeAudio(ctx,path){
  try{return await fetchDecodeAudio(ctx,path)}catch(e){return null}
 }
 
+/* 保存済み音源の場所を自動探索する。
+   旧データ／手動配置データでも melody.m4a と accompaniment.m4a があれば使える。 */
+function separatedAudioCandidates(item,fileName){
+ const name=String(item.name||item.playerName||"").trim();
+ const no=String(item.productionNumber||"").trim();
+ const root=OUENKA_PUBLIC_BASE+"%E3%83%87%E3%83%BC%E3%82%BF/";
+ const n=encodeURIComponent(name),p=encodeURIComponent(no),f=encodeURIComponent(fileName);
+ const list=[];
+ const registered=fileName==="melody.m4a"?item.melodyUrl:
+                  fileName==="accompaniment.m4a"?item.accompanimentUrl:
+                  fileName==="intro_melody.m4a"?item.introMelodyUrl:
+                  fileName==="intro_accompaniment.m4a"?item.introAccompanimentUrl:"";
+ if(registered)list.push(registered);
+ if(name&&no){
+  list.push(root+n+"/"+p+"/"+f);              // データ/選手名/制作番号/
+  list.push(root+n+"_"+p+"/"+f);             // データ/選手名_制作番号/
+  list.push(root+n+"/"+f);                    // データ/選手名/
+  list.push(root+n+"/"+p+"_"+f);             // データ/選手名/制作番号_melody.m4a
+ }
+ return [...new Set(list)];
+}
+
+async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
+ let lastError=null;
+ for(const path of separatedAudioCandidates(item,fileName)){
+  try{return await fetchDecodeAudio(ctx,path)}catch(e){lastError=e}
+ }
+ if(optional)return null;
+ throw lastError||new Error(`${fileName} が見つかりません。`);
+}
+
 /* =========================================================
    分離音源メドレー合成（新方式）
    melody.m4a        = メロディーのみ
@@ -668,20 +699,20 @@ async function buildAndPlayOneNineMedley(){
    const item=selected[i];
    try{
     const [melody,accompaniment]=await Promise.all([
-     fetchDecodeAudio(ctx,item.melodyUrl),
-     fetchDecodeAudio(ctx,item.accompanimentUrl)
+     fetchFirstExistingAudio(ctx,item,"melody.m4a"),
+     fetchFirstExistingAudio(ctx,item,"accompaniment.m4a")
     ]);
     separated.push({melody,accompaniment});
    }catch(e){
-    throw new Error(`${item.name} の melody.m4a / accompaniment.m4a が見つかりません。新方式用の分離音源を登録してください。`);
+    throw new Error(`${item.name} の melody.m4a / accompaniment.m4a を公開データフォルダから読み込めませんでした。ファイル配置を確認してください。`);
    }
   }
 
   let intro=null;
   if(selected[0]?.introMelodyUrl&&selected[0]?.introAccompanimentUrl){
    const [introMelody,introAccompaniment]=await Promise.all([
-    fetchOptionalDecodeAudio(ctx,selected[0].introMelodyUrl),
-    fetchOptionalDecodeAudio(ctx,selected[0].introAccompanimentUrl)
+    fetchFirstExistingAudio(ctx,selected[0],"intro_melody.m4a",true),
+    fetchFirstExistingAudio(ctx,selected[0],"intro_accompaniment.m4a",true)
    ]);
    // 2本そろった場合だけ前奏として使用。片方だけなら安全のため前奏なし。
    if(introMelody&&introAccompaniment)intro={melody:introMelody,accompaniment:introAccompaniment};
