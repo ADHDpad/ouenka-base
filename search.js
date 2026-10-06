@@ -245,6 +245,20 @@ async function searchPlayers() {
                             basePath +
                             "audio.m4a",
 
+                        // 個別再生用：再生用m4a＋コード進行・ベースm4a
+                        accompaniment:
+                            basePath +
+                            "accompaniment.m4a",
+
+                        // 前奏（登録されている場合だけ player.js 側で使用）
+                        introMelody:
+                            basePath +
+                            "intro_melody.m4a",
+
+                        introAccompaniment:
+                            basePath +
+                            "intro_accompaniment.m4a",
+
                         // ========================
                         // GarageBand
                         // ========================

@@ -1,9 +1,9 @@
 // ========================================
 // OUENKA BASE 音楽プレイヤー
-// 通常再生 → 失敗時だけ iPhone 音声復帰処理
+// 個別再生：前奏(任意) → 再生用m4a＋コード進行/ベースm4a
 // ========================================
 
-let audioPlayer = null;
+let audioPlayers = [];
 let playAttemptId = 0;
 
 function setNowPlaying(text) {
@@ -25,9 +25,8 @@ function destroyAudio(audio) {
 
 function stopCurrentSong() {
     playAttemptId++;
-    if (!audioPlayer) return;
-    destroyAudio(audioPlayer);
-    audioPlayer = null;
+    audioPlayers.forEach(destroyAudio);
+    audioPlayers = [];
 }
 
 function createAudio(src) {
@@ -40,89 +39,49 @@ function createAudio(src) {
     return audio;
 }
 
-async function tryNormalPlayback(player, attemptId) {
-    // 通常状態では余計なリセットを挟まず、そのまま再生する。
-    const oldAudio = audioPlayer;
-    const nextAudio = createAudio(player.audio);
-    audioPlayer = nextAudio;
-
-    let started = false;
-
-    nextAudio.addEventListener("playing", () => {
-        if (attemptId !== playAttemptId || audioPlayer !== nextAudio) return;
-        started = true;
-        // 新しい音が実際に鳴ってから、前のAudioを破棄する。
-        if (oldAudio && oldAudio !== nextAudio) destroyAudio(oldAudio);
-        setNowPlaying("♪ 再生中：" + (player.name || ""));
-    }, { once: true });
-
-    nextAudio.addEventListener("ended", () => {
-        if (audioPlayer === nextAudio) {
-            setNowPlaying("");
-        }
-    }, { once: true });
-
+async function urlExists(url) {
+    if (!url) return false;
     try {
-        const promise = nextAudio.play();
-        if (promise) await promise;
-    } catch (error) {
-        console.warn("通常再生に失敗。復帰処理へ:", error);
-        if (audioPlayer === nextAudio) destroyAudio(nextAudio);
+        const r = await fetch(url, { method: "HEAD", cache: "no-store" });
+        return r.ok;
+    } catch (_) {
         return false;
     }
-
-    // iPhoneでは play() が成功扱いでも playing が来ず無音になる場合があるため確認。
-    await new Promise(resolve => setTimeout(resolve, 900));
-
-    if (attemptId !== playAttemptId) return true;
-    if (started || (!nextAudio.paused && nextAudio.currentTime > 0)) return true;
-
-    console.warn("通常再生が開始されませんでした。復帰処理へ");
-    if (audioPlayer === nextAudio) destroyAudio(nextAudio);
-    return false;
 }
 
-async function recoverAndPlayback(player, attemptId) {
-    // X / TikTok / YouTube / Apple Music 等から戻った後だけ使う復旧ルート。
-    if (audioPlayer) {
-        destroyAudio(audioPlayer);
-        audioPlayer = null;
-    }
+function waitEnded(audio, attemptId) {
+    return new Promise(resolve => {
+        const done = () => resolve();
+        audio.addEventListener("ended", done, { once: true });
+        audio.addEventListener("error", done, { once: true });
+        if (attemptId !== playAttemptId) resolve();
+    });
+}
 
-    // iOS側に古い音声状態を解放する時間を少し与える。
-    await new Promise(resolve => setTimeout(resolve, 120));
-
+async function playPair(primarySrc, accompanimentSrc, attemptId, label) {
     if (attemptId !== playAttemptId) return false;
 
-    const recoveryAudio = createAudio(player.audio);
-    // 同じURLでもキャッシュされた壊れたMedia状態を避けるため再load。
-    recoveryAudio.load();
-    audioPlayer = recoveryAudio;
+    const primary = primarySrc ? createAudio(primarySrc) : null;
+    const accompaniment = accompanimentSrc ? createAudio(accompanimentSrc) : null;
+    const pair = [primary, accompaniment].filter(Boolean);
+    if (!pair.length) return false;
 
-    recoveryAudio.addEventListener("playing", () => {
-        if (attemptId !== playAttemptId || audioPlayer !== recoveryAudio) return;
-        setNowPlaying("♪ 再生中：" + (player.name || ""));
-    });
-
-    recoveryAudio.addEventListener("ended", () => {
-        if (audioPlayer === recoveryAudio) setNowPlaying("");
-    }, { once: true });
-
-    recoveryAudio.addEventListener("error", () => {
-        if (attemptId !== playAttemptId || audioPlayer !== recoveryAudio) return;
-        console.error("復旧後Audioエラー:", recoveryAudio.error, player.audio);
-        setNowPlaying("音源を読み込めませんでした");
-    }, { once: true });
+    audioPlayers = pair;
 
     try {
-        const promise = recoveryAudio.play();
-        if (promise) await promise;
-        return true;
+        // 同じユーザー操作内で2本をほぼ同時に開始する。
+        await Promise.all(pair.map(a => {
+            const p = a.play();
+            return p && typeof p.then === "function" ? p : Promise.resolve();
+        }));
+        if (attemptId !== playAttemptId) return false;
+        setNowPlaying("♪ 再生中：" + label);
+        await Promise.all(pair.map(a => waitEnded(a, attemptId)));
+        return attemptId === playAttemptId;
     } catch (error) {
-        console.error("復旧後も再生できません:", error, player.audio);
-        if (attemptId === playAttemptId) {
-            setNowPlaying("音源を再生できませんでした");
-        }
+        console.warn("複数音源の再生に失敗:", error);
+        pair.forEach(destroyAudio);
+        if (attemptId === playAttemptId) setNowPlaying("音源を再生できませんでした");
         return false;
     }
 }
@@ -134,15 +93,42 @@ async function playSongData(player) {
         return;
     }
 
+    stopCurrentSong();
     const attemptId = ++playAttemptId;
+    const label = player.name || "";
 
-    // ① 何も競合していない通常状態を最優先
-    const normalOK = await tryNormalPlayback(player, attemptId);
-    if (attemptId !== playAttemptId || normalOK) return;
+    // 前奏は2本とも存在するときだけ使用。片方だけなら本編から開始。
+    const hasIntroMelody = await urlExists(player.introMelody);
+    const hasIntroAccompaniment = await urlExists(player.introAccompaniment);
+    if (attemptId !== playAttemptId) return;
 
-    // ② 通常再生できなかった時だけ、iPhone向け復帰処理を実行
-    setNowPlaying("音声を復旧しています…");
-    await recoverAndPlayback(player, attemptId);
+    if (hasIntroMelody && hasIntroAccompaniment) {
+        const introOK = await playPair(
+            player.introMelody,
+            player.introAccompaniment,
+            attemptId,
+            label + "（前奏）"
+        );
+        if (!introOK || attemptId !== playAttemptId) return;
+    }
+
+    // 本編：再生用m4a＋コード進行/ベースm4a。
+    // accompaniment が無い既存データは audio.m4a だけで再生できる。
+    const hasAccompaniment = await urlExists(player.accompaniment);
+    if (attemptId !== playAttemptId) return;
+
+    const ok = await playPair(
+        player.audio,
+        hasAccompaniment ? player.accompaniment : null,
+        attemptId,
+        label
+    );
+
+    if (ok && attemptId === playAttemptId) {
+        setNowPlaying("");
+        audioPlayers.forEach(destroyAudio);
+        audioPlayers = [];
+    }
 }
 
 // 旧players.js用も残す

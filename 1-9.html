@@ -457,7 +457,7 @@ function registeredSongUrls(song,playerName,productionNumber){
  const medleyFile=String(song.medley_filename||song.medleyFilename||"medley.m4a").trim();
  if(!name||!no)return null;
  const base=OUENKA_PUBLIC_BASE+"%E3%83%87%E3%83%BC%E3%82%BF/"+encodeURIComponent(name)+"/"+encodeURIComponent(no)+"/";
- return{playerName:name,productionNumber:no,audioUrl:base+encodeURIComponent(audioFile),medleyUrl:base+encodeURIComponent(medleyFile)};
+ return{playerName:name,productionNumber:no,audioUrl:base+encodeURIComponent(audioFile),medleyUrl:base+encodeURIComponent(medleyFile),melodyUrl:base+"melody.m4a",accompanimentUrl:base+"accompaniment.m4a",introMelodyUrl:base+"intro_melody.m4a",introAccompanimentUrl:base+"intro_accompaniment.m4a"};
 }
 
 async function getSelectedMedleyPlayers(){
@@ -468,15 +468,15 @@ async function getSelectedMedleyPlayers(){
   if(!name)continue;
   if(!productionNumber)throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。`);
   if(row.dataset.audioUrl&&row.dataset.medleyUrl){
-   selected.push({name,productionNumber,audioUrl:row.dataset.audioUrl,medleyUrl:row.dataset.medleyUrl});continue;
+   selected.push({name,productionNumber,audioUrl:row.dataset.audioUrl,medleyUrl:row.dataset.medleyUrl,melodyUrl:row.dataset.melodyUrl||"",accompanimentUrl:row.dataset.accompanimentUrl||"",introMelodyUrl:row.dataset.introMelodyUrl||"",introAccompanimentUrl:row.dataset.introAccompanimentUrl||""});continue;
   }
   setStatus(`♪ 登録データを確認中… ${name}`,"ok");
   const song=await getRegisteredSongFor19(name,productionNumber);
   if(!song)throw new Error(`${name}（制作番号 ${productionNumber}）の登録データが見つかりません。`);
   const urls=registeredSongUrls(song,name,productionNumber);
   if(!urls)throw new Error(`${name} の登録音源情報を作成できません。`);
-  row.dataset.audioUrl=urls.audioUrl;row.dataset.medleyUrl=urls.medleyUrl;
-  selected.push({name:urls.playerName,productionNumber:urls.productionNumber,audioUrl:urls.audioUrl,medleyUrl:urls.medleyUrl});
+  row.dataset.audioUrl=urls.audioUrl;row.dataset.medleyUrl=urls.medleyUrl;row.dataset.melodyUrl=urls.melodyUrl;row.dataset.accompanimentUrl=urls.accompanimentUrl;row.dataset.introMelodyUrl=urls.introMelodyUrl;row.dataset.introAccompanimentUrl=urls.introAccompanimentUrl;
+  selected.push({name:urls.playerName,productionNumber:urls.productionNumber,audioUrl:urls.audioUrl,medleyUrl:urls.medleyUrl,melodyUrl:urls.melodyUrl,accompanimentUrl:urls.accompanimentUrl,introMelodyUrl:urls.introMelodyUrl,introAccompanimentUrl:urls.introAccompanimentUrl});
  }
  return selected;
 }
@@ -498,79 +498,88 @@ async function fetchDecodeAudio(ctx,path){
  const arrayBuffer=await response.arrayBuffer();
  return await ctx.decodeAudioData(arrayBuffer.slice(0));
 }
-
-/* =========================================================
-   正式ジャッキ合成 + マスター音量調整
-   0秒 / 11.294117...秒 / 22.588235...秒 ... に配置。
-
-   【重要】
-   ・前曲9小節目と次曲1小節目は両方とも残す
-   ・曲別のフェード／固定ゲイン補正はしない
-   ・重なって合成音量が上がった瞬間だけ、最終ミックス側で
-     自動的にゲインを下げる
-   ・重なりが終わると約70msで自然に元の音量へ戻す
-
-   これにより、弱起が重なっても急に音量が大きくならず、
-   ChatGPTで作成した確認用m4aと同じ考え方でつながる。
-========================================================= */
-function applyJackingMasterLimiter(output,sampleRate){
- const channels=output.numberOfChannels;
- const length=output.length;
- const releaseSec=0.070;
- const releaseCoef=Math.exp(-1/(sampleRate*releaseSec));
- let gain=1;
-
- const channelData=[];
- for(let ch=0;ch<channels;ch++){
-  channelData.push(output.getChannelData(ch));
- }
-
- for(let i=0;i<length;i++){
-  let peak=0;
-  for(let ch=0;ch<channels;ch++){
-   const a=Math.abs(channelData[ch][i]);
-   if(a>peak)peak=a;
-  }
-
-  const targetGain=peak>MEDLEY_LIMIT
-   ? MEDLEY_LIMIT/peak
-   : 1;
-
-  // 音が重なって大きくなった瞬間は即座に抑える。
-  // 戻すときだけ滑らかにしてポンピング感を防ぐ。
-  if(targetGain<gain){
-   gain=targetGain;
-  }else{
-   gain=1-(1-gain)*releaseCoef;
-  }
-
-  for(let ch=0;ch<channels;ch++){
-   channelData[ch][i]*=gain;
-  }
- }
+async function fetchOptionalDecodeAudio(ctx,path){
+ try{return await fetchDecodeAudio(ctx,path)}catch(e){return null}
 }
 
-function mixBuffersJacking(ctx,buffers){
- if(!buffers.length)throw new Error("結合する音源がありません。");
- const sampleRate=buffers[0].sampleRate;
- const channels=Math.max(...buffers.map(b=>b.numberOfChannels));
- const starts=buffers.map((_,i)=>Math.round(i*MEDLEY_INTERVAL_SEC*sampleRate));
- const totalFrames=Math.max(...buffers.map((b,i)=>starts[i]+b.length));
- const output=ctx.createBuffer(channels,totalFrames,sampleRate);
+/* =========================================================
+   分離音源メドレー合成（新方式）
+   melody.m4a        = メロディーのみ
+   accompaniment.m4a = コード進行＋ベース
 
- // まず前曲・次曲をそのまま加算。重複音は消さない。
- for(let i=0;i<buffers.length;i++){
-  const b=buffers[i],start=starts[i];
+   ・各曲は 0 / 11.294117... / 22.588235... 秒 ... に配置
+   ・伴奏は常にそのまま残す
+   ・前曲メロディーと次曲メロディーが同時発音した瞬間だけ
+     前曲メロディーを鳴らさず、次曲メロディーを100%残す
+   ・弱起判定、弱起ゲイン補正、EQ、マスターリミッターは行わない
+========================================================= */
+function frameRms(data,center,radius){
+ const a=Math.max(0,center-radius),b=Math.min(data.length,center+radius+1);
+ if(b<=a)return 0;
+ let sum=0;for(let i=a;i<b;i++){const v=data[i];sum+=v*v}
+ return Math.sqrt(sum/(b-a));
+}
+
+function mixSeparatedMedley(ctx,songs,intro=null){
+ if(!songs.length)throw new Error("結合する音源がありません。");
+ const sampleRate=songs[0].melody.sampleRate;
+ const introFrames=intro?Math.max(intro.melody.length,intro.accompaniment.length):0;
+ const channels=Math.max(...songs.flatMap(s=>[s.melody.numberOfChannels,s.accompaniment.numberOfChannels]),...(intro?[intro.melody.numberOfChannels,intro.accompaniment.numberOfChannels]:[]));
+ const starts=songs.map((_,i)=>introFrames+Math.round(i*MEDLEY_INTERVAL_SEC*sampleRate));
+ const totalFrames=Math.max(introFrames,...songs.map((s,i)=>starts[i]+Math.max(s.melody.length,s.accompaniment.length)));
+ const output=ctx.createBuffer(channels,totalFrames,sampleRate);
+ const radius=Math.max(1,Math.round(sampleRate*0.003));
+ const threshold=Math.pow(10,-42/20);
+
+ // 伴奏は前奏を含め、すべて無条件で残す。
+ if(intro){
   for(let ch=0;ch<channels;ch++){
-   const out=output.getChannelData(ch);
-   const src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
+   const out=output.getChannelData(ch),src=intro.accompaniment.getChannelData(Math.min(ch,intro.accompaniment.numberOfChannels-1));
+   for(let f=0;f<intro.accompaniment.length;f++)out[f]+=src[f];
+  }
+ }
+ for(let i=0;i<songs.length;i++){
+  const b=songs[i].accompaniment,start=starts[i];
+  for(let ch=0;ch<channels;ch++){
+   const out=output.getChannelData(ch),src=b.getChannelData(Math.min(ch,b.numberOfChannels-1));
    for(let f=0;f<b.length;f++)out[start+f]+=src[f];
   }
  }
 
- // 最後に合成音全体だけを自動音量調整する。
- applyJackingMasterLimiter(output,sampleRate);
+ // 前奏メロディー：1番本編メロディーと重なる瞬間だけ前奏側を鳴らさない。
+ if(intro){
+  for(let ch=0;ch<channels;ch++){
+   const out=output.getChannelData(ch),src=intro.melody.getChannelData(Math.min(ch,intro.melody.numberOfChannels-1));
+   const next=songs[0].melody,nextSrc=next.getChannelData(Math.min(ch,next.numberOfChannels-1));
+   for(let f=0;f<intro.melody.length;f++){
+    const nextLocal=f-starts[0];
+    let suppress=false;
+    if(nextLocal>=0&&nextLocal<next.length){
+     suppress=frameRms(src,f,radius)>threshold&&frameRms(nextSrc,nextLocal,radius)>threshold;
+    }
+    if(!suppress)out[f]+=src[f];
+   }
+  }
+ }
 
+ // 本編メロディー：次曲と重なる瞬間だけ前曲側を鳴らさない。
+ for(let i=0;i<songs.length;i++){
+  const cur=songs[i].melody,start=starts[i];
+  for(let ch=0;ch<channels;ch++){
+   const out=output.getChannelData(ch),src=cur.getChannelData(Math.min(ch,cur.numberOfChannels-1));
+   for(let f=0;f<cur.length;f++){
+    const global=start+f;let suppress=false;
+    if(i<songs.length-1){
+     const next=songs[i+1].melody,nextLocal=global-starts[i+1];
+     if(nextLocal>=0&&nextLocal<next.length){
+      const nextSrc=next.getChannelData(Math.min(ch,next.numberOfChannels-1));
+      suppress=frameRms(src,f,radius)>threshold&&frameRms(nextSrc,nextLocal,radius)>threshold;
+     }
+    }
+    if(!suppress)out[global]+=src[f];
+   }
+  }
+ }
  return output;
 }
 
@@ -654,14 +663,30 @@ async function buildAndPlayOneNineMedley(){
   // バックグラウンド復帰などで停止していた場合も、結合直前にもう一度復帰させる。
   if(ctx.state==="suspended")await ctx.resume();
 
-  const buffers=[];
+  const separated=[];
   for(let i=0;i<selected.length;i++){
-   const item=selected[i],url=makeMedleySongPath(item,i);
-
-   buffers.push(await fetchDecodeAudio(ctx,url));
+   const item=selected[i];
+   try{
+    const [melody,accompaniment]=await Promise.all([
+     fetchDecodeAudio(ctx,item.melodyUrl),
+     fetchDecodeAudio(ctx,item.accompanimentUrl)
+    ]);
+    separated.push({melody,accompaniment});
+   }catch(e){
+    throw new Error(`${item.name} の melody.m4a / accompaniment.m4a が見つかりません。新方式用の分離音源を登録してください。`);
+   }
   }
 
-  const completed=mixBuffersJacking(ctx,buffers);
+  let intro=null;
+  if(selected[0]?.introMelodyUrl&&selected[0]?.introAccompanimentUrl){
+   const [introMelody,introAccompaniment]=await Promise.all([
+    fetchOptionalDecodeAudio(ctx,selected[0].introMelodyUrl),
+    fetchOptionalDecodeAudio(ctx,selected[0].introAccompanimentUrl)
+   ]);
+   // 2本そろった場合だけ前奏として使用。片方だけなら安全のため前奏なし。
+   if(introMelody&&introAccompaniment)intro={melody:introMelody,accompaniment:introAccompaniment};
+  }
+  const completed=mixSeparatedMedley(ctx,separated,intro);
 
   const wavBlob=audioBufferToWav(completed);
 

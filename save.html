@@ -610,7 +610,7 @@ OUENKA BASE /// DATA REGISTER
 
 <div class="description">
 GarageBand ZIPと応援歌音源を選択して、選手情報を共通データベースに登録します。
-登録完了後にPC保存用データZIP（通常再生用m4a＋メドレー用m4a＋GarageBand ZIP）を自動作成します。
+登録完了後にPC保存用データZIP（再生用m4a＋メロディーm4a＋コード進行・ベースm4a＋GarageBand ZIP）を自動作成します。
 </div>
 
 
@@ -920,60 +920,35 @@ m4aが選択されていません
 
 
 <!-- ============================== -->
-<!-- 04 MEDLEY M4A -->
+<!-- 04 SEPARATED AUDIO -->
 <!-- ============================== -->
-
 <section class="card">
-
-<div class="card-title">
-04 /// SELECT MEDLEY AUDIO
-</div>
-
+<div class="card-title">04 /// SELECT SEPARATED AUDIO</div>
 <div class="form-group">
-
-<label
-  class="form-label"
-  for="medleyAudioFile"
->
-メドレー用音源（m4a）
-<span class="required">*</span>
-</label>
-
-<input
-  type="file"
-  id="medleyAudioFile"
-  class="file-input"
-  accept=".m4a,audio/mp4,audio/x-m4a"
->
-<div class="edit-file-note" id="medleyEditNote">編集時：差し替える場合だけ選択してください。</div>
-
+<label class="form-label" for="melodyAudioFile">メロディー音源（m4a） <span class="required">*</span></label>
+<input type="file" id="melodyAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
+<div class="selected-file-name" id="selectedMelodyAudioName">メロディーm4aが選択されていません</div>
 </div>
-
-<div class="selected-box">
-
-<div class="selected-label">
-SELECTED MEDLEY AUDIO
+<div class="form-group">
+<label class="form-label" for="accompanimentAudioFile">コード進行＋ベース音源（m4a） <span class="required">*</span></label>
+<input type="file" id="accompanimentAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
+<div class="selected-file-name" id="selectedAccompanimentAudioName">コード＋ベースm4aが選択されていません</div>
 </div>
-
-<div
-  id="selectedMedleyAudioName"
-  class="selected-file-name"
->
-メドレー用m4aが選択されていません
+<div class="form-group">
+<label class="form-label" for="introMelodyAudioFile">前奏メロディー（m4a・任意）</label>
+<input type="file" id="introMelodyAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
+<div class="selected-file-name" id="selectedIntroMelodyAudioName">前奏なし</div>
 </div>
-
+<div class="form-group">
+<label class="form-label" for="introAccompanimentAudioFile">前奏コード進行＋ベース（m4a・任意）</label>
+<input type="file" id="introAccompanimentAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
+<div class="selected-file-name" id="selectedIntroAccompanimentAudioName">前奏なし</div>
 </div>
-
-<div
-  id="medleyAudioResult"
-  class="file-result"
-></div>
-
+<div class="file-result">前奏は任意です。1-9では先頭選手に前奏が登録されている場合だけ、前奏→1番本編の順で再生します。</div>
 </section>
 
-
 <!-- ============================== -->
-<!-- 05 REGISTER -->
+<!-- 06 REGISTER -->
 <!-- ============================== -->
 
 <section class="card">
@@ -1101,7 +1076,10 @@ let selectedZipFile = null;
 
 let selectedAudioFile = null;
 
-let selectedMedleyAudioFile = null;
+let selectedMelodyAudioFile = null;
+let selectedAccompanimentAudioFile = null;
+let selectedIntroMelodyAudioFile = null;
+let selectedIntroAccompanimentAudioFile = null;
 
 /*
   編集中のD1レコード。
@@ -1906,91 +1884,26 @@ $("audioFile")
 
 
 
-/* =========================================
-   メドレー用 m4a
-========================================= */
-
-$("medleyAudioFile")
-  .addEventListener(
-    "change",
-    () => {
-
-      const file =
-        $("medleyAudioFile")
-          .files?.[0];
-
-      const result =
-        $("medleyAudioResult");
-
-      if(!file){
-
-        selectedMedleyAudioFile =
-          null;
-
-        $("selectedMedleyAudioName")
-          .textContent =
-          "メドレー用m4aが選択されていません";
-
-        result.style.display =
-          "none";
-
-        return;
-      }
-
-      if(
-        !file.name
-          .toLowerCase()
-          .endsWith(".m4a")
-      ){
-
-        selectedMedleyAudioFile =
-          null;
-
-        $("selectedMedleyAudioName")
-          .textContent =
-          file.name;
-
-        result.style.display =
-          "block";
-
-        result.style.background =
-          "#fdecec";
-
-        result.style.color =
-          "#a51f1f";
-
-        result.textContent =
-          "× m4aファイルを選択してください";
-
-        return;
-      }
-
-      selectedMedleyAudioFile =
-        file;
-
-      $("selectedMedleyAudioName")
-        .textContent =
-        file.name;
-
-      result.style.display =
-        "block";
-
-      result.style.background =
-        "#e6f5eb";
-
-      result.style.color =
-        "#137333";
-
-      result.textContent =
-        "✓ メドレー用m4aを選択できました：" +
-        file.name;
-    }
-  );
-
+$("melodyAudioFile").addEventListener("change",e=>{
+ selectedMelodyAudioFile=e.target.files?.[0]||null;
+ $("selectedMelodyAudioName").textContent=selectedMelodyAudioFile?selectedMelodyAudioFile.name:"メロディーm4aが選択されていません";
+});
+$("accompanimentAudioFile").addEventListener("change",e=>{
+ selectedAccompanimentAudioFile=e.target.files?.[0]||null;
+ $("selectedAccompanimentAudioName").textContent=selectedAccompanimentAudioFile?selectedAccompanimentAudioFile.name:"コード＋ベースm4aが選択されていません";
+});
+$("introMelodyAudioFile").addEventListener("change",e=>{
+ selectedIntroMelodyAudioFile=e.target.files?.[0]||null;
+ $("selectedIntroMelodyAudioName").textContent=selectedIntroMelodyAudioFile?selectedIntroMelodyAudioFile.name:"前奏なし";
+});
+$("introAccompanimentAudioFile").addEventListener("change",e=>{
+ selectedIntroAccompanimentAudioFile=e.target.files?.[0]||null;
+ $("selectedIntroAccompanimentAudioName").textContent=selectedIntroAccompanimentAudioFile?selectedIntroAccompanimentAudioFile.name:"前奏なし";
+});
 
 /* =========================================
    PC保存用ZIP
-   データ/選手名/制作番号/ に展開する5ファイルを作成
+   データ/選手名/制作番号/ に必要な音源・GarageBand ZIPを作成
 ========================================= */
 
 function safeFolderName(value){
@@ -2003,16 +1916,20 @@ async function downloadPcDataZip(
   playerName,
   productionNumber,
   audioFile,
-  medleyAudioFile,
-  garageBandZipFile
+  garageBandZipFile,
+  melodyAudioFile,
+  accompanimentAudioFile,
+  introMelodyAudioFile,
+  introAccompanimentAudioFile
 ){
   if(
     !audioFile ||
-    !medleyAudioFile ||
-    !garageBandZipFile
+    !garageBandZipFile ||
+    !melodyAudioFile ||
+    !accompanimentAudioFile
   ){
     throw new Error(
-      "PC保存用ZIPに必要な3ファイルがそろっていません。"
+      "PC保存用ZIPに必要な分離音源を含むファイルがそろっていません。"
     );
   }
 
@@ -2035,14 +1952,13 @@ async function downloadPcDataZip(
   );
 
   songFolder.file(
-    "medley.m4a",
-    medleyAudioFile
-  );
-
-  songFolder.file(
     "garageband.zip",
     garageBandZipFile
   );
+  songFolder.file("melody.m4a", melodyAudioFile);
+  songFolder.file("accompaniment.m4a", accompanimentAudioFile);
+  if(introMelodyAudioFile) songFolder.file("intro_melody.m4a", introMelodyAudioFile);
+  if(introAccompanimentAudioFile) songFolder.file("intro_accompaniment.m4a", introAccompanimentAudioFile);
 
   const blob =
     await zip.generateAsync({
@@ -2183,14 +2099,8 @@ async function registerPlayer(){
 
     return;
   }
-  if(!selectedMedleyAudioFile){
-
-    showError(
-      "メドレー用のm4aファイルを選択してください。"
-    );
-
-    return;
-  }
+  if(!selectedMelodyAudioFile){showError("メロディーm4aを選択してください。");return;}
+  if(!selectedAccompanimentAudioFile){showError("コード進行＋ベースm4aを選択してください。");return;}
 
 
 
@@ -2237,8 +2147,6 @@ async function registerPlayer(){
               "audio.m4a",
             garageband_filename:
               "garageband.zip",
-            medley_filename:
-              "medley.m4a" 
           })
         }
       );
@@ -2306,14 +2214,14 @@ async function registerPlayer(){
         selectedAudioFile,
 
 
-      /*
-      メドレー用 m4a
-      */
-      medleyAudioFileName:
-        "medley.m4a",
-
-      medleyAudioFile:
-        selectedMedleyAudioFile,
+      melodyAudioFileName:"melody.m4a",
+      melodyAudioFile:selectedMelodyAudioFile,
+      accompanimentAudioFileName:"accompaniment.m4a",
+      accompanimentAudioFile:selectedAccompanimentAudioFile,
+      introMelodyAudioFileName:selectedIntroMelodyAudioFile?"intro_melody.m4a":"",
+      introMelodyAudioFile:selectedIntroMelodyAudioFile,
+      introAccompanimentAudioFileName:selectedIntroAccompanimentAudioFile?"intro_accompaniment.m4a":"",
+      introAccompanimentAudioFile:selectedIntroAccompanimentAudioFile,
 
 
       /*
@@ -2383,8 +2291,11 @@ async function registerPlayer(){
         name,
         productionNumber,
         selectedAudioFile,
-        selectedMedleyAudioFile,
-        selectedZipFile
+        selectedZipFile,
+        selectedMelodyAudioFile,
+        selectedAccompanimentAudioFile,
+        selectedIntroMelodyAudioFile,
+        selectedIntroAccompanimentAudioFile
       );
 
       showSuccess(
@@ -2471,10 +2382,8 @@ function startEditSong(song){
 
     selectedZipFile = null;
     selectedAudioFile = null;
-    selectedMedleyAudioFile = null;
     $("zipFile").value = "";
     $("audioFile").value = "";
-    $("medleyAudioFile").value = "";
 
     $("registerArea")
       .style
@@ -2547,11 +2456,9 @@ function startEditSong(song){
     */
     $("zipFile").disabled = false;
     $("audioFile").disabled = false;
-    $("medleyAudioFile").disabled = false;
 
     $("zipEditNote").style.display = "block";
     $("audioEditNote").style.display = "block";
-    $("medleyEditNote").style.display = "block";
 
     $("selectedFileName")
       .textContent =
@@ -2562,11 +2469,6 @@ function startEditSong(song){
       .textContent =
       song.audio_filename ||
       "登録済みm4a";
-
-    $("selectedMedleyAudioName")
-      .textContent =
-      song.medley_filename ||
-      "登録済みメドレー用m4a";
 
     $("registerArea")
       .scrollIntoView({
@@ -2642,7 +2544,10 @@ async function updateExistingSong(){
   const changingFiles =
     !!selectedZipFile ||
     !!selectedAudioFile ||
-    !!selectedMedleyAudioFile;
+    !!selectedMelodyAudioFile ||
+    !!selectedAccompanimentAudioFile ||
+    !!selectedIntroMelodyAudioFile ||
+    !!selectedIntroAccompanimentAudioFile;
 
   if(!name){
 
@@ -2676,8 +2581,8 @@ async function updateExistingSong(){
     return;
   }
 
-  if(changingFiles && !(selectedZipFile && selectedAudioFile && selectedMedleyAudioFile)){
-    showError("応援歌データを差し替える場合は、通常m4a・メドレー用m4a・GarageBand ZIPの3つをすべて選択してください。");
+  if(changingFiles && !(selectedZipFile && selectedAudioFile && selectedMelodyAudioFile && selectedAccompanimentAudioFile)){
+    showError("応援歌データを差し替える場合は、再生用m4a・メロディーm4a・コード進行＋ベースm4a・GarageBand ZIPを選択してください。");
     return;
   }
 
@@ -2718,7 +2623,6 @@ async function updateExistingSong(){
             lyrics:lyrics,
             production_number:productionNumber,
             audio_filename: selectedAudioFile ? "audio.m4a" : (editingSong.audio_filename || "audio.m4a"),
-            medley_filename: selectedMedleyAudioFile ? "medley.m4a" : (editingSong.medley_filename || "medley.m4a"),
             garageband_filename: selectedZipFile ? "garageband.zip" : (editingSong.garageband_filename || "garageband.zip")
           })
         }
@@ -2792,11 +2696,6 @@ async function updateExistingSong(){
           local.audioFile = selectedAudioFile;
         }
 
-        if(selectedMedleyAudioFile){
-          local.medleyAudioFileName = "medley.m4a";
-          local.medleyAudioFile = selectedMedleyAudioFile;
-        }
-
         if(selectedZipFile){
           local.zipFileName = "garageband.zip";
           local.originalZip = selectedZipFile;
@@ -2824,8 +2723,11 @@ async function updateExistingSong(){
         name,
         productionNumber,
         selectedAudioFile,
-        selectedMedleyAudioFile,
-        selectedZipFile
+        selectedZipFile,
+        selectedMelodyAudioFile,
+        selectedAccompanimentAudioFile,
+        selectedIntroMelodyAudioFile,
+        selectedIntroAccompanimentAudioFile
       );
     }
 
@@ -2933,8 +2835,6 @@ function cancelEditMode(
   $("audioFile").disabled =
     false;
 
-  $("medleyAudioFile").disabled =
-    false;
 
   $("productionNumberDisplay").style.display = "block";
   $("productionAutoNote").style.display = "block";
@@ -2943,7 +2843,6 @@ function cancelEditMode(
 
   $("zipEditNote").style.display = "none";
   $("audioEditNote").style.display = "none";
-  $("medleyEditNote").style.display = "none";
 
   if(clearForm){
 
@@ -2953,8 +2852,6 @@ function cancelEditMode(
     $("audioFile").value =
       "";
 
-    $("medleyAudioFile").value =
-      "";
 
     selectedZipFile =
       null;
@@ -2962,8 +2859,6 @@ function cancelEditMode(
     selectedAudioFile =
       null;
 
-    selectedMedleyAudioFile =
-      null;
 
     $("selectedFileName")
       .textContent =
@@ -2972,10 +2867,6 @@ function cancelEditMode(
     $("selectedAudioName")
       .textContent =
       "m4aが選択されていません";
-
-    $("selectedMedleyAudioName")
-      .textContent =
-      "メドレー用m4aが選択されていません";
 
     $("playerName").value =
       "";
@@ -3174,9 +3065,6 @@ function showSavedSongs(songs){
         meta += " ／ m4a：" + song.audio_filename;
       }
 
-      if(song.medley_filename){
-        meta += " ／ メドレーm4a：" + song.medley_filename;
-      }
 
       d.querySelector(".saved-meta").textContent = meta;
 
