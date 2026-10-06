@@ -94,6 +94,29 @@ async function searchPlayers() {
         ++searchRequestNumber;
 
 
+    // ====================================
+    // 検索中表示
+    // ====================================
+
+    const searchingResult =
+        document.createElement(
+            "div"
+        );
+
+    searchingResult.className =
+        "search-message search-loading";
+
+    searchingResult.textContent =
+        "検索中…";
+
+    suggestions.appendChild(
+        searchingResult
+    );
+
+    suggestions.style.display =
+        "block";
+
+
     try {
 
         // ====================================
@@ -142,6 +165,10 @@ async function searchPlayers() {
             Array.isArray(data.songs)
                 ? data.songs
                 : [];
+
+
+        // 「検索中…」を消してから結果を表示
+        suggestions.innerHTML = "";
 
 
         // ====================================
@@ -319,6 +346,12 @@ async function searchPlayers() {
     }
 
     catch (error) {
+
+        if (requestNumber !== searchRequestNumber) {
+            return;
+        }
+
+        suggestions.innerHTML = "";
 
         console.error(
             "D1検索エラー:",

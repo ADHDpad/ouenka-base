@@ -377,6 +377,17 @@ async function showSuggestions(row,input,box){
     const basePath="データ/"+encodeURIComponent(song.player_name||"")+"/"+encodeURIComponent(song.production_number||"")+"/";
     row.dataset.audioUrl=basePath+encodeURIComponent(song.audio_filename||"audio.m4a");
     row.dataset.medleyUrl=basePath+encodeURIComponent(song.medley_filename||"medley.m4a");
+
+    // 選手を選んだ瞬間から裏で1-9用音源を先読み。
+    // 再生ボタンを押す頃には通信待ちをほぼ終わらせる。
+    const preloadItem={name,productionNumber:prod,audioUrl:row.dataset.audioUrl};
+    ["audio.m4a","melody.m4a","accompaniment.m4a","intro_melody.m4a","intro_accompaniment.m4a"]
+      .forEach(fileName=>{
+       const candidates=separatedAudioCandidates(preloadItem,fileName);
+       // 最有力パスを先に取得。失敗は再生時の通常探索へ任せる。
+       if(candidates[0])fetchAudioDataCached(candidates[0]).catch(()=>{});
+      });
+
     box.innerHTML="";box.style.display="none";
     checkDuplicates();saveDraft();updateInputFieldColor(input);
    });
@@ -400,56 +411,65 @@ function stopRowAudio(){
 }
 async function playSelectedRow(row){
  const button=row.querySelector(".order");
- if(currentPlayingRow===row&&rowAudio&&!rowAudio.paused){stopRowAudio();return}
+ if(currentPlayingRow===row && liveMedleyContext){stopOneNineMedley();currentPlayingRow=null;resetPlayIcons();return}
+
  const name=row.querySelector(".player-search").value.trim();
- if(!name){setStatus("先に再生する選手を選択してください。","error");return}
- const audioValue=row.dataset.audioUrl||"";
- if(!audioValue){setStatus(`${name}の再生用音源を取得できませんでした。`,"error");return}
+ const productionNumber=String(row.dataset.productionNumber||"").trim();
+ if(!name||!productionNumber){setStatus("先に検索候補から選手を選択してください。","error");return}
+
  stopRowAudio();
- try{
-  rowAudio=new Audio();rowAudio.preload="auto";rowAudio.volume=1;rowAudio.muted=false;
-  rowAudio.src=toPublicAudioUrl(audioValue);rowAudio.playsInline=true;
-  currentPlayingRow=row;button.classList.add("playing");
-  rowAudio.addEventListener("playing",hideStatus);
-  rowAudio.addEventListener("ended",stopRowAudio,{once:true});
-  rowAudio.addEventListener("error",()=>{setStatus(`${name}の音源を読み込めませんでした。`,"error");stopRowAudio()},{once:true});
-  const p=rowAudio.play();if(p)await p;
- }catch(error){console.error("1-9試聴エラー:",error);stopRowAudio();setStatus(`${name}の音源を再生できませんでした。`,"error")}
-}
+ stopOneNineMedley();
 
-document.addEventListener("visibilitychange",()=>{
- if(document.visibilityState==="hidden"){stopRowAudio();stopOneNineMedley()}
-});
-window.addEventListener("pageshow",()=>stopRowAudio());
-
-async function getRegisteredSongFor19(playerName,productionNumber){
- const name=String(playerName||"").trim(),no=String(productionNumber||"").trim();
- if(!name||!no)return null;
- const candidates=[
-  `${DATA_API}/song?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`,
-  `${DATA_API}/songs?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`,
-  `${DATA_API}/search?player_name=${encodeURIComponent(name)}&production_number=${encodeURIComponent(no)}`
- ];
- for(const url of candidates){
-  try{
-   const res=await fetch(url,{cache:"no-store"});if(!res.ok)continue;
-   const data=await res.json();let song=null;
-   if(data?.song)song=data.song;
-   else if(Array.isArray(data?.songs))song=data.songs.find(x=>String(x.player_name||x.name||"")===name&&String(x.production_number||x.productionNumber||"")===no)||data.songs[0]||null;
-   else if(Array.isArray(data))song=data.find(x=>String(x.player_name||x.name||"")===name&&String(x.production_number||x.productionNumber||"")===no)||data[0]||null;
-   else if(data&&(data.player_name||data.name))song=data;
-   if(song)return song;
-  }catch(e){}
- }
+ let ctx=null;
  try{
-  const res=await fetch(`${DATA_API}/songs`,{cache:"no-store"});
-  if(res.ok){
-   const data=await res.json();
-   const list=Array.isArray(data)?data:Array.isArray(data.songs)?data.songs:Array.isArray(data.items)?data.items:[];
-   return list.find(x=>String(x.player_name||x.name||"")===name&&String(x.production_number||x.productionNumber||"")===no)||null;
+  ctx=await prepareOneNineAudioContext();
+  const item={name,productionNumber,audioUrl:row.dataset.audioUrl||""};
+
+  // No.再生の本編もメドレー1曲目と同じ audio + accompaniment
+  const [audio,accompaniment]=await Promise.all([
+   fetchFirstExistingAudio(ctx,item,"audio.m4a"),
+   fetchFirstExistingAudio(ctx,item,"accompaniment.m4a")
+  ]);
+
+  // 前奏はあれば2本とも使用
+  const [introMelody,introAccompaniment]=await Promise.all([
+   fetchFirstExistingAudio(ctx,item,"intro_melody.m4a",true),
+   fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true)
+  ]);
+  const intro=(introMelody&&introAccompaniment)
+   ?{melody:introMelody,accompaniment:introAccompaniment}:null;
+
+  liveMedleyContext=ctx;
+  currentPlayingRow=row;
+  button.classList.add("playing");
+  const base=ctx.currentTime+0.04;
+  const mainStart=intro?getSongJoinOffsetSec(intro):0;
+
+  if(intro){
+   scheduleBuffer(ctx,intro.melody,base);
+   scheduleBuffer(ctx,intro.accompaniment,base);
   }
- }catch(e){}
- return null;
+  scheduleBuffer(ctx,audio,base+mainStart);
+  scheduleBuffer(ctx,accompaniment,base+mainStart);
+
+  const total=Math.max(
+   mainStart+audio.duration,
+   mainStart+accompaniment.duration,
+   intro?intro.melody.duration:0,
+   intro?intro.accompaniment.duration:0
+  );
+  liveMedleyStopTimer=setTimeout(()=>{
+   liveMedleyStopTimer=null;liveMedleySources=[];
+   if(liveMedleyContext){try{liveMedleyContext.close()}catch(e){} liveMedleyContext=null}
+   currentPlayingRow=null;resetPlayIcons();
+  },Math.ceil((total+0.15)*1000));
+  hideStatus();
+ }catch(error){
+  console.error("1-9 No.再生エラー:",error);
+  if(ctx){try{await ctx.close()}catch(e){}}
+  liveMedleyContext=null;currentPlayingRow=null;resetPlayIcons();
+  setStatus(`${name}の音源を再生できませんでした。`,"error");
+ }
 }
 
 function registeredSongUrls(song,playerName,productionNumber){
@@ -527,10 +547,42 @@ function separatedAudioCandidates(item,fileName){
  return [...new Set(list)];
 }
 
+
+/* ===== 1-9高速化：取得済みm4aをメモリキャッシュ =====
+   AudioBufferはAudioContext依存を避けるため、元ArrayBufferを保存し、
+   再生時はローカルメモリからdecodeする。 */
+const oneNineAudioDataCache=new Map();
+const oneNineAudioFetchPromises=new Map();
+
+async function fetchAudioDataCached(url){
+ if(oneNineAudioDataCache.has(url))return oneNineAudioDataCache.get(url).slice(0);
+ if(oneNineAudioFetchPromises.has(url)){
+  const data=await oneNineAudioFetchPromises.get(url);
+  return data.slice(0);
+ }
+ const promise=(async()=>{
+  const r=await fetch(url,{cache:"force-cache"});
+  if(!r.ok)throw new Error(`HTTP ${r.status}`);
+  const data=await r.arrayBuffer();
+  oneNineAudioDataCache.set(url,data);
+  return data;
+ })();
+ oneNineAudioFetchPromises.set(url,promise);
+ try{
+  const data=await promise;
+  return data.slice(0);
+ }finally{
+  oneNineAudioFetchPromises.delete(url);
+ }
+}
+async function fetchDecodeAudioCached(ctx,url){
+ const data=await fetchAudioDataCached(url);
+ return await ctx.decodeAudioData(data);
+}
 async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  let lastError=null;
  for(const path of separatedAudioCandidates(item,fileName)){
-  try{return await fetchDecodeAudio(ctx,path)}catch(e){lastError=e}
+  try{return await fetchDecodeAudioCached(ctx,path)}catch(e){lastError=e}
  }
  if(optional)return null;
  throw lastError||new Error(`${fileName} が見つかりません。`);
@@ -682,30 +734,182 @@ function applyBoundarySuppression(ctx,gainNode,cur,next,curStart,nextStart,playB
  gainNode.gain.setValueAtTime(1,playBase+overlapEnd);
 }
 
+
+/* 実際に鳴っている終端を見て小節数を判定する。
+   m4a末尾の無音は小節数に含めない。 */
+function getAudibleEndSec(buffer){
+ const sr=buffer.sampleRate, block=Math.max(1,Math.floor(sr*0.020));
+ const threshold=Math.pow(10,-48/20);
+ let last=0;
+ for(let i=0;i<buffer.length;i+=block){
+  const to=Math.min(buffer.length,i+block);
+  let peak=0;
+  for(let c=0;c<buffer.numberOfChannels;c++){
+   const data=buffer.getChannelData(c);
+   for(let j=i;j<to;j++)peak=Math.max(peak,Math.abs(data[j]));
+  }
+  if(peak>threshold)last=to;
+ }
+ return last/sr;
+}
+function getSongBarCount(song){
+ const end=Math.max(getAudibleEndSec(song.melody),getAudibleEndSec(song.accompaniment));
+ return Math.max(2,Math.ceil(Math.max(0,end-0.035)/MEDLEY_BAR_SEC));
+}
+/* 「最後の小節の1個前」の頭。
+   8小節曲→7小節目頭＝6小節分後
+   16小節曲→15小節目頭＝14小節分後 */
+function getSongJoinOffsetSec(song){
+ return Math.max(0,(getSongBarCount(song)-2)*MEDLEY_BAR_SEC);
+}
+function buildDynamicSongStarts(songs,introDuration){
+ const starts=[];let cursor=introDuration;
+ for(let i=0;i<songs.length;i++){
+  starts.push(cursor);
+  if(i<songs.length-1)cursor+=getSongJoinOffsetSec(songs[i]);
+ }
+ return starts;
+}
+
+
+/* 今日最初に良かった方式：
+   Gainを6msごとに0/1切替せず、波形を約6ms窓のRMSで判定し、
+   重複しているサンプルだけ前側を「足さない」。
+   これによりGain境界のプツンを作らない。 */
+function smoothFrameRms(data,index,radius){
+ const from=Math.max(0,index-radius),to=Math.min(data.length,index+radius+1);
+ let sum=0;
+ for(let i=from;i<to;i++){const v=data[i];sum+=v*v}
+ return Math.sqrt(sum/Math.max(1,to-from));
+}
+
+
+/* メロディーとコード進行＋ベースを完全に別バスで処理する。
+   一方の重複判定結果をもう一方には絶対に使用しない。 */
+
+/* 高速版：音が鳴っているかの判定を先にブロック単位で1回だけ作る。
+   メロディー/伴奏の独立判定ルールは維持。
+   以前のように各サンプルごとに6ms窓RMSを再計算しない。 */
+function mixSmoothIndependent(ctx,songs,intro,starts){
+ const sampleRate=songs[0].melody.sampleRate;
+ const channels=Math.max(
+  ...songs.flatMap(s=>[s.melody.numberOfChannels,s.accompaniment.numberOfChannels]),
+  ...(intro?[intro.melody.numberOfChannels,intro.accompaniment.numberOfChannels]:[])
+ );
+ const startFrames=starts.map(v=>Math.round(v*sampleRate));
+ const totalFrames=Math.max(
+  ...songs.map((song,i)=>startFrames[i]+Math.max(song.melody.length,song.accompaniment.length)),
+  ...(intro?[Math.max(intro.melody.length,intro.accompaniment.length)]:[0])
+ );
+ const melodyBus=ctx.createBuffer(channels,totalFrames,sampleRate);
+ const accompanimentBus=ctx.createBuffer(channels,totalFrames,sampleRate);
+
+ const blockSize=Math.max(64,Math.round(sampleRate*0.006));
+ const threshold=Math.pow(10,-42/20);
+ const activityCache=new WeakMap();
+
+ function getActivity(buffer,ch){
+  let byChannel=activityCache.get(buffer);
+  if(!byChannel){byChannel=new Map();activityCache.set(buffer,byChannel)}
+  const realCh=Math.min(ch,buffer.numberOfChannels-1);
+  if(byChannel.has(realCh))return byChannel.get(realCh);
+  const data=buffer.getChannelData(realCh);
+  const blocks=Math.ceil(data.length/blockSize);
+  const active=new Uint8Array(blocks);
+  for(let b=0;b<blocks;b++){
+   const from=b*blockSize,to=Math.min(data.length,from+blockSize);
+   let sum=0;
+   for(let i=from;i<to;i++){const v=data[i];sum+=v*v}
+   active[b]=Math.sqrt(sum/Math.max(1,to-from))>threshold?1:0;
+  }
+  byChannel.set(realCh,active);
+  return active;
+ }
+
+ function addIndependentTrack(target,cur,curStart,next,nextStart,ch){
+  const out=target.getChannelData(ch);
+  const src=cur.getChannelData(Math.min(ch,cur.numberOfChannels-1));
+  const curActivity=getActivity(cur,ch);
+  const nextSrc=next?next.getChannelData(Math.min(ch,next.numberOfChannels-1)):null;
+  const nextActivity=next?getActivity(next,ch):null;
+
+  // 重複区間外は判定なしで高速コピー加算。
+  const overlapStart=next?Math.max(curStart,nextStart):Infinity;
+  const overlapEnd=next?Math.min(curStart+cur.length,nextStart+next.length):-Infinity;
+
+  for(let f=0;f<cur.length;f++){
+   const global=curStart+f;
+   if(global>=overlapStart && global<overlapEnd && nextSrc){
+    const nextLocal=global-nextStart;
+    const cb=Math.min(curActivity.length-1,Math.floor(f/blockSize));
+    const nb=Math.min(nextActivity.length-1,Math.floor(nextLocal/blockSize));
+    if(curActivity[cb] && nextActivity[nb])continue;
+   }
+   out[global]+=src[f];
+  }
+ }
+
+ for(let ch=0;ch<channels;ch++){
+  if(intro){
+   addIndependentTrack(melodyBus,intro.melody,0,songs[0].melody,startFrames[0],ch);
+   addIndependentTrack(accompanimentBus,intro.accompaniment,0,songs[0].accompaniment,startFrames[0],ch);
+  }
+  for(let i=0;i<songs.length;i++){
+   const next=i<songs.length-1?songs[i+1]:null;
+   const nextStart=next?startFrames[i+1]:0;
+   addIndependentTrack(melodyBus,songs[i].melody,startFrames[i],next?next.melody:null,nextStart,ch);
+   addIndependentTrack(accompanimentBus,songs[i].accompaniment,startFrames[i],next?next.accompaniment:null,nextStart,ch);
+  }
+ }
+ const output=ctx.createBuffer(channels,totalFrames,sampleRate);
+ for(let ch=0;ch<channels;ch++){
+  const dst=output.getChannelData(ch),mel=melodyBus.getChannelData(ch),acc=accompanimentBus.getChannelData(ch);
+  for(let i=0;i<totalFrames;i++)dst[i]=mel[i]+acc[i];
+ }
+ return output;
+}
+
 async function buildAndPlayOneNineMedley(){
  if(medleyBuilding)return;
  if(liveMedleyContext){stopOneNineMedley();hideStatus();return}
  stopRowAudio();hideStatus();
+
  let ctx=null;
- try{ctx=await prepareOneNineAudioContext()}catch(error){setStatus("音声デバイスを起動できませんでした。","error");return}
+ try{ctx=await prepareOneNineAudioContext()}
+ catch(error){setStatus("音声デバイスを起動できませんでした。","error");return}
+
  let selected;
- try{selected=await getSelectedMedleyPlayers()}catch(error){try{await ctx.close()}catch(e){} setStatus(error.message||String(error),"error");return}
- if(!selected.length){try{await ctx.close()}catch(e){} setStatus("選手を1人以上選択してください。","error");return}
+ try{selected=await getSelectedMedleyPlayers()}
+ catch(error){
+  try{await ctx.close()}catch(e){}
+  setStatus(error.message||String(error),"error");return;
+ }
+ if(!selected.length){
+  try{await ctx.close()}catch(e){}
+  setStatus("選手を1人以上選択してください。","error");return;
+ }
+
  medleyBuilding=true;
  const btn=document.getElementById("medleyPlayButton");
  if(btn){btn.disabled=true;btn.textContent="読み込み中…"}
+
  try{
-  // 9人分を直列ではなく一括並列取得。
-  const separated=await Promise.all(selected.map(async item=>{
+  /* 全選手の分離音源を並列取得。
+     1番だけは本編メロディーとして audio.m4a を使用する。 */
+  const separated=await Promise.all(selected.map(async(item,i)=>{
    try{
+    const melodyFile=(i===0)?"audio.m4a":"melody.m4a";
     const [melody,accompaniment]=await Promise.all([
-     fetchFirstExistingAudio(ctx,item,"melody.m4a"),
+     fetchFirstExistingAudio(ctx,item,melodyFile),
      fetchFirstExistingAudio(ctx,item,"accompaniment.m4a")
     ]);
     return{melody,accompaniment};
-   }catch(e){throw new Error(`${item.name} の分離音源を読み込めませんでした。`)}
+   }catch(e){
+    throw new Error(`${item.name} の音源を読み込めませんでした。`);
+   }
   }));
 
+  /* 前奏は1番だけ。 */
   let intro=null;
   const first=selected[0];
   const [im,ia]=await Promise.all([
@@ -716,39 +920,47 @@ async function buildAndPlayOneNineMedley(){
 
   liveMedleyContext=ctx;
   const base=ctx.currentTime+0.06;
-  const introDuration=intro?Math.max(intro.melody.duration,intro.accompaniment.duration):0;
-  const starts=separated.map((_,i)=>introDuration+i*MEDLEY_INTERVAL_SEC);
 
-  if(intro){
-   const ig=ctx.createGain();ig.connect(ctx.destination);
-   applyBoundarySuppression(ctx,ig,intro.melody,separated[0].melody,0,starts[0],base);
-   scheduleBuffer(ctx,intro.melody,base,ig);
-   scheduleBuffer(ctx,intro.accompaniment,base);
+  /* 前奏→1番：前奏の最後から2番目の小節頭に1番本編を置く */
+  const firstSongStart=intro ? getSongJoinOffsetSec(intro) : 0;
+
+  /* 本編同士も前曲の最後から2番目の小節頭へ次曲を置く */
+  const starts=[];
+  let cursor=firstSongStart;
+  for(let i=0;i<separated.length;i++){
+   starts.push(cursor);
+   if(i<separated.length-1)cursor+=getSongJoinOffsetSec(separated[i]);
   }
 
-  separated.forEach((song,i)=>{
-   const mg=ctx.createGain();mg.connect(ctx.destination);
-   if(i<separated.length-1){
-    applyBoundarySuppression(ctx,mg,song.melody,separated[i+1].melody,starts[i],starts[i+1],base);
-   }
-   scheduleBuffer(ctx,song.melody,base+starts[i],mg);
-   scheduleBuffer(ctx,song.accompaniment,base+starts[i]);
-  });
+  /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
+     メロディーとコード進行は別々に重複判定する。 */
+  const mixed=mixSmoothIndependent(ctx,separated,intro,starts);
+  scheduleBuffer(ctx,mixed,base);
 
-  const total=Math.max(...separated.map((s,i)=>starts[i]+Math.max(s.melody.duration,s.accompaniment.duration)));
+  const total=mixed.duration;
+
   if(btn){btn.disabled=false;btn.textContent="■ 1-9を停止"}
   liveMedleyStopTimer=setTimeout(()=>{
-   liveMedleyStopTimer=null;liveMedleySources=[];
-   if(liveMedleyContext){try{liveMedleyContext.close()}catch(e){} liveMedleyContext=null}
-   const b=document.getElementById("medleyPlayButton");if(b)b.textContent="▶ 1-9を作成・再生";
+   liveMedleyStopTimer=null;
+   liveMedleySources=[];
+   if(liveMedleyContext){
+    try{liveMedleyContext.close()}catch(e){}
+    liveMedleyContext=null;
+   }
+   const b=document.getElementById("medleyPlayButton");
+   if(b)b.textContent="▶ 1-9を作成・再生";
   },Math.ceil((total+0.2)*1000));
+
  }catch(error){
   console.error("1-9高速再生エラー:",error);
   try{await ctx.close()}catch(e){}
-  liveMedleyContext=null;liveMedleySources=[];
+  liveMedleyContext=null;
+  liveMedleySources=[];
   setStatus("1-9を再生できませんでした："+(error.message||error),"error");
   if(btn){btn.disabled=false;btn.textContent="▶ 1-9を作成・再生"}
- }finally{medleyBuilding=false}
+ }finally{
+  medleyBuilding=false;
+ }
 }
 async function playOneNineMedley(){return buildAndPlayOneNineMedley()}
 

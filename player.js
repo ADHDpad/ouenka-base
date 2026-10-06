@@ -87,47 +87,130 @@ async function playPair(primarySrc, accompanimentSrc, attemptId, label) {
 }
 
 async function playSongData(player) {
-    if (!player || !player.audio) {
+    if (!player || !player.name || !player.productionNumber) {
         console.error("再生データがありません", player);
         setNowPlaying("音源データがありません");
         return;
     }
 
     stopCurrentSong();
-    const attemptId = ++playAttemptId;
-    const label = player.name || "";
+    const attemptId=++playAttemptId;
+    const label=player.name||"";
+    let ctx=null;
 
-    // 前奏は2本とも存在するときだけ使用。片方だけなら本編から開始。
-    const hasIntroMelody = await urlExists(player.introMelody);
-    const hasIntroAccompaniment = await urlExists(player.introAccompaniment);
-    if (attemptId !== playAttemptId) return;
+    try{
+        ctx=new (window.AudioContext||window.webkitAudioContext)();
+        await ctx.resume();
 
-    if (hasIntroMelody && hasIntroAccompaniment) {
-        const introOK = await playPair(
-            player.introMelody,
-            player.introAccompaniment,
-            attemptId,
-            label + "（前奏）"
+        /* 1-9と同じ公開GitHub Pagesを基準にする。
+           トップページ自身の相対URLには依存しない。 */
+        const PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
+        const root=PUBLIC_BASE+"%E3%83%87%E3%83%BC%E3%82%BF/";
+        const name=String(player.name||"").trim();
+        const no=String(player.productionNumber||"").trim();
+        const n=encodeURIComponent(name),pn=encodeURIComponent(no);
+
+        function candidateUrls(fileName,registeredUrl=""){
+            const f=encodeURIComponent(fileName);
+            const list=[];
+            if(registeredUrl)list.push(new URL(registeredUrl,PUBLIC_BASE).href);
+            list.push(root+n+"/"+pn+"/"+f);       // データ/選手名/制作番号/
+            list.push(root+n+"_"+pn+"/"+f);       // データ/選手名_制作番号/
+            list.push(root+n+"/"+f);              // データ/選手名/
+            list.push(root+n+"/"+pn+"_"+f);       // データ/選手名/制作番号_file
+            return [...new Set(list)];
+        }
+
+        async function fetchFirst(fileName,registeredUrl="",optional=false){
+            let lastError=null;
+            for(const url of candidateUrls(fileName,registeredUrl)){
+                try{
+                    const response=await fetch(url,{
+                        cache:"no-store",
+                        credentials:"omit"
+                    });
+                    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+                    const data=await response.arrayBuffer();
+                    return await ctx.decodeAudioData(data.slice(0));
+                }catch(e){
+                    lastError=e;
+                }
+            }
+            if(optional)return null;
+            throw lastError||new Error(fileName+" が見つかりません");
+        }
+
+        /* 1-9のNo.再生と同じ4本を取得 */
+        const [audio,accompaniment,im,ia]=await Promise.all([
+            fetchFirst("audio.m4a",player.audio||""),
+            fetchFirst("accompaniment.m4a",player.accompaniment||""),
+            fetchFirst("intro_melody.m4a",player.introMelody||"",true),
+            fetchFirst("intro_accompaniment.m4a",player.introAccompaniment||"",true)
+        ]);
+
+        if(attemptId!==playAttemptId){
+            try{await ctx.close()}catch(e){}
+            return;
+        }
+
+        const intro=(im&&ia)?{melody:im,accompaniment:ia}:null;
+        const BAR_SEC=(60/170)*4;
+
+        function audibleEnd(buffer){
+            const sr=buffer.sampleRate,block=Math.max(1,Math.floor(sr*.020));
+            const threshold=Math.pow(10,-48/20);
+            let last=0;
+            for(let i=0;i<buffer.length;i+=block){
+                const to=Math.min(buffer.length,i+block);
+                let peak=0;
+                for(let c=0;c<buffer.numberOfChannels;c++){
+                    const data=buffer.getChannelData(c);
+                    for(let j=i;j<to;j++)peak=Math.max(peak,Math.abs(data[j]));
+                }
+                if(peak>threshold)last=to;
+            }
+            return last/sr;
+        }
+        function joinOffset(pair){
+            const end=Math.max(audibleEnd(pair.melody),audibleEnd(pair.accompaniment));
+            const bars=Math.max(2,Math.ceil(Math.max(0,end-.035)/BAR_SEC));
+            return Math.max(0,(bars-2)*BAR_SEC);
+        }
+
+        const sources=[];
+        function schedule(buffer,when){
+            const src=ctx.createBufferSource();
+            src.buffer=buffer;src.connect(ctx.destination);src.start(when);
+            sources.push(src);
+        }
+
+        const base=ctx.currentTime+.04;
+        const mainStart=intro?joinOffset(intro):0;
+        if(intro){
+            schedule(intro.melody,base);
+            schedule(intro.accompaniment,base);
+        }
+        schedule(audio,base+mainStart);
+        schedule(accompaniment,base+mainStart);
+        setNowPlaying("♪ 再生中："+label);
+
+        const total=Math.max(
+            mainStart+audio.duration,mainStart+accompaniment.duration,
+            intro?intro.melody.duration:0,intro?intro.accompaniment.duration:0
         );
-        if (!introOK || attemptId !== playAttemptId) return;
-    }
+        setTimeout(async()=>{
+            if(attemptId===playAttemptId){
+                setNowPlaying("");
+                try{await ctx.close()}catch(e){}
+            }
+        },Math.ceil((total+.15)*1000));
 
-    // 本編：再生用m4a＋コード進行/ベースm4a。
-    // accompaniment が無い既存データは audio.m4a だけで再生できる。
-    const hasAccompaniment = await urlExists(player.accompaniment);
-    if (attemptId !== playAttemptId) return;
-
-    const ok = await playPair(
-        player.audio,
-        hasAccompaniment ? player.accompaniment : null,
-        attemptId,
-        label
-    );
-
-    if (ok && attemptId === playAttemptId) {
-        setNowPlaying("");
-        audioPlayers.forEach(destroyAudio);
-        audioPlayers = [];
+    }catch(error){
+        console.error("トップ個人再生エラー:",error);
+        if(ctx){try{await ctx.close()}catch(e){}}
+        if(attemptId===playAttemptId){
+            setNowPlaying("音源を再生できませんでした");
+        }
     }
 }
 

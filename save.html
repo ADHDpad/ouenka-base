@@ -556,6 +556,104 @@ textarea{
 .production-edit-wrap input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #b8c4d0;border-radius:8px;font-size:16px;}
 .edit-file-note{display:none;margin:8px 0 0;color:#536273;font-size:13px;}
 
+
+/* ===== A案：カード分割型 ===== */
+main{max-width:760px}
+.description{
+  background:#fff;border:1px solid #dde5ec;border-radius:12px;
+  padding:14px 16px;margin-bottom:18px;font-size:13px;
+}
+.card{
+  position:relative;overflow:hidden;
+  border:1px solid #dfe7ee;
+  box-shadow:0 3px 14px rgba(7,29,51,.07);
+  padding:20px;margin-bottom:14px;
+}
+.card::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#9aabba;
+}
+.card-title{
+  display:flex;align-items:center;gap:9px;
+  margin:-4px 0 17px;font-size:15px;letter-spacing:0;color:#0b2f55;
+}
+.card-title::before{
+  display:grid;place-items:center;width:30px;height:30px;border-radius:8px;
+  font-size:15px;font-weight:900;background:#e8f2fb;color:#0b5fa5;
+}
+.card-player{background:linear-gradient(180deg,#f7fbff 0,#fff 110px);border-color:#cfe3f5}
+.card-player::before{background:#1976c9}
+.card-player .card-title::before{content:"👤"}
+
+.card-main-audio{background:linear-gradient(180deg,#fff8f8 0,#fff 110px);border-color:#f2d2d2}
+.card-main-audio::before{background:#d94b5b}
+.card-main-audio .card-title{color:#a52838}
+.card-main-audio .card-title::before{content:"♪";background:#fde8eb;color:#b4233a}
+
+.card-intro{background:linear-gradient(180deg,#f5fff8 0,#fff 110px);border-color:#ccebd7}
+.card-intro::before{background:#2c9a59}
+.card-intro .card-title{color:#16713b}
+.card-intro .card-title::before{content:"＋";background:#def5e6;color:#17743d}
+
+.card-garage{background:linear-gradient(180deg,#fbf8ff 0,#fff 110px);border-color:#dfd3f2}
+.card-garage::before{background:#7950b8}
+.card-garage .card-title{color:#65409c}
+.card-garage .card-title::before{content:"▣";background:#eee5fb;color:#6840a2}
+
+.card-register{background:#071d33;border-color:#071d33;color:#fff}
+.card-register::before{background:#2f8bd2}
+.card-register .card-title{color:#fff}
+.card-register .card-title::before{content:"✓";background:#fff;color:#071d33}
+.card-register .register-button{background:#1683d8;border-radius:9px;font-size:16px;padding:15px}
+.card-register .edit-cancel-button{background:#fff;color:#071d33}
+
+.card-saved .card-title::before{content:"⌕"}
+
+.file-row-card{
+  border:1px solid #e1e7ed;border-radius:10px;background:rgba(255,255,255,.82);
+  padding:13px;margin-bottom:10px;
+}
+.file-row-card:last-child{margin-bottom:0}
+.file-row-card .form-group{margin-bottom:0}
+.file-row-card .selected-file-name{
+  margin-top:8px;padding:8px 10px;border-radius:7px;background:#f1f5f8;
+  font-size:12px;color:#405466;
+}
+.file-input{padding:11px;border-width:1.5px;background:#fff}
+.edit-file-note{font-size:11px;color:#758391;margin:5px 0}
+.section-help{font-size:12px;color:#657483;margin:-7px 0 14px;line-height:1.5}
+.optional-badge{
+  display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;
+  background:#e6f5eb;color:#17713d;font-size:10px;vertical-align:2px;
+}
+.required-badge{
+  display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;
+  background:#fdebed;color:#b42338;font-size:10px;vertical-align:2px;
+}
+@media(max-width:600px){
+  main{padding:88px 10px 40px}
+  h1{font-size:23px}
+  .description{font-size:12px;padding:12px}
+  .card{padding:16px 14px;border-radius:11px;margin-bottom:11px}
+  .card-title{font-size:14px;margin-bottom:14px}
+  .two-columns{grid-template-columns:1fr}
+  .player-search-row{grid-template-columns:minmax(0,1fr) auto}
+  .player-search-button{padding:0 12px;font-size:12px}
+}
+
+
+.mode-switch{
+ display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px;
+ padding:5px;background:#e8eef4;border-radius:12px;
+}
+.mode-button{
+ border:0;border-radius:9px;padding:13px 10px;font-weight:800;
+ font-size:14px;background:transparent;color:#486174;cursor:pointer;
+}
+.mode-button.active{background:#0b2f55;color:#fff;box-shadow:0 2px 8px rgba(7,29,51,.18)}
+#editPickerArea{display:none}
+.mode-guide{font-size:12px;color:#607486;margin:-5px 0 14px}
+@media(max-width:600px){.mode-button{font-size:13px;padding:12px 6px}}
+
 </style>
 </head>
 
@@ -613,15 +711,27 @@ GarageBand ZIPと応援歌音源を選択して、選手情報を共通データ
 登録完了後にPC保存用データZIP（再生用m4a＋メロディーm4a＋コード進行・ベースm4a＋GarageBand ZIP）を自動作成します。
 </div>
 
+<div class="mode-switch">
+ <button type="button" id="newModeButton" class="mode-button active" onclick="showNewRegisterMode()">＋ 新規登録</button>
+ <button type="button" id="editModeButton" class="mode-button" onclick="showExistingEditMode()">登録済みデータを編集</button>
+</div>
+<div id="newModeGuide" class="mode-guide">新しい選手・新しい応援歌を登録します。下のフォームへ入力してください。</div>
+
+
 
 <!-- ============================== -->
 <!-- 01 ZIP -->
 <!-- ============================== -->
 
-<section class="card">
+
+
+
+<div id="registerArea">
+
+<section class="card card-garage">
 
 <div class="card-title">
-01 /// GARAGEBAND ZIP
+GarageBandデータ <span class="optional-badge">元データ</span>
 </div>
 
 <input
@@ -655,17 +765,15 @@ ZIPが選択されていません
 </section>
 
 
-<div id="registerArea">
-
 
 <!-- ============================== -->
 <!-- 02 PLAYER -->
 <!-- ============================== -->
 
-<section class="card">
+<section class="card card-player">
 
 <div class="card-title">
-02 /// PLAYER DATA
+選手情報
 </div>
 
 <div class="form-group">
@@ -867,10 +975,10 @@ NPBから取得
 <!-- 03 M4A -->
 <!-- ============================== -->
 
-<section class="card">
+<section class="card card-main-audio">
 
 <div class="card-title">
-03 /// SELECT AUDIO
+本編音源
 </div>
 
 <div class="form-group">
@@ -879,7 +987,7 @@ NPBから取得
   class="form-label"
   for="audioFile"
 >
-応援歌音源（m4a）
+再生用音源（audio.m4a）
 <span class="required">*</span>
 </label>
 
@@ -919,43 +1027,50 @@ m4aが選択されていません
 <!-- ============================== -->
 <!-- 04 SEPARATED AUDIO -->
 <!-- ============================== -->
-<section class="card">
-<div class="card-title">04 /// SELECT SEPARATED AUDIO</div>
-<div class="form-group">
+<section class="card card-main-audio">
+<div class="card-title">分離音源 <span class="required-badge">必須</span></div>
+<div class="section-help">メドレー再生で使用する音源です。メロディーと伴奏を別々に登録します。</div>
+<div class="file-row-card"><div class="form-group">
 <label class="form-label" for="melodyAudioFile">メロディー音源（m4a） <span class="required">*</span></label>
 <input type="file" id="melodyAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
 <div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedMelodyAudioName">メロディーm4aが選択されていません</div>
-</div>
-<div class="form-group">
-<label class="form-label" for="accompanimentAudioFile">コード進行＋ベース音源（m4a） <span class="required">*</span></label>
+</div></div>
+<div class="file-row-card"><div class="form-group">
+<label class="form-label" for="accompanimentAudioFile">コード進行＋ベース＋ドラム（accompaniment.m4a） <span class="required">*</span></label>
 <input type="file" id="accompanimentAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
 <div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedAccompanimentAudioName">コード＋ベースm4aが選択されていません</div>
-</div>
-<div class="form-group">
+</div></div>
+</section>
+<section class="card card-intro">
+<div class="card-title">前奏 <span class="optional-badge">任意</span></div>
+<div class="section-help">前奏がある曲だけ登録してください。前奏なしの場合は何も選択しなくてOKです。</div>
+<div class="file-row-card"><div class="form-group">
 <label class="form-label" for="introMelodyAudioFile">前奏メロディー（m4a・任意）</label>
 <input type="file" id="introMelodyAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
 <div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedIntroMelodyAudioName">前奏なし</div>
-</div>
-<div class="form-group">
-<label class="form-label" for="introAccompanimentAudioFile">前奏コード進行＋ベース（m4a・任意）</label>
+</div></div>
+<div class="file-row-card"><div class="form-group">
+<label class="form-label" for="introAccompanimentAudioFile">前奏コード進行＋ベース＋ドラム（m4a・任意）</label>
 <input type="file" id="introAccompanimentAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
 <div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedIntroAccompanimentAudioName">前奏なし</div>
-</div>
+</div></div>
 <div class="file-result">前奏は任意です。1-9では先頭選手に前奏が登録されている場合だけ、前奏→1番本編の順で再生します。</div>
 </section>
+
+
 
 <!-- ============================== -->
 <!-- 06 REGISTER -->
 <!-- ============================== -->
 
-<section class="card">
+<section class="card card-register">
 
 <div class="card-title">
-05 /// REGISTER
+登録
 </div>
 
 <div
@@ -993,10 +1108,11 @@ m4aが選択されていません
 <!-- 06 SAVED -->
 <!-- ============================== -->
 
-<section class="card">
+<div id="editPickerArea">
+<section class="card card-saved">
 
 <div class="card-title">
-06 /// REGISTERED DATA
+登録済みデータ
 </div>
 
 <div class="saved-search-wrap">
@@ -1038,6 +1154,7 @@ m4aが選択されていません
 </div>
 
 </section>
+</div>
 
 </main>
 
@@ -1093,6 +1210,79 @@ const $ = id =>
   document.getElementById(id);
 
 
+function setRegisterMode(mode){
+ const isNew=mode==="new";
+
+ const newBtn=$("newModeButton");
+ const editBtn=$("editModeButton");
+ const registerArea=$("registerArea");
+ const editPicker=$("editPickerArea");
+ const guide=$("newModeGuide");
+
+ if(newBtn)newBtn.classList.toggle("active",isNew);
+ if(editBtn)editBtn.classList.toggle("active",!isNew);
+
+ /* 新規登録と既存編集を完全に別画面として切り替える */
+ if(registerArea)registerArea.style.display=isNew?"block":"none";
+ if(editPicker)editPicker.style.display=isNew?"none":"block";
+ if(guide)guide.style.display=isNew?"block":"none";
+}
+
+function showNewRegisterMode(){
+ /* 必ず新規登録状態へ初期化してフォームを表示 */
+ editingSong=null;
+ clearNewRegisterForm();
+ setRegisterMode("new");
+
+ const area=$("registerArea");
+ if(area){
+  area.style.display="block";
+  setTimeout(()=>area.scrollIntoView({behavior:"smooth",block:"start"}),0);
+ }
+}
+
+function showExistingEditMode(){
+ /* まず検索画面だけ表示。選手を選ぶまでは登録フォームを出さない。 */
+ if(editingSong)cancelEditMode(true);
+ clearNewRegisterForm();
+ setRegisterMode("edit");
+ const input=$("savedSearchInput");
+ if(input)setTimeout(()=>input.focus(),0);
+}
+
+function clearNewRegisterForm(){
+ const ids=["playerName","reading","team","number","lyrics"];
+ ids.forEach(id=>{if($(id))$(id).value=""});
+ const current=document.querySelector('input[name="playerType"][value="現在使用"]');
+ if(current)current.checked=true;
+
+ ["zipFile","audioFile","melodyAudioFile","accompanimentAudioFile","introMelodyAudioFile","introAccompanimentAudioFile"]
+  .forEach(id=>{if($(id))$(id).value=""});
+
+ selectedZipFile=null;
+ selectedAudioFile=null;
+ selectedMelodyAudioFile=null;
+ selectedAccompanimentAudioFile=null;
+ selectedIntroMelodyAudioFile=null;
+ selectedIntroAccompanimentAudioFile=null;
+ editingSong=null;
+
+ if($("selectedFileName"))$("selectedFileName").textContent="ZIPが選択されていません";
+ if($("selectedAudioName"))$("selectedAudioName").textContent="m4aが選択されていません";
+ if($("selectedMelodyAudioName"))$("selectedMelodyAudioName").textContent="メロディーm4aが選択されていません";
+ if($("selectedAccompanimentAudioName"))$("selectedAccompanimentAudioName").textContent="コード＋ベース＋ドラムm4aが選択されていません";
+ if($("selectedIntroMelodyAudioName"))$("selectedIntroMelodyAudioName").textContent="前奏なし";
+ if($("selectedIntroAccompanimentAudioName"))$("selectedIntroAccompanimentAudioName").textContent="前奏なし";
+ if($("registerButton"))$("registerButton").textContent="この選手を登録";
+ if($("cancelEditButton"))$("cancelEditButton").style.display="none";
+ if($("editModeBox"))$("editModeBox").textContent="";
+ if($("productionNumberEdit"))$("productionNumberEdit").value="1";
+ if($("productionNumberDisplay"))$("productionNumberDisplay").textContent="1";
+ if($("message"))$("message").innerHTML="";
+ updateProductionNumber();
+}
+
+
 /* =========================================
    作成者認証（簡易ロック）
 ========================================= */
@@ -1119,6 +1309,8 @@ function openSongDataSubmit(){
 }
 
 window.addEventListener("DOMContentLoaded",()=>{
+  setRegisterMode("new");
+
   if(sessionStorage.getItem("ouenkaCreatorUnlocked") === "1"){
     $("creatorGate").style.display = "none";
     $("creatorContent").style.display = "block";
@@ -1922,7 +2114,6 @@ async function downloadPcDataZip(
 ){
   if(
     !audioFile ||
-    !garageBandZipFile ||
     !melodyAudioFile ||
     !accompanimentAudioFile
   ){
@@ -1949,10 +2140,12 @@ async function downloadPcDataZip(
     audioFile
   );
 
-  songFolder.file(
-    "garageband.zip",
-    garageBandZipFile
-  );
+  if(garageBandZipFile){
+    songFolder.file(
+      "garageband.zip",
+      garageBandZipFile
+    );
+  }
   songFolder.file("melody.m4a", melodyAudioFile);
   songFolder.file("accompaniment.m4a", accompanimentAudioFile);
   if(introMelodyAudioFile) songFolder.file("intro_melody.m4a", introMelodyAudioFile);
@@ -2056,18 +2249,9 @@ async function registerPlayer(){
     return;
   }
 
+  // GarageBand ZIPは任意です。
 
-  if(!selectedZipFile){
-
-    showError(
-      "GarageBand ZIPを選択してください。"
-    );
-
-    return;
-  }
-
-
-  if(!name){
+if(!name){
 
     showError(
       "選手名を入力してください。"
@@ -2235,10 +2419,10 @@ async function registerPlayer(){
       GarageBand ZIP
       */
       zipFileName:
-        "garageband.zip",
+        selectedZipFile ? "garageband.zip" : "",
 
       originalZip:
-        selectedZipFile,
+        selectedZipFile || null,
 
       /*
       D1情報
@@ -2367,6 +2551,10 @@ async function registerPlayer(){
 ========================================= */
 
 function startEditSong(song){
+  setRegisterMode("edit");
+  /* 既存選手を選んだ時だけ編集フォームを表示 */
+  if($("registerArea"))$("registerArea").style.display="block";
+
 
   clearMessage();
 
