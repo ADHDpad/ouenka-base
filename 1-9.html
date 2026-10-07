@@ -694,6 +694,7 @@ function stopOneNineMedley(){
  if(liveMedleyContext){try{liveMedleyContext.close()}catch(e){} liveMedleyContext=null}
  const btn=document.getElementById("medleyPlayButton");
  if(btn)btn.textContent="▶ 1-9を作成・再生";
+ if(navigator.mediaSession){try{navigator.mediaSession.playbackState="none"}catch(e){}}
 }
 
 async function prepareOneNineAudioContext(){
@@ -772,10 +773,10 @@ function buildDynamicSongStarts(songs,introDuration){
 }
 
 
-/* 今日最初に良かった方式：
-   Gainを6msごとに0/1切替せず、波形を約6ms窓のRMSで判定し、
-   重複しているサンプルだけ前側を「足さない」。
-   これによりGain境界のプツンを作らない。 */
+/* v49 重複音削除方式：
+   弱起かどうかは判定しない。
+   前曲と次曲が実際に鳴っている重複ブロックだけ、前曲側を「足さない」。
+   次曲側はそのまま残す。Gainの急切替を使わないため境界ノイズも作りにくい。 */
 function smoothFrameRms(data,index,radius){
  const from=Math.max(0,index-radius),to=Math.min(data.length,index+radius+1);
  let sum=0;
@@ -924,32 +925,45 @@ async function buildAndPlayOneNineMedley(){
   /* 前奏→1番：前奏の最後から2番目の小節頭に1番本編を置く */
   const firstSongStart=intro ? getSongJoinOffsetSec(intro) : 0;
 
-  /* 本編同士も前曲の最後から2番目の小節頭へ次曲を置く */
-  const starts=[];
-  let cursor=firstSongStart;
-  for(let i=0;i<separated.length;i++){
-   starts.push(cursor);
-   if(i<separated.length-1)cursor+=getSongJoinOffsetSec(separated[i]);
-  }
+  /* v49: 1-9本編は空白小節を含む9小節構造を基準に固定。
+     「最後に音が鳴った位置」では詰めない。
+     次曲は常に前曲開始から8小節後（9小節目の頭）に置く。 */
+  const starts=separated.map((_,i)=>firstSongStart+i*MEDLEY_INTERVAL_SEC);
 
   /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
      メロディーとコード進行は別々に重複判定する。 */
   const mixed=mixSmoothIndependent(ctx,separated,intro,starts);
-  scheduleBuffer(ctx,mixed,base);
+  const masterSource=scheduleBuffer(ctx,mixed,base);
 
-  const total=mixed.duration;
-
-  if(btn){btn.disabled=false;btn.textContent="■ 1-9を停止"}
-  liveMedleyStopTimer=setTimeout(()=>{
-   liveMedleyStopTimer=null;
+  /* v49: 壁時計setTimeoutではなく、実際の音源終了を基準にする。
+     バックグラウンドでAudioContextが停止しても終了判定だけ先に進ませない。 */
+  masterSource.addEventListener("ended",()=>{
+   if(liveMedleyContext!==ctx)return;
    liveMedleySources=[];
-   if(liveMedleyContext){
-    try{liveMedleyContext.close()}catch(e){}
-    liveMedleyContext=null;
-   }
+   try{ctx.close()}catch(e){}
+   liveMedleyContext=null;
    const b=document.getElementById("medleyPlayButton");
    if(b)b.textContent="▶ 1-9を作成・再生";
-  },Math.ceil((total+0.2)*1000));
+   if(navigator.mediaSession)navigator.mediaSession.playbackState="none";
+  },{once:true});
+
+  if("mediaSession" in navigator){
+   try{
+    navigator.mediaSession.metadata=new MediaMetadata({title:"1-9",artist:"OUENKA BASE",album:"FIGHT SONG"});
+    navigator.mediaSession.setActionHandler("play",async()=>{
+     if(liveMedleyContext&&liveMedleyContext.state==="suspended")await liveMedleyContext.resume();
+     navigator.mediaSession.playbackState="playing";
+    });
+    navigator.mediaSession.setActionHandler("pause",async()=>{
+     if(liveMedleyContext&&liveMedleyContext.state==="running")await liveMedleyContext.suspend();
+     navigator.mediaSession.playbackState="paused";
+    });
+    navigator.mediaSession.setActionHandler("stop",()=>stopOneNineMedley());
+    navigator.mediaSession.playbackState="playing";
+   }catch(e){console.warn("1-9 MediaSession",e)}
+  }
+
+  if(btn){btn.disabled=false;btn.textContent="■ 1-9を停止"}
 
  }catch(error){
   console.error("1-9高速再生エラー:",error);

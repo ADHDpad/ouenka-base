@@ -4,6 +4,7 @@ const params=new URLSearchParams(location.search);
 const team=params.get("team")||"北海道日本ハムファイターズ";
 let songs=[],filter="all",current=null,currentAudios=[],paused=false;
 let teamAudioContext=null,teamSources=[],teamPlayToken=0,teamStartedAt=0,teamPauseOffset=0,teamBuffers=null,teamTimeline=[],teamTotalDuration=0;
+let teamEndTimer=null,teamRemainingMs=0,teamTimerStartedAt=0;
 const $=id=>document.getElementById(id);
 $("teamTitle").textContent=team;
 document.title=team+" | OUENKA BASE";
@@ -55,6 +56,8 @@ function render(){
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function stopAudio(clear=true){
  teamPlayToken++;
+ if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
+ teamRemainingMs=0;teamTimerStartedAt=0;
  teamSources.forEach(src=>{try{src.stop()}catch(_){}});teamSources=[];
  currentAudios.forEach(a=>{try{a.pause();a.removeAttribute("src");a.load()}catch(_){}});currentAudios=[];
  if(teamAudioContext){try{teamAudioContext.close()}catch(_){}}teamAudioContext=null;teamBuffers=null;teamTimeline=[];teamTotalDuration=0;teamPauseOffset=0;paused=false;
@@ -89,6 +92,16 @@ function introJoinOffset(melody,accompaniment){
  const bars=Math.max(2,Math.ceil(Math.max(0,end-.035)/BAR_SEC));
  return Math.max(0,(bars-2)*BAR_SEC);
 }
+function armTeamEndTimer(ms){
+ if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
+ teamRemainingMs=Math.max(0,ms);
+ teamTimerStartedAt=performance.now();
+ const token=teamPlayToken;
+ teamEndTimer=setTimeout(()=>{
+  teamEndTimer=null;
+  if(token===teamPlayToken&&!paused)stopAudio();
+ },teamRemainingMs);
+}
 function startSyncedBuffers(offset=0){
  if(!teamAudioContext||!teamTimeline.length)return;
  teamSources.forEach(src=>{try{src.stop()}catch(_){}});teamSources=[];
@@ -101,8 +114,7 @@ function startSyncedBuffers(offset=0){
   src.start(when+delay,Math.min(seek,Math.max(0,item.buffer.duration-.01)));teamSources.push(src);
  }
  teamStartedAt=when-offset;
- const remain=teamTotalDuration-offset,token=teamPlayToken;
- setTimeout(()=>{if(token===teamPlayToken&&!paused)stopAudio()},Math.max(0,(remain+.2)*1000));
+ armTeamEndTimer(Math.max(0,(teamTotalDuration-offset+.2)*1000));
 }
 async function playSong(s){
  if(current&&current.name===s.name&&current.productionNumber===s.productionNumber&&teamBuffers){togglePause();return}
@@ -131,9 +143,25 @@ async function playSong(s){
 async function togglePause(){
  if(!teamAudioContext||!teamBuffers)return;
  if(paused){
-  try{if(teamAudioContext.state==="suspended")await teamAudioContext.resume();paused=false;startSyncedBuffers(teamPauseOffset);$("miniState").textContent="再生中";if(navigator.mediaSession)navigator.mediaSession.playbackState="playing"}catch(e){console.warn(e)}
+  try{
+   await teamAudioContext.resume();
+   paused=false;
+   armTeamEndTimer(teamRemainingMs||Math.max(0,(teamTotalDuration-teamPauseOffset+.2)*1000));
+   $("miniState").textContent="再生中";
+   if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";
+  }catch(e){console.warn(e)}
  }else{
-  teamPauseOffset=Math.max(0,teamAudioContext.currentTime-teamStartedAt);teamSources.forEach(src=>{try{src.stop()}catch(_){}});teamSources=[];paused=true;$("miniState").textContent="一時停止";if(navigator.mediaSession)navigator.mediaSession.playbackState="paused"
+  try{
+   teamPauseOffset=Math.max(0,teamAudioContext.currentTime-teamStartedAt);
+   if(teamEndTimer){
+    clearTimeout(teamEndTimer);teamEndTimer=null;
+    teamRemainingMs=Math.max(0,teamRemainingMs-(performance.now()-teamTimerStartedAt));
+   }
+   await teamAudioContext.suspend();
+   paused=true;
+   $("miniState").textContent="一時停止";
+   if(navigator.mediaSession)navigator.mediaSession.playbackState="paused";
+  }catch(e){console.warn(e)}
  }
 }
 function setMediaSession(s){if(!("mediaSession" in navigator))return;try{navigator.mediaSession.metadata=new MediaMetadata({title:s.name,artist:team,album:"OUENKA BASE"});navigator.mediaSession.setActionHandler("play",()=>{if(paused)togglePause()});navigator.mediaSession.setActionHandler("pause",()=>{if(!paused)togglePause()});navigator.mediaSession.setActionHandler("stop",()=>stopAudio())}catch(e){console.warn("MediaSession",e)}}
