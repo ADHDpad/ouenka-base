@@ -180,6 +180,13 @@ async function playSongData(player) {
             return Math.max(0,(bars-2)*BAR_SEC);
         }
 
+        // 前奏の末尾2小節の1小節目頭に本編1小節目を重ねる。
+        // 音量検出ではなく前奏ファイル長基準なので、1-9画面と同じタイミングになる。
+        function introJoinOffset(pair){
+            const fileEnd=Math.max(pair.melody?.duration||0,pair.accompaniment?.duration||0);
+            return Math.max(0,fileEnd-(BAR_SEC*2));
+        }
+
         const sources=[];
         function schedule(buffer,when){
             const src=ctx.createBufferSource();
@@ -188,7 +195,7 @@ async function playSongData(player) {
         }
 
         const base=ctx.currentTime+.04;
-        const mainStart=intro?joinOffset(intro):0;
+        const mainStart=intro?introJoinOffset(intro):0;
         if(intro){
             schedule(intro.melody,base);
             schedule(intro.accompaniment,base);

@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-v40";
+const CACHE_NAME = "gap1-ouenka-base-v41";
 
 // 2026-10-06
 // 1-9分離音源方式：メロディー重複時のみ前曲メロディーを抑止。
