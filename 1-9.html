@@ -688,12 +688,51 @@ function audioBufferToWav(buffer){
 
 function stopOneNineMedley(){
  if(completedMedleyAudio){try{completedMedleyAudio.pause();completedMedleyAudio.currentTime=0}catch(e){}}
+ if(completedMedleyUrl){try{URL.revokeObjectURL(completedMedleyUrl)}catch(e){} completedMedleyUrl=null}
  if(liveMedleyStopTimer){clearTimeout(liveMedleyStopTimer);liveMedleyStopTimer=null}
  for(const source of liveMedleySources){try{source.stop()}catch(e){}}
  liveMedleySources=[];
  if(liveMedleyContext){try{liveMedleyContext.close()}catch(e){} liveMedleyContext=null}
+ if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="none"}catch(e){}}
  const btn=document.getElementById("medleyPlayButton");
  if(btn)btn.textContent="▶ 1-9を作成・再生";
+}
+
+/* iPhone/PWAの画面ロック中も再生を続けやすくするため、
+   完成した1-9はWeb Audioではなく1本のHTMLAudioとして再生する。 */
+async function playCompletedMedleyBuffer(buffer){
+ if(completedMedleyAudio){try{completedMedleyAudio.pause()}catch(e){}}
+ if(completedMedleyUrl){try{URL.revokeObjectURL(completedMedleyUrl)}catch(e){}}
+ completedMedleyUrl=URL.createObjectURL(audioBufferToWav(buffer));
+ const audio=new Audio(completedMedleyUrl);
+ audio.preload="auto";
+ audio.playsInline=true;
+ audio.volume=1;
+ completedMedleyAudio=audio;
+
+ if("mediaSession" in navigator){
+  try{
+   navigator.mediaSession.metadata=new MediaMetadata({title:"1-9 メドレー",artist:"応援歌BASE",album:"応援歌BASE"});
+   navigator.mediaSession.setActionHandler("play",()=>audio.play());
+   navigator.mediaSession.setActionHandler("pause",()=>audio.pause());
+   navigator.mediaSession.playbackState="playing";
+  }catch(e){}
+ }
+
+ audio.addEventListener("play",()=>{
+  if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="playing"}catch(e){}}
+ });
+ audio.addEventListener("pause",()=>{
+  if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="paused"}catch(e){}}
+ });
+ audio.addEventListener("ended",()=>{
+  const b=document.getElementById("medleyPlayButton");
+  if(b)b.textContent="▶ 1-9を作成・再生";
+  if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="none"}catch(e){}}
+ });
+
+ await audio.play();
+ return audio;
 }
 
 async function prepareOneNineAudioContext(){
@@ -935,21 +974,15 @@ async function buildAndPlayOneNineMedley(){
   /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
      メロディーとコード進行は別々に重複判定する。 */
   const mixed=mixSmoothIndependent(ctx,separated,intro,starts);
-  scheduleBuffer(ctx,mixed,base);
 
-  const total=mixed.duration;
+  /* 合成処理だけAudioContextで行い、再生はHTMLAudioへ渡す。
+     これでiOSのロック画面/バックグラウンド再生に対応しやすくする。 */
+  try{await ctx.close()}catch(e){}
+  liveMedleyContext=null;
+  liveMedleySources=[];
+  await playCompletedMedleyBuffer(mixed);
 
   if(btn){btn.disabled=false;btn.textContent="■ 1-9を停止"}
-  liveMedleyStopTimer=setTimeout(()=>{
-   liveMedleyStopTimer=null;
-   liveMedleySources=[];
-   if(liveMedleyContext){
-    try{liveMedleyContext.close()}catch(e){}
-    liveMedleyContext=null;
-   }
-   const b=document.getElementById("medleyPlayButton");
-   if(b)b.textContent="▶ 1-9を作成・再生";
-  },Math.ceil((total+0.2)*1000));
 
  }catch(error){
   console.error("1-9高速再生エラー:",error);
