@@ -443,7 +443,7 @@ async function playSelectedRow(row){
   currentPlayingRow=row;
   button.classList.add("playing");
   const base=ctx.currentTime+0.04;
-  const mainStart=intro?getIntroJoinOffsetSec(intro):0;
+  const mainStart=intro?getSongJoinOffsetSec(intro):0;
 
   if(intro){
    scheduleBuffer(ctx,intro.melody,base);
@@ -688,51 +688,12 @@ function audioBufferToWav(buffer){
 
 function stopOneNineMedley(){
  if(completedMedleyAudio){try{completedMedleyAudio.pause();completedMedleyAudio.currentTime=0}catch(e){}}
- if(completedMedleyUrl){try{URL.revokeObjectURL(completedMedleyUrl)}catch(e){} completedMedleyUrl=null}
  if(liveMedleyStopTimer){clearTimeout(liveMedleyStopTimer);liveMedleyStopTimer=null}
  for(const source of liveMedleySources){try{source.stop()}catch(e){}}
  liveMedleySources=[];
  if(liveMedleyContext){try{liveMedleyContext.close()}catch(e){} liveMedleyContext=null}
- if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="none"}catch(e){}}
  const btn=document.getElementById("medleyPlayButton");
  if(btn)btn.textContent="▶ 1-9を作成・再生";
-}
-
-/* iPhone/PWAの画面ロック中も再生を続けやすくするため、
-   完成した1-9はWeb Audioではなく1本のHTMLAudioとして再生する。 */
-async function playCompletedMedleyBuffer(buffer){
- if(completedMedleyAudio){try{completedMedleyAudio.pause()}catch(e){}}
- if(completedMedleyUrl){try{URL.revokeObjectURL(completedMedleyUrl)}catch(e){}}
- completedMedleyUrl=URL.createObjectURL(audioBufferToWav(buffer));
- const audio=new Audio(completedMedleyUrl);
- audio.preload="auto";
- audio.playsInline=true;
- audio.volume=1;
- completedMedleyAudio=audio;
-
- if("mediaSession" in navigator){
-  try{
-   navigator.mediaSession.metadata=new MediaMetadata({title:"1-9 メドレー",artist:"応援歌BASE",album:"応援歌BASE"});
-   navigator.mediaSession.setActionHandler("play",()=>audio.play());
-   navigator.mediaSession.setActionHandler("pause",()=>audio.pause());
-   navigator.mediaSession.playbackState="playing";
-  }catch(e){}
- }
-
- audio.addEventListener("play",()=>{
-  if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="playing"}catch(e){}}
- });
- audio.addEventListener("pause",()=>{
-  if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="paused"}catch(e){}}
- });
- audio.addEventListener("ended",()=>{
-  const b=document.getElementById("medleyPlayButton");
-  if(b)b.textContent="▶ 1-9を作成・再生";
-  if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="none"}catch(e){}}
- });
-
- await audio.play();
- return audio;
 }
 
 async function prepareOneNineAudioContext(){
@@ -798,41 +759,7 @@ function getSongBarCount(song){
 /* 「最後の小節の1個前」の頭。
    8小節曲→7小節目頭＝6小節分後
    16小節曲→15小節目頭＝14小節分後 */
-/* 前奏→本編は、登録された前奏の末尾2小節のうち、最初の1小節目の頭に本編1小節目を重ねる。
-   さきほど確認した「前奏＋メロディー_空白1小節」と同じ基準。
-   音量検出ではなくファイル長基準にすることで、弱起や余韻に左右されない。 */
-function getIntroJoinOffsetSec(intro){
- const fileEnd=Math.max(
-  intro?.melody ? intro.melody.duration : 0,
-  intro?.accompaniment ? intro.accompaniment.duration : 0
- );
- return Math.max(0,fileEnd-(MEDLEY_BAR_SEC*2));
-}
-
 function getSongJoinOffsetSec(song){
- /* 曲ファイルの末尾に「空白2小節」が入っている場合は、
-    その空白を全部詰めず、1小節だけ残して次曲を開始する。
-    例：末尾2小節の1小節目頭 ＝ 次曲1小節目頭。重複時間は増やさない。
-    末尾無音が2小節未満の通常曲は、従来どおり
-    「最後の小節の1個前」の頭で接続する。 */
- const audibleEnd=Math.max(getAudibleEndSec(song.melody),getAudibleEndSec(song.accompaniment));
- const fileEnd=Math.max(
-  song.melody ? song.melody.duration : 0,
-  song.accompaniment ? song.accompaniment.duration : 0
- );
- // M4Aの末尾パディングや音の余韻で秒数が少しずれても、
- // 「空白が何小節あるか」を小節単位で判定する。
- const fileBars=Math.max(1,Math.round(fileEnd/MEDLEY_BAR_SEC));
- const audibleBars=Math.max(1,Math.ceil(Math.max(0,audibleEnd-0.035)/MEDLEY_BAR_SEC));
- const trailingBlankBars=Math.max(0,fileBars-audibleBars);
-
- // 末尾空白が2小節以上：空白1小節目の頭へ次曲1小節目を重ねる。
- // 接続点は「最後に音が鳴った位置」ではなく、空白を含むファイル全長基準。
- if(trailingBlankBars>=2){
-  return Math.max(0,(fileBars-2)*MEDLEY_BAR_SEC);
- }
-
- // 末尾空白が0～1小節：従来どおりの接続。
  return Math.max(0,(getSongBarCount(song)-2)*MEDLEY_BAR_SEC);
 }
 function buildDynamicSongStarts(songs,introDuration){
@@ -864,10 +791,6 @@ function smoothFrameRms(data,index,radius){
    メロディー/伴奏の独立判定ルールは維持。
    以前のように各サンプルごとに6ms窓RMSを再計算しない。 */
 function mixSmoothIndependent(ctx,songs,intro,starts){
- /* 接続ルール：
-    前曲の末尾2小節のうち1小節目の頭に、次曲の1小節目の頭を置く。
-    「重複を消す」は時間を1小節ぶん詰める意味で、音そのものは削除しない。
-    前曲の最後の1小節も最後まで残し、次曲の先頭と同時に鳴らす。 */
  const sampleRate=songs[0].melody.sampleRate;
  const channels=Math.max(
   ...songs.flatMap(s=>[s.melody.numberOfChannels,s.accompaniment.numberOfChannels]),
@@ -881,32 +804,67 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
  const melodyBus=ctx.createBuffer(channels,totalFrames,sampleRate);
  const accompanimentBus=ctx.createBuffer(channels,totalFrames,sampleRate);
 
- function addWholeTrack(target,buffer,startFrame,ch){
-  if(!buffer)return;
+ const blockSize=Math.max(64,Math.round(sampleRate*0.006));
+ const threshold=Math.pow(10,-42/20);
+ const activityCache=new WeakMap();
+
+ function getActivity(buffer,ch){
+  let byChannel=activityCache.get(buffer);
+  if(!byChannel){byChannel=new Map();activityCache.set(buffer,byChannel)}
+  const realCh=Math.min(ch,buffer.numberOfChannels-1);
+  if(byChannel.has(realCh))return byChannel.get(realCh);
+  const data=buffer.getChannelData(realCh);
+  const blocks=Math.ceil(data.length/blockSize);
+  const active=new Uint8Array(blocks);
+  for(let b=0;b<blocks;b++){
+   const from=b*blockSize,to=Math.min(data.length,from+blockSize);
+   let sum=0;
+   for(let i=from;i<to;i++){const v=data[i];sum+=v*v}
+   active[b]=Math.sqrt(sum/Math.max(1,to-from))>threshold?1:0;
+  }
+  byChannel.set(realCh,active);
+  return active;
+ }
+
+ function addIndependentTrack(target,cur,curStart,next,nextStart,ch){
   const out=target.getChannelData(ch);
-  const src=buffer.getChannelData(Math.min(ch,buffer.numberOfChannels-1));
-  const max=Math.min(src.length,out.length-startFrame);
-  for(let f=0;f<max;f++)out[startFrame+f]+=src[f];
+  const src=cur.getChannelData(Math.min(ch,cur.numberOfChannels-1));
+  const curActivity=getActivity(cur,ch);
+  const nextSrc=next?next.getChannelData(Math.min(ch,next.numberOfChannels-1)):null;
+  const nextActivity=next?getActivity(next,ch):null;
+
+  // 重複区間外は判定なしで高速コピー加算。
+  const overlapStart=next?Math.max(curStart,nextStart):Infinity;
+  const overlapEnd=next?Math.min(curStart+cur.length,nextStart+next.length):-Infinity;
+
+  for(let f=0;f<cur.length;f++){
+   const global=curStart+f;
+   if(global>=overlapStart && global<overlapEnd && nextSrc){
+    const nextLocal=global-nextStart;
+    const cb=Math.min(curActivity.length-1,Math.floor(f/blockSize));
+    const nb=Math.min(nextActivity.length-1,Math.floor(nextLocal/blockSize));
+    if(curActivity[cb] && nextActivity[nb])continue;
+   }
+   out[global]+=src[f];
+  }
  }
 
  for(let ch=0;ch<channels;ch++){
   if(intro){
-   addWholeTrack(melodyBus,intro.melody,0,ch);
-   addWholeTrack(accompanimentBus,intro.accompaniment,0,ch);
+   addIndependentTrack(melodyBus,intro.melody,0,songs[0].melody,startFrames[0],ch);
+   addIndependentTrack(accompanimentBus,intro.accompaniment,0,songs[0].accompaniment,startFrames[0],ch);
   }
   for(let i=0;i<songs.length;i++){
-   addWholeTrack(melodyBus,songs[i].melody,startFrames[i],ch);
-   addWholeTrack(accompanimentBus,songs[i].accompaniment,startFrames[i],ch);
+   const next=i<songs.length-1?songs[i+1]:null;
+   const nextStart=next?startFrames[i+1]:0;
+   addIndependentTrack(melodyBus,songs[i].melody,startFrames[i],next?next.melody:null,nextStart,ch);
+   addIndependentTrack(accompanimentBus,songs[i].accompaniment,startFrames[i],next?next.accompaniment:null,nextStart,ch);
   }
  }
  const output=ctx.createBuffer(channels,totalFrames,sampleRate);
  for(let ch=0;ch<channels;ch++){
   const dst=output.getChannelData(ch),mel=melodyBus.getChannelData(ch),acc=accompanimentBus.getChannelData(ch);
-  for(let i=0;i<totalFrames;i++){
-   // クリップだけ防止。重なった音を選別・削除はしない。
-   const v=mel[i]+acc[i];
-   dst[i]=Math.max(-1,Math.min(1,v));
-  }
+  for(let i=0;i<totalFrames;i++)dst[i]=mel[i]+acc[i];
  }
  return output;
 }
@@ -964,7 +922,7 @@ async function buildAndPlayOneNineMedley(){
   const base=ctx.currentTime+0.06;
 
   /* 前奏→1番：前奏の最後から2番目の小節頭に1番本編を置く */
-  const firstSongStart=intro ? getIntroJoinOffsetSec(intro) : 0;
+  const firstSongStart=intro ? getSongJoinOffsetSec(intro) : 0;
 
   /* 本編同士も前曲の最後から2番目の小節頭へ次曲を置く */
   const starts=[];
@@ -977,15 +935,21 @@ async function buildAndPlayOneNineMedley(){
   /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
      メロディーとコード進行は別々に重複判定する。 */
   const mixed=mixSmoothIndependent(ctx,separated,intro,starts);
+  scheduleBuffer(ctx,mixed,base);
 
-  /* 合成処理だけAudioContextで行い、再生はHTMLAudioへ渡す。
-     これでiOSのロック画面/バックグラウンド再生に対応しやすくする。 */
-  try{await ctx.close()}catch(e){}
-  liveMedleyContext=null;
-  liveMedleySources=[];
-  await playCompletedMedleyBuffer(mixed);
+  const total=mixed.duration;
 
   if(btn){btn.disabled=false;btn.textContent="■ 1-9を停止"}
+  liveMedleyStopTimer=setTimeout(()=>{
+   liveMedleyStopTimer=null;
+   liveMedleySources=[];
+   if(liveMedleyContext){
+    try{liveMedleyContext.close()}catch(e){}
+    liveMedleyContext=null;
+   }
+   const b=document.getElementById("medleyPlayButton");
+   if(b)b.textContent="▶ 1-9を作成・再生";
+  },Math.ceil((total+0.2)*1000));
 
  }catch(error){
   console.error("1-9高速再生エラー:",error);
