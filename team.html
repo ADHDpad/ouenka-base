@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071d33">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="team.css?v=43">
+<title>球団別応援歌 | OUENKA BASE</title>
+</head>
+<body>
+<header class="team-fixed">
+  <div class="team-topline">
+    <button class="back" type="button" onclick="location.href='./index.html'" aria-label="戻る">‹</button>
+    <h1 id="teamTitle">球団別応援歌</h1>
+    <span class="brand">OUENKA BASE</span>
+  </div>
+  <nav class="filter-tabs" aria-label="表示区分">
+    <button type="button" class="filter active" data-filter="all">全曲</button>
+    <button type="button" class="filter" data-filter="active">現役のみ</button>
+    <button type="button" class="filter" data-filter="ob">OBのみ</button>
+  </nav>
+</header>
+<main>
+  <div id="teamStatus" class="status">読み込み中…</div>
+  <section id="songList" class="song-list" aria-live="polite"></section>
+</main>
+<div id="miniPlayer" class="mini-player" hidden aria-label="再生操作">
+  <button id="miniPause" type="button" aria-label="一時停止">Ⅱ</button>
+  <button id="miniPlay" type="button" class="main-play" aria-label="再生">▶</button>
+  <button id="miniStop" type="button" aria-label="停止">■</button>
+  <strong id="miniTitle" hidden></strong><small id="miniState" hidden>停止中</small>
+</div>
+<script src="team.js?v=45"></script>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js').catch(console.warn)}
+</script>
+</body>
+</html>

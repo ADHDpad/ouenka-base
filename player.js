@@ -6,6 +6,13 @@
 let audioPlayers = [];
 let playAttemptId = 0;
 
+// v46: ホームの実再生エンジン状態
+let homeAudioContext = null;
+let homeAudioSources = [];
+let homePlaybackActive = false;
+let homePaused = false;
+let homeEndTimer = null;
+
 function setNowPlaying(text) {
     const now = document.getElementById("nowPlaying");
     if (now) now.textContent = text;
@@ -27,6 +34,23 @@ function stopCurrentSong() {
     playAttemptId++;
     audioPlayers.forEach(destroyAudio);
     audioPlayers = [];
+
+    // AudioContextで鳴っている前奏・メロディー・伴奏を全て停止
+    if (homeEndTimer) {
+        clearTimeout(homeEndTimer);
+        homeEndTimer = null;
+    }
+    homeAudioSources.forEach(src => {
+        try { src.stop(); } catch (_) {}
+        try { src.disconnect(); } catch (_) {}
+    });
+    homeAudioSources = [];
+    if (homeAudioContext) {
+        try { homeAudioContext.close(); } catch (_) {}
+    }
+    homeAudioContext = null;
+    homePlaybackActive = false;
+    homePaused = false;
 }
 
 function createAudio(src) {
@@ -87,6 +111,8 @@ async function playPair(primarySrc, accompanimentSrc, attemptId, label) {
 }
 
 async function playSongData(player) {
+    showHomeMiniPlayer();
+    homePaused=false;
     if (!player || !player.name || !player.productionNumber) {
         console.error("再生データがありません", player);
         setNowPlaying("音源データがありません");
@@ -103,6 +129,9 @@ async function playSongData(player) {
 
     try{
         ctx=new (window.AudioContext||window.webkitAudioContext)();
+        homeAudioContext=ctx;
+        homePlaybackActive=true;
+        homePaused=false;
         await ctx.resume();
 
         /* 1-9と同じ公開GitHub Pagesを基準にする。
@@ -185,6 +214,7 @@ async function playSongData(player) {
             const src=ctx.createBufferSource();
             src.buffer=buffer;src.connect(ctx.destination);src.start(when);
             sources.push(src);
+            homeAudioSources.push(src);
         }
 
         const base=ctx.currentTime+.04;
@@ -201,9 +231,14 @@ async function playSongData(player) {
             mainStart+audio.duration,mainStart+accompaniment.duration,
             intro?intro.melody.duration:0,intro?intro.accompaniment.duration:0
         );
-        setTimeout(async()=>{
+        if(homeEndTimer) clearTimeout(homeEndTimer);
+        homeEndTimer=setTimeout(async()=>{
             if(attemptId===playAttemptId){
                 setNowPlaying("");
+                homePlaybackActive=false;
+                homePaused=false;
+                homeAudioSources=[];
+                if(homeAudioContext===ctx) homeAudioContext=null;
                 try{await ctx.close()}catch(e){}
             }
         },Math.ceil((total+.15)*1000));
@@ -225,3 +260,44 @@ function playSong(playerId) {
     }
     playSongData(players[playerId]);
 }
+
+
+// ===== v46 下部固定プレイヤー（ホーム） =====
+function homeMini(){
+    return document.getElementById("homeMiniPlayer");
+}
+function showHomeMiniPlayer(){
+    const p=homeMini(); if(p) p.hidden=false;
+}
+async function pauseHomePlayback(){
+    if(!homeAudioContext || !homePlaybackActive || homePaused) return;
+    try{
+        await homeAudioContext.suspend();
+        homePaused=true;
+        setNowPlaying("Ⅱ 一時停止中");
+        if(navigator.mediaSession) navigator.mediaSession.playbackState="paused";
+    }catch(e){ console.warn("一時停止失敗",e); }
+}
+async function resumeHomePlayback(){
+    if(!homeAudioContext || !homePlaybackActive) return;
+    try{
+        await homeAudioContext.resume();
+        homePaused=false;
+        setNowPlaying("♪ 再生中");
+        if(navigator.mediaSession) navigator.mediaSession.playbackState="playing";
+    }catch(e){ console.warn("再開失敗",e); }
+}
+function stopHomePlayback(){
+    stopCurrentSong();
+    setNowPlaying("");
+    const p=homeMini(); if(p) p.hidden=true;
+    if(navigator.mediaSession) navigator.mediaSession.playbackState="none";
+}
+document.addEventListener("DOMContentLoaded",()=>{
+    const pause=document.getElementById("homePause");
+    const play=document.getElementById("homePlay");
+    const stop=document.getElementById("homeStop");
+    if(pause) pause.addEventListener("click",pauseHomePlayback);
+    if(play) play.addEventListener("click",resumeHomePlayback);
+    if(stop) stop.addEventListener("click",stopHomePlayback);
+});

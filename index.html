@@ -127,7 +127,27 @@
  .legacy-team-button{min-height:72px}
 }
 
-</style>
+
+        /* 下部固定ミニプレイヤー：一時停止 / 再生 / 停止 */
+        .simple-mini-player{
+            position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
+            z-index:9999; display:flex; align-items:center; justify-content:center;
+            gap:14px; padding:10px 14px; border-radius:16px;
+            background:rgba(7,29,51,.96); box-shadow:0 8px 28px rgba(0,0,0,.28);
+            backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+        }
+        .simple-mini-player[hidden]{display:none!important}
+        .simple-mini-player button{
+            width:48px; height:48px; border:1px solid rgba(255,255,255,.22);
+            border-radius:50%; background:#0B2F55; color:#fff;
+            font-size:20px; line-height:1; display:grid; place-items:center;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;
+        }
+        .simple-mini-player .main-play{
+            width:56px; height:56px; font-size:24px; background:#fff; color:#071d33;
+        }
+
+    </style>
 
 
     <style>
@@ -987,7 +1007,7 @@
 
     <script src="players.js"></script>
 
-    <script src="player.js?v=39"></script>
+    <script src="player.js?v=46"></script>
 
     <script src="search.js?v=39"></script>
 
@@ -1212,11 +1232,21 @@
    "ブルーウェーブ":"ORIX BLUEWAVE",
    "日本代表":"SAMURAI JAPAN"
  };
+ function openMainTeamPage(team){
+   location.href="./team.html?team="+encodeURIComponent(team);
+ }
+ document.querySelectorAll(".team-button").forEach((button)=>{
+   button.addEventListener("click",()=>{
+     const name=button.querySelector(".team-info strong")?.textContent?.trim();
+     if(name)openMainTeamPage(name);
+   });
+ });
+
  function openTeamFromExtra(team){
    if(typeof showTeamPlayers==="function"){showTeamPlayers(team);return}
    if(typeof selectTeam==="function"){selectTeam(team);return}
    if(typeof openTeam==="function"){openTeam(team);return}
-   location.href="./index.html?team="+encodeURIComponent(team);
+   location.href="./team.html?team="+encodeURIComponent(team);
  }
  function makeButton(team,number){
    const b=document.createElement("button");
@@ -1245,6 +1275,13 @@
  window.addEventListener("ouenka-team-order-change",renderExtraTeams);
 })();
 </script>
+
+
+    <div id="homeMiniPlayer" class="simple-mini-player" hidden aria-label="再生操作">
+        <button id="homePause" type="button" aria-label="一時停止">Ⅱ</button>
+        <button id="homePlay" class="main-play" type="button" aria-label="再生">▶</button>
+        <button id="homeStop" type="button" aria-label="停止">■</button>
+    </div>
 
 </body>
 
