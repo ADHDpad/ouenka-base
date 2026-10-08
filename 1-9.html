@@ -381,7 +381,7 @@ async function showSuggestions(row,input,box){
     // 選手を選んだ瞬間から裏で1-9用音源を先読み。
     // 再生ボタンを押す頃には通信待ちをほぼ終わらせる。
     const preloadItem={name,productionNumber:prod,audioUrl:row.dataset.audioUrl};
-    ["audio.m4a","melody.m4a","accompaniment.m4a","intro_melody.m4a","intro_accompaniment.m4a"]
+    ["melody.m4a","accompaniment.m4a","intro_accompaniment.m4a"]
       .forEach(fileName=>{
        const candidates=separatedAudioCandidates(preloadItem,fileName);
        // 最有力パスを先に取得。失敗は再生時の通常探索へ任せる。
@@ -522,8 +522,8 @@ function separatedAudioCandidates(item,fileName){
                   fileName==="intro_accompaniment.m4a"?item.introAccompanimentUrl:"";
  // 1曲目の個人再生用は必ず正規の audio.m4a を最優先する。
  // 登録メタデータに古い別名が残っていてもメドレー音源へ置き換えない。
- if(fileName==="audio.m4a"&&name&&no)list.push(root+n+"/"+p+"/audio.m4a");
  if(registered)list.push(registered);
+ if(fileName==="audio.m4a"&&name&&no)list.push(root+n+"/"+p+"/audio.m4a");
  if(name&&no){
   list.push(root+n+"/"+p+"/"+f);              // データ/選手名/制作番号/
   list.push(root+n+"_"+p+"/"+f);             // データ/選手名_制作番号/
@@ -568,7 +568,17 @@ async function fetchDecodeAudioCached(ctx,url){
 async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  let lastError=null;
  for(const path of separatedAudioCandidates(item,fileName)){
-  try{return await fetchDecodeAudioCached(ctx,path)}catch(e){lastError=e}
+  try{
+   // 個人再生と同様、1曲目の再生用音源は常に最新ファイルを直接取得。
+   // 先読み時の古い音源キャッシュ（force-cache）を使わない。
+   if(fileName==="audio.m4a"){
+    const url=toPublicAudioUrl(path);
+    const response=await fetch(url,{cache:"no-store",credentials:"omit"});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    return await ctx.decodeAudioData(await response.arrayBuffer());
+   }
+   return await fetchDecodeAudioCached(ctx,path);
+  }catch(e){lastError=e}
  }
  if(optional)return null;
  throw lastError||new Error(`${fileName} が見つかりません。`);
