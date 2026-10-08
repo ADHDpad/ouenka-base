@@ -425,39 +425,21 @@ async function playSelectedRow(row){
   ctx=await prepareOneNineAudioContext();
   const item={name,productionNumber,audioUrl:row.dataset.audioUrl||""};
 
-  // No.再生の本編もメドレー1曲目と同じ audio + accompaniment
-  const [audio,accompaniment]=await Promise.all([
+  const [audio,normalAccompaniment,openingAccompaniment]=await Promise.all([
    fetchFirstExistingAudio(ctx,item,"audio.m4a"),
-   fetchFirstExistingAudio(ctx,item,"accompaniment.m4a")
-  ]);
-
-  // 前奏はあれば2本とも使用
-  const [introMelody,introAccompaniment]=await Promise.all([
-   fetchFirstExistingAudio(ctx,item,"intro_melody.m4a",true),
+   fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
    fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true)
   ]);
-  const intro=(introMelody&&introAccompaniment)
-   ?{melody:introMelody,accompaniment:introAccompaniment}:null;
+  const accompaniment=openingAccompaniment||normalAccompaniment;
 
   liveMedleyContext=ctx;
   currentPlayingRow=row;
   button.classList.add("playing");
   const base=ctx.currentTime+0.04;
-  const mainStart=intro?getSongJoinOffsetSec(intro):0;
+  scheduleBuffer(ctx,audio,base);
+  scheduleBuffer(ctx,accompaniment,base);
 
-  if(intro){
-   scheduleBuffer(ctx,intro.melody,base);
-   scheduleBuffer(ctx,intro.accompaniment,base);
-  }
-  scheduleBuffer(ctx,audio,base+mainStart);
-  scheduleBuffer(ctx,accompaniment,base+mainStart);
-
-  const total=Math.max(
-   mainStart+audio.duration,
-   mainStart+accompaniment.duration,
-   intro?intro.melody.duration:0,
-   intro?intro.accompaniment.duration:0
-  );
+  const total=Math.max(audio.duration,accompaniment.duration);
   liveMedleyStopTimer=setTimeout(()=>{
    liveMedleyStopTimer=null;liveMedleySources=[];
    if(liveMedleyContext){try{liveMedleyContext.close()}catch(e){} liveMedleyContext=null}
@@ -899,31 +881,23 @@ async function buildAndPlayOneNineMedley(){
      1番だけは本編メロディーとして audio.m4a を使用する。 */
   const separated=await Promise.all(selected.map(async(item,i)=>{
    try{
-    const melodyFile=(i===0)?"audio.m4a":"melody.m4a";
-    const [melody,accompaniment]=await Promise.all([
+    const melodyFile=i===0?"audio.m4a":"melody.m4a";
+    const [melody,normalAccompaniment,openingAccompaniment]=await Promise.all([
      fetchFirstExistingAudio(ctx,item,melodyFile),
-     fetchFirstExistingAudio(ctx,item,"accompaniment.m4a")
+     fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
+     i===0?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
     ]);
-    return{melody,accompaniment};
-   }catch(e){
-    throw new Error(`${item.name} の音源を読み込めませんでした。`);
-   }
+    return {melody,accompaniment:(i===0&&openingAccompaniment)||normalAccompaniment};
+   }catch(e){throw new Error(`${item.name} の音源を読み込めませんでした。`)}
   }));
-
-  /* 前奏は1番だけ。 */
-  let intro=null;
-  const first=selected[0];
-  const [im,ia]=await Promise.all([
-   fetchFirstExistingAudio(ctx,first,"intro_melody.m4a",true),
-   fetchFirstExistingAudio(ctx,first,"intro_accompaniment.m4a",true)
-  ]);
-  if(im&&ia)intro={melody:im,accompaniment:ia};
+  // 前奏は再生用音源と前奏あり伴奏の中に含まれる。別トラックは継ぎ足さない。
+  const intro=null;
 
   liveMedleyContext=ctx;
   const base=ctx.currentTime+0.06;
 
   /* 前奏→1番：前奏の最後から2番目の小節頭に1番本編を置く */
-  const firstSongStart=intro ? getSongJoinOffsetSec(intro) : 0;
+  const firstSongStart=0;
 
   /* v49: 1-9本編は空白小節を含む9小節構造を基準に固定。
      「最後に音が鳴った位置」では詰めない。

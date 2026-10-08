@@ -124,17 +124,14 @@ async function playSong(s){
  try{
   const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error("AudioContext非対応");
   const ctx=new Ctx();teamAudioContext=ctx;await ctx.resume();
-  const [audio,accompaniment,introMelody,introAccompaniment]=await Promise.all([
+  const [audio,normalAccompaniment,openingAccompaniment]=await Promise.all([
    fetchDecoded(ctx,s,"audio.m4a"),fetchDecoded(ctx,s,"accompaniment.m4a"),
-   fetchDecoded(ctx,s,"intro_melody.m4a").catch(()=>null),fetchDecoded(ctx,s,"intro_accompaniment.m4a").catch(()=>null)
+   fetchDecoded(ctx,s,"intro_accompaniment.m4a").catch(()=>null)
   ]);
   if(token!==teamPlayToken){try{await ctx.close()}catch(_){};return}
-  const hasIntro=!!(introMelody&&introAccompaniment);
-  const mainStart=hasIntro?introJoinOffset(introMelody,introAccompaniment):0;
+  const accompaniment=openingAccompaniment||normalAccompaniment;
   teamBuffers=[audio,accompaniment];
-  teamTimeline=[];
-  if(hasIntro){teamTimeline.push({buffer:introMelody,start:0},{buffer:introAccompaniment,start:0})}
-  teamTimeline.push({buffer:audio,start:mainStart},{buffer:accompaniment,start:mainStart});
+  teamTimeline=[{buffer:audio,start:0},{buffer:accompaniment,start:0}];
   teamTotalDuration=Math.max(...teamTimeline.map(x=>x.start+x.buffer.duration));
   teamPauseOffset=0;paused=false;startSyncedBuffers(0);
   $("miniState").textContent="再生中";if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";

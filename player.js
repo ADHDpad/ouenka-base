@@ -172,41 +172,17 @@ async function playSongData(player) {
             throw lastError||new Error(fileName+" が見つかりません");
         }
 
-        /* 1-9のNo.再生と同じ4本を取得 */
-        const [audio,accompaniment,im,ia]=await Promise.all([
+        // 前奏あり伴奏があれば再生用音源と同期。なければ通常伴奏。
+        const [audio,normalAccompaniment,openingAccompaniment]=await Promise.all([
             fetchFirst("audio.m4a",player.audio||""),
             fetchFirst("accompaniment.m4a",player.accompaniment||""),
-            fetchFirst("intro_melody.m4a",player.introMelody||"",true),
             fetchFirst("intro_accompaniment.m4a",player.introAccompaniment||"",true)
         ]);
+        const accompaniment=openingAccompaniment||normalAccompaniment;
 
         if(attemptId!==playAttemptId){
             try{await ctx.close()}catch(e){}
             return;
-        }
-
-        const intro=(im&&ia)?{melody:im,accompaniment:ia}:null;
-        const BAR_SEC=(60/170)*4;
-
-        function audibleEnd(buffer){
-            const sr=buffer.sampleRate,block=Math.max(1,Math.floor(sr*.020));
-            const threshold=Math.pow(10,-48/20);
-            let last=0;
-            for(let i=0;i<buffer.length;i+=block){
-                const to=Math.min(buffer.length,i+block);
-                let peak=0;
-                for(let c=0;c<buffer.numberOfChannels;c++){
-                    const data=buffer.getChannelData(c);
-                    for(let j=i;j<to;j++)peak=Math.max(peak,Math.abs(data[j]));
-                }
-                if(peak>threshold)last=to;
-            }
-            return last/sr;
-        }
-        function joinOffset(pair){
-            const end=Math.max(audibleEnd(pair.melody),audibleEnd(pair.accompaniment));
-            const bars=Math.max(2,Math.ceil(Math.max(0,end-.035)/BAR_SEC));
-            return Math.max(0,(bars-2)*BAR_SEC);
         }
 
         const sources=[];
@@ -218,19 +194,10 @@ async function playSongData(player) {
         }
 
         const base=ctx.currentTime+.04;
-        const mainStart=intro?joinOffset(intro):0;
-        if(intro){
-            schedule(intro.melody,base);
-            schedule(intro.accompaniment,base);
-        }
-        schedule(audio,base+mainStart);
-        schedule(accompaniment,base+mainStart);
+        schedule(audio,base);
+        schedule(accompaniment,base);
         setNowPlaying("♪ 再生中："+label);
-
-        const total=Math.max(
-            mainStart+audio.duration,mainStart+accompaniment.duration,
-            intro?intro.melody.duration:0,intro?intro.accompaniment.duration:0
-        );
+        const total=Math.max(audio.duration,accompaniment.duration);
         if(homeEndTimer) clearTimeout(homeEndTimer);
         homeEndTimer=setTimeout(async()=>{
             if(attemptId===playAttemptId){

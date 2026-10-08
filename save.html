@@ -1045,20 +1045,20 @@ m4aが選択されていません
 </section>
 <section class="card card-intro">
 <div class="card-title">前奏 <span class="optional-badge">任意</span></div>
-<div class="section-help">前奏がある曲だけ登録してください。前奏なしの場合は何も選択しなくてOKです。</div>
+<div class="section-help">前奏込みの再生用音源（audio.m4a）と同じ長さ・開始位置の伴奏を登録してください。未登録なら通常コード進行を使用します。前奏を別トラックとして継ぎ足しません。</div>
 <div class="file-row-card"><div class="form-group">
-<label class="form-label" for="introMelodyAudioFile">前奏メロディー（m4a・任意）</label>
+<label class="form-label" for="introMelodyAudioFile">旧方式：前奏メロディー（新規登録では使用しません）</label>
 <input type="file" id="introMelodyAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
 <div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedIntroMelodyAudioName">前奏なし</div>
 </div></div>
 <div class="file-row-card"><div class="form-group">
-<label class="form-label" for="introAccompanimentAudioFile">前奏コード進行＋ベース＋ドラム（m4a・任意）</label>
+<label class="form-label" for="introAccompanimentAudioFile">前奏ありコード進行＋ベース＋ドラム（再生用音源と同じ開始位置・任意）</label>
 <input type="file" id="introAccompanimentAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a">
 <div class="edit-file-note">編集時：差し替える場合だけ選択してください。</div>
 <div class="selected-file-name" id="selectedIntroAccompanimentAudioName">前奏なし</div>
 </div></div>
-<div class="file-result">前奏は任意です。1-9では先頭選手に前奏が登録されている場合だけ、前奏→1番本編の順で再生します。</div>
+<div class="file-result">個人再生・球団別再生・1-9の先頭では、前奏ありコード進行があれば優先します。2曲目以降は通常コード進行を使用します。</div>
 </section>
 
 
