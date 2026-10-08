@@ -515,7 +515,8 @@ function separatedAudioCandidates(item,fileName){
  const root=OUENKA_PUBLIC_BASE+"%E3%83%87%E3%83%BC%E3%82%BF/";
  const n=encodeURIComponent(name),p=encodeURIComponent(no),f=encodeURIComponent(fileName);
  const list=[];
- const registered=fileName==="melody.m4a"?item.melodyUrl:
+ const registered=fileName==="audio.m4a"?item.audioUrl:
+                  fileName==="melody.m4a"?item.melodyUrl:
                   fileName==="accompaniment.m4a"?item.accompanimentUrl:
                   fileName==="intro_melody.m4a"?item.introMelodyUrl:
                   fileName==="intro_accompaniment.m4a"?item.introAccompanimentUrl:"";
@@ -901,18 +902,15 @@ async function buildAndPlayOneNineMedley(){
   // 前奏付きコード進行がない場合は従来どおりの9小節接続を維持。
   let openingExtraSec=0;
   if(separated[0].hasOpeningAccompaniment){
-   const normalMelody=await fetchFirstExistingAudio(ctx,selected[0],"melody.m4a",true);
-   if(normalMelody){
-    const extra=Math.max(0,separated[0].melody.duration-normalMelody.duration);
-    openingExtraSec=Math.round(extra/MEDLEY_BAR_SEC)*MEDLEY_BAR_SEC;
-   }else{
-    // 本編ファイルがない旧データは、伴奏の通常版との長さの差を参照する。
-    const normalAccompaniment=await fetchFirstExistingAudio(ctx,selected[0],"accompaniment.m4a",true);
-    if(normalAccompaniment){
-     const extra=Math.max(0,separated[0].accompaniment.duration-normalAccompaniment.duration);
-     openingExtraSec=Math.round(extra/MEDLEY_BAR_SEC)*MEDLEY_BAR_SEC;
-    }
-   }
+   // 再生用音源・前奏付き伴奏の双方から前奏の長さを確認する。
+   // 片方が本編と同じ長さで書き出されていても、もう片方の差を採用する。
+   const [normalMelody,normalAccompaniment]=await Promise.all([
+    fetchFirstExistingAudio(ctx,selected[0],"melody.m4a",true),
+    fetchFirstExistingAudio(ctx,selected[0],"accompaniment.m4a",true)
+   ]);
+   const melodyExtra=normalMelody?Math.max(0,separated[0].melody.duration-normalMelody.duration):0;
+   const chordExtra=normalAccompaniment?Math.max(0,separated[0].accompaniment.duration-normalAccompaniment.duration):0;
+   openingExtraSec=Math.round(Math.max(melodyExtra,chordExtra)/MEDLEY_BAR_SEC)*MEDLEY_BAR_SEC;
   }
   const starts=separated.map((_,i)=>i===0?0:i*MEDLEY_INTERVAL_SEC+openingExtraSec);
 
