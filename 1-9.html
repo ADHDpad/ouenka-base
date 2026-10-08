@@ -887,22 +887,34 @@ async function buildAndPlayOneNineMedley(){
      fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
      i===0?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
     ]);
-    return {melody,accompaniment:(i===0&&openingAccompaniment)||normalAccompaniment};
+    return {melody,accompaniment:(i===0&&openingAccompaniment)||normalAccompaniment,
+            hasOpeningAccompaniment:i===0&&!!openingAccompaniment};
    }catch(e){throw new Error(`${item.name} の音源を読み込めませんでした。`)}
   }));
-  // 前奏は再生用音源と前奏あり伴奏の中に含まれる。別トラックは継ぎ足さない。
+  // 前奏は再生用音源に収録済み。別の前奏トラックを加えない。
   const intro=null;
-
   liveMedleyContext=ctx;
   const base=ctx.currentTime+0.06;
 
-  /* 前奏→1番：前奏の最後から2番目の小節頭に1番本編を置く */
-  const firstSongStart=0;
-
-  /* v49: 1-9本編は空白小節を含む9小節構造を基準に固定。
-     「最後に音が鳴った位置」では詰めない。
-     次曲は常に前曲開始から8小節後（9小節目の頭）に置く。 */
-  const starts=separated.map((_,i)=>firstSongStart+i*MEDLEY_INTERVAL_SEC);
+  // 1曲目の前奏分だけ2曲目以降を後ろへ送る。
+  // 本編の melody.m4a と再生用 audio.m4a の長さの差を小節単位で判定する。
+  // 前奏付きコード進行がない場合は従来どおりの9小節接続を維持。
+  let openingExtraSec=0;
+  if(separated[0].hasOpeningAccompaniment){
+   const normalMelody=await fetchFirstExistingAudio(ctx,selected[0],"melody.m4a",true);
+   if(normalMelody){
+    const extra=Math.max(0,separated[0].melody.duration-normalMelody.duration);
+    openingExtraSec=Math.round(extra/MEDLEY_BAR_SEC)*MEDLEY_BAR_SEC;
+   }else{
+    // 本編ファイルがない旧データは、伴奏の通常版との長さの差を参照する。
+    const normalAccompaniment=await fetchFirstExistingAudio(ctx,selected[0],"accompaniment.m4a",true);
+    if(normalAccompaniment){
+     const extra=Math.max(0,separated[0].accompaniment.duration-normalAccompaniment.duration);
+     openingExtraSec=Math.round(extra/MEDLEY_BAR_SEC)*MEDLEY_BAR_SEC;
+    }
+   }
+  }
+  const starts=separated.map((_,i)=>i===0?0:i*MEDLEY_INTERVAL_SEC+openingExtraSec);
 
   /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
      メロディーとコード進行は別々に重複判定する。 */
