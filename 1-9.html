@@ -520,6 +520,9 @@ function separatedAudioCandidates(item,fileName){
                   fileName==="accompaniment.m4a"?item.accompanimentUrl:
                   fileName==="intro_melody.m4a"?item.introMelodyUrl:
                   fileName==="intro_accompaniment.m4a"?item.introAccompanimentUrl:"";
+ // 1曲目の個人再生用は必ず正規の audio.m4a を最優先する。
+ // 登録メタデータに古い別名が残っていてもメドレー音源へ置き換えない。
+ if(fileName==="audio.m4a"&&name&&no)list.push(root+n+"/"+p+"/audio.m4a");
  if(registered)list.push(registered);
  if(name&&no){
   list.push(root+n+"/"+p+"/"+f);              // データ/選手名/制作番号/
