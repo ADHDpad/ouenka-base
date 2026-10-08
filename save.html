@@ -2572,7 +2572,7 @@ function startEditSong(song){
     selectedIntroMelodyAudioFile = null;
     selectedIntroAccompanimentAudioFile = null;
     ["zipFile","audioFile","melodyAudioFile","accompanimentAudioFile","introMelodyAudioFile","introAccompanimentAudioFile"]
-      .forEach(id => { $(id).value = ""; });
+      .forEach(id => { if($(id)) $(id).value = ""; });
 
     $("registerArea")
       .style
@@ -2661,7 +2661,7 @@ function startEditSong(song){
 
     $("selectedMelodyAudioName").textContent = "登録済み（変更する場合だけ選択）";
     $("selectedAccompanimentAudioName").textContent = "登録済み（変更する場合だけ選択）";
-    $("selectedIntroMelodyAudioName").textContent = "既存データを維持（変更する場合だけ選択）";
+    if($("selectedIntroMelodyAudioName")) $("selectedIntroMelodyAudioName").textContent = "既存データを維持（変更する場合だけ選択）";
     $("selectedIntroAccompanimentAudioName").textContent = "既存データを維持（変更する場合だけ選択）";
 
     $("registerArea")
@@ -3095,7 +3095,7 @@ function cancelEditMode(
     selectedIntroAccompanimentAudioFile = null;
 
     ["melodyAudioFile","accompanimentAudioFile","introMelodyAudioFile","introAccompanimentAudioFile"]
-      .forEach(id => { $(id).value = ""; });
+      .forEach(id => { if($(id)) $(id).value = ""; });
 
 
     $("selectedFileName")
