@@ -1,3 +1,5 @@
+window.ouenkaMissingAudio=window.ouenkaMissingAudio||new Set();
+window.ouenkaAudioBytes=window.ouenkaAudioBytes||new Map();
 // ========================================
 // OUENKA BASE 音楽プレイヤー
 // 個別再生：前奏(任意) → 再生用m4a＋コード進行/ベースm4a
@@ -153,27 +155,49 @@ async function playSongData(player) {
             return [...new Set(list)];
         }
 
+        // Successful URLs and decoded buffers are reused across individual plays.
+        // Failed optional files are remembered to avoid repeated 404 downloads.
         async function fetchFirst(fileName,registeredUrl="",optional=false){
+            const urls=candidateUrls(fileName,registeredUrl);
             let lastError=null;
-            for(const url of candidateUrls(fileName,registeredUrl)){
+            for(const url of urls){
+                if(window.ouenkaMissingAudio?.has(url))continue;
                 try{
-                    const response=await fetch(url,{
-                        cache:"no-store",
-                        credentials:"omit"
-                    });
-                    if(!response.ok)throw new Error(`HTTP ${response.status}`);
-                    const data=await response.arrayBuffer();
-                    return await ctx.decodeAudioData(data.slice(0));
-                }catch(e){
-                    lastError=e;
-                }
+                    let bytes=window.ouenkaAudioBytes?.get(url);
+                    if(!bytes){
+                        const response=await fetch(url,{credentials:"omit"});
+                        if(!response.ok){
+                            if(response.status===404)window.ouenkaMissingAudio.add(url);
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        bytes=await response.arrayBuffer();
+                        if(bytes.byteLength<12)throw new Error('音源データが空です');
+                        if(bytes.byteLength<12*1024*1024){
+                            window.ouenkaAudioBytes.set(url,bytes);
+                            if(window.ouenkaAudioBytes.size>12){
+                                window.ouenkaAudioBytes.delete(window.ouenkaAudioBytes.keys().next().value);
+                            }
+                        }
+                    }
+                    return await ctx.decodeAudioData(bytes.slice(0));
+                }catch(e){lastError=e;}
             }
             if(optional)return null;
             throw lastError||new Error(fileName+" が見つかりません");
         }
 
-        // 特別版は個人再生のみ。完成音源なので通常伴奏を重ねない。
-        const special=await fetchFirst("special_audio.m4a","",true);
+        // Only check the canonical location for optional special audio.
+        // Older code downloaded up to four missing files sequentially BEFORE normal playback.
+        const specialUrl=root+n+"/"+pn+"/special_audio.m4a";
+        const special=await (async()=>{
+            if(window.ouenkaMissingAudio.has(specialUrl))return null;
+            try{
+                const r=await fetch(specialUrl,{method:"HEAD",credentials:"omit"});
+                if(r.status===404){window.ouenkaMissingAudio.add(specialUrl);return null;}
+                if(!r.ok)return null;
+                return await fetchFirst("special_audio.m4a",specialUrl,true);
+            }catch(e){console.warn('特別版の確認:',e);return null;}
+        })();
         if(special){
             if(attemptId!==playAttemptId){try{await ctx.close()}catch(_){}return;}
             const src=ctx.createBufferSource();src.buffer=special;src.connect(ctx.destination);
