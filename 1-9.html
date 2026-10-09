@@ -81,6 +81,7 @@ body.row-dragging{user-select:none;-webkit-user-select:none}
 body.row-dragging{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}
 body.row-dragging *{cursor:grabbing!important}
 </style>
+<script src="audio-recovery.js?v=53"></script>
 <script src="team-order.js"></script>
 </head>
 <body>
@@ -697,14 +698,7 @@ function stopOneNineMedley(){
 }
 
 async function prepareOneNineAudioContext(){
- const AC=window.AudioContext||window.webkitAudioContext;
- if(!AC)throw new Error("このブラウザは音源再生に対応していません。");
- const ctx=new AC();
- if(ctx.state==="suspended")await ctx.resume();
- const oscillator=ctx.createOscillator(),gain=ctx.createGain();
- gain.gain.value=0;oscillator.connect(gain);gain.connect(ctx.destination);
- oscillator.start();oscillator.stop(ctx.currentTime+0.001);
- return ctx;
+ return window.ouenkaAudioRecovery.create();
 }
 
 function scheduleBuffer(ctx,buffer,when,gainNode=null){

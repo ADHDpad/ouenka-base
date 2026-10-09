@@ -123,7 +123,7 @@ async function playSong(s){
  document.querySelectorAll(".song-row").forEach(x=>x.classList.toggle("playing",x.dataset.key===s.name+"#"+s.productionNumber));setMediaSession(s);
  try{
   const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error("AudioContext非対応");
-  const ctx=new Ctx();teamAudioContext=ctx;await ctx.resume();
+  const ctx=await window.ouenkaAudioRecovery.create();teamAudioContext=ctx;
   const [audio,normalAccompaniment,openingAccompaniment]=await Promise.all([
    fetchDecoded(ctx,s,"audio.m4a"),fetchDecoded(ctx,s,"accompaniment.m4a"),
    fetchDecoded(ctx,s,"intro_accompaniment.m4a").catch(()=>null)

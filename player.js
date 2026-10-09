@@ -128,7 +128,7 @@ async function playSongData(player) {
     setNowPlaying("音源を検索中…");
 
     try{
-        ctx=new (window.AudioContext||window.webkitAudioContext)();
+        ctx=await window.ouenkaAudioRecovery.create();
         homeAudioContext=ctx;
         homePlaybackActive=true;
         homePaused=false;

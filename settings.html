@@ -78,4 +78,14 @@ document.getElementById("save").onclick=()=>{OUENKA_TEAM_ORDER.set(order);const 
 document.getElementById("reset").onclick=()=>{order=[...OUENKA_TEAM_ORDER.DEFAULT];render()};
 render();
 </script>
+<section style="margin:24px auto;max-width:650px;padding:16px;border:1px solid #789;border-radius:12px">
+<h2>iPhone 音声復旧</h2><p>他のアプリから戻った後に音が出ない場合、ここから音声エンジンだけを再起動します。再生中の曲は停止します。</p>
+<button type="button" id="audioResetButton" style="padding:12px 18px;font-size:16px;cursor:pointer">音声エンジンをリセット</button>
+<p id="audioResetResult" role="status" aria-live="polite"></p>
+</section>
+<script src="audio-recovery.js?v=53"></script>
+<script>document.getElementById('audioResetButton').addEventListener('click',async function(){
+ const out=document.getElementById('audioResetResult');out.textContent='音声を確認中…';
+ try{out.textContent=await window.ouenkaAudioRecovery.reset()}catch(e){out.textContent='復旧できませんでした: '+e.message+'。iOSの音声サービス側の問題の可能性があります。'}
+});</script>
 </body></html>
