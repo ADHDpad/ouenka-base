@@ -732,40 +732,24 @@ function applyBoundarySuppression(ctx,gainNode,cur,next,curStart,nextStart,playB
 }
 
 
-/* 実際に鳴っている終端を見て小節数を判定する。
-   m4a末尾の無音は小節数に含めない。 */
-function getAudibleEndSec(buffer){
- const sr=buffer.sampleRate, block=Math.max(1,Math.floor(sr*0.020));
- const threshold=Math.pow(10,-48/20);
- let last=0;
- for(let i=0;i<buffer.length;i+=block){
-  const to=Math.min(buffer.length,i+block);
-  let peak=0;
-  for(let c=0;c<buffer.numberOfChannels;c++){
-   const data=buffer.getChannelData(c);
-   for(let j=i;j<to;j++)peak=Math.max(peak,Math.abs(data[j]));
-  }
-  if(peak>threshold)last=to;
- }
- return last/sr;
+/* 音源全長（末尾の無音小節も含む）から8/16小節を選択。
+   書き出しには接続用の最終1小節があるため、9小節長なら8小節進む。
+   前奏付きの1曲目は、前奏の長さを別途加える。 */
+function getSongJoinOffsetSec(song,openingExtraSec=0){
+ const total=Math.max(song.melody.duration,song.accompaniment.duration);
+ const body=Math.max(0,total-openingExtraSec);
+ const bars=Math.max(1,Math.round(body/MEDLEY_BAR_SEC));
+ const musicalBars=bars>=13?16:8;
+ return openingExtraSec+musicalBars*MEDLEY_BAR_SEC;
 }
-function getSongBarCount(song){
- const end=Math.max(getAudibleEndSec(song.melody),getAudibleEndSec(song.accompaniment));
- return Math.max(2,Math.ceil(Math.max(0,end-0.035)/MEDLEY_BAR_SEC));
-}
-/* 音が鳴る最終小節の次の小節頭へ接続（8→9、16→17）。 */
-function getSongJoinOffsetSec(song){
- return Math.max(0,(getSongBarCount(song)-1)*MEDLEY_BAR_SEC);
-}
-function buildDynamicSongStarts(songs,introDuration){
- const starts=[];let cursor=introDuration;
+function buildDynamicSongStarts(songs,openingExtraSec=0){
+ const starts=[];let cursor=0;
  for(let i=0;i<songs.length;i++){
   starts.push(cursor);
-  if(i<songs.length-1)cursor+=getSongJoinOffsetSec(songs[i]);
+  if(i<songs.length-1)cursor+=getSongJoinOffsetSec(songs[i],i===0?openingExtraSec:0);
  }
  return starts;
 }
-
 
 /* v49 重複音削除方式：
    弱起かどうかは判定しない。
@@ -838,7 +822,7 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
     const nextLocal=global-nextStart;
     const cb=Math.min(curActivity.length-1,Math.floor(f/blockSize));
     const nb=Math.min(nextActivity.length-1,Math.floor(nextLocal/blockSize));
-    if(curActivity[cb] && nextActivity[nb])continue;
+    // 接続部は前曲・次曲の両方を残す（音を削除しない）。
    }
    out[global]+=src[f];
   }
@@ -859,7 +843,7 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
  const output=ctx.createBuffer(channels,totalFrames,sampleRate);
  for(let ch=0;ch<channels;ch++){
   const dst=output.getChannelData(ch),mel=melodyBus.getChannelData(ch),acc=accompanimentBus.getChannelData(ch);
-  for(let i=0;i<totalFrames;i++)dst[i]=mel[i]+acc[i];
+  for(let i=0;i<totalFrames;i++){const x=mel[i]+acc[i];dst[i]=Math.tanh(x*0.85)/Math.tanh(0.85);}
  }
  return output;
 }
@@ -895,7 +879,7 @@ async function buildAndPlayOneNineMedley(){
    try{
     const melodyFile=i===0?"audio.m4a":"melody.m4a";
     const [melody,normalAccompaniment,openingAccompaniment]=await Promise.all([
-     fetchFirstExistingAudio(ctx,item,melodyFile),
+     (i===0?fetchFirstExistingAudio(ctx,item,melodyFile,true).then(v=>v||fetchFirstExistingAudio(ctx,item,"melody.m4a")):fetchFirstExistingAudio(ctx,item,melodyFile)),
      fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
      i===0?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
     ]);
