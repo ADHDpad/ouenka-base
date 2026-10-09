@@ -498,7 +498,7 @@ function toPublicAudioUrl(path){
 async function fetchDecodeAudio(ctx,path){
  if(!path)throw new Error("登録音源情報を取得できませんでした。");
  const url=toPublicAudioUrl(path);
- const response=await fetch(url,{cache:"no-store",credentials:"omit"});
+ const response=await fetch(url,{cache:"default",credentials:"omit"});
  if(!response.ok)throw new Error(`音源取得失敗 (${response.status})：${url}`);
  const arrayBuffer=await response.arrayBuffer();
  return await ctx.decodeAudioData(arrayBuffer.slice(0));
@@ -539,6 +539,7 @@ function separatedAudioCandidates(item,fileName){
    再生時はローカルメモリからdecodeする。 */
 const oneNineAudioDataCache=new Map();
 const oneNineAudioFetchPromises=new Map();
+const oneNineDecodedCache=new WeakMap();
 
 async function fetchAudioDataCached(url){
  if(oneNineAudioDataCache.has(url))return oneNineAudioDataCache.get(url).slice(0);
@@ -562,8 +563,10 @@ async function fetchAudioDataCached(url){
  }
 }
 async function fetchDecodeAudioCached(ctx,url){
- const data=await fetchAudioDataCached(url);
- return await ctx.decodeAudioData(data);
+ let cache=oneNineDecodedCache.get(ctx);
+ if(!cache){cache=new Map();oneNineDecodedCache.set(ctx,cache)}
+ if(!cache.has(url))cache.set(url,(async()=>ctx.decodeAudioData(await fetchAudioDataCached(url)))());
+ return cache.get(url);
 }
 async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  let lastError=null;
@@ -573,7 +576,7 @@ async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
    // 先読み時の古い音源キャッシュ（force-cache）を使わない。
    if(fileName==="audio.m4a"){
     const url=toPublicAudioUrl(path);
-    const response=await fetch(url,{cache:"no-store",credentials:"omit"});
+    const response=await fetch(url,{cache:"default",credentials:"omit"});
     if(!response.ok)throw new Error(`HTTP ${response.status}`);
     return await ctx.decodeAudioData(await response.arrayBuffer());
    }
@@ -809,22 +812,25 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
   const out=target.getChannelData(ch);
   const src=cur.getChannelData(Math.min(ch,cur.numberOfChannels-1));
   const curActivity=getActivity(cur,ch);
-  const nextSrc=next?next.getChannelData(Math.min(ch,next.numberOfChannels-1)):null;
   const nextActivity=next?getActivity(next,ch):null;
-
-  // 重複区間外は判定なしで高速コピー加算。
   const overlapStart=next?Math.max(curStart,nextStart):Infinity;
   const overlapEnd=next?Math.min(curStart+cur.length,nextStart+next.length):-Infinity;
-
+  // 次曲の音が存在する区間では前曲側だけを抑制。
+  // ブロック境界は3msの滑らかな遷移でクリックノイズを防ぐ。
+  const fadeFrames=Math.max(1,Math.round(sampleRate*0.003));
+  let gain=1;
+  const gainStep=1/fadeFrames;
   for(let f=0;f<cur.length;f++){
    const global=curStart+f;
-   if(global>=overlapStart && global<overlapEnd && nextSrc){
+   let targetGain=1;
+   if(global>=overlapStart && global<overlapEnd && nextActivity){
     const nextLocal=global-nextStart;
     const cb=Math.min(curActivity.length-1,Math.floor(f/blockSize));
     const nb=Math.min(nextActivity.length-1,Math.floor(nextLocal/blockSize));
-    // 接続部は前曲・次曲の両方を残す（音を削除しない）。
+    if(curActivity[cb]&&nextActivity[nb])targetGain=0;
    }
-   out[global]+=src[f];
+   gain=targetGain===0?Math.max(0,gain-gainStep):Math.min(1,gain+gainStep);
+   out[global]+=src[f]*gain;
   }
  }
 
@@ -843,7 +849,7 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
  const output=ctx.createBuffer(channels,totalFrames,sampleRate);
  for(let ch=0;ch<channels;ch++){
   const dst=output.getChannelData(ch),mel=melodyBus.getChannelData(ch),acc=accompanimentBus.getChannelData(ch);
-  for(let i=0;i<totalFrames;i++){const x=mel[i]+acc[i];dst[i]=Math.tanh(x*0.85)/Math.tanh(0.85);}
+  for(let i=0;i<totalFrames;i++){const x=mel[i]+acc[i];dst[i]=Math.max(-1,Math.min(1,x*0.75));}
  }
  return output;
 }
