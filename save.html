@@ -1061,6 +1061,7 @@ m4aが選択されていません
 <!-- 06 REGISTER -->
 <!-- ============================== -->
 
+<section class="card card-main-audio"><div class="card-title">個人再生専用・特別版 <span class="optional-badge">任意</span></div><div class="section-help">2番まである応援歌など、個人再生だけで使用する完成音源を選択してください。伴奏も含む完成版m4aを推奨します。1-9では使用しません。既存の通常版は上書きしません。</div><div class="form-group"><label class="form-label" for="specialAudioFile">特別版音源（special_audio.m4a）</label><input type="file" id="specialAudioFile" class="file-input" accept=".m4a,audio/mp4,audio/x-m4a"><div class="selected-file-name" id="selectedSpecialAudioName">未選択（通常版で再生）</div></div></section>
 <section class="card card-register">
 
 <div class="card-title">
@@ -1187,6 +1188,7 @@ let db = null;
 let selectedZipFile = null;
 
 let selectedAudioFile = null;
+let selectedSpecialAudioFile = null;
 
 let selectedMelodyAudioFile = null;
 let selectedAccompanimentAudioFile = null;
@@ -1255,6 +1257,7 @@ function clearNewRegisterForm(){
 
  selectedZipFile=null;
  selectedAudioFile=null;
+ selectedSpecialAudioFile=null;
  selectedMelodyAudioFile=null;
  selectedAccompanimentAudioFile=null;
  selectedIntroMelodyAudioFile=null;
@@ -2136,6 +2139,7 @@ async function downloadPcDataZip(
       garageBandZipFile
     );
   }
+  if(selectedSpecialAudioFile) songFolder.file("special_audio.m4a",selectedSpecialAudioFile);
   songFolder.file("melody.m4a", melodyAudioFile);
   songFolder.file("accompaniment.m4a", accompanimentAudioFile);
   if(introMelodyAudioFile) songFolder.file("intro_melody.m4a", introMelodyAudioFile);
@@ -2393,6 +2397,7 @@ if(!name){
 
       audioFile:
         selectedAudioFile,
+      specialAudioFile:selectedSpecialAudioFile,
 
 
       melodyAudioFileName:"melody.m4a",
@@ -2707,6 +2712,7 @@ async function downloadPcPatchZip(
   if(zipFile) folder.file("garageband.zip", zipFile);
   if(melodyFile) folder.file("melody.m4a", melodyFile);
   if(accompanimentFile) folder.file("accompaniment.m4a", accompanimentFile);
+  if(selectedSpecialAudioFile) folder.file("special_audio.m4a",selectedSpecialAudioFile);
   if(introMelodyFile) folder.file("intro_melody.m4a", introMelodyFile);
   if(introAccompanimentFile) folder.file("intro_accompaniment.m4a", introAccompanimentFile);
   folder.file("差分更新.txt",
@@ -2765,6 +2771,7 @@ async function updateExistingSong(){
   const changingFiles =
     !!selectedZipFile ||
     !!selectedAudioFile ||
+    !!selectedSpecialAudioFile ||
     !!selectedMelodyAudioFile ||
     !!selectedAccompanimentAudioFile ||
     !!selectedIntroMelodyAudioFile ||
@@ -2908,6 +2915,7 @@ async function updateExistingSong(){
         local.lyrics =
           updated.lyrics || "";
 
+        if(selectedSpecialAudioFile) local.specialAudioFile=selectedSpecialAudioFile;
         if(selectedAudioFile){
           local.audioFileName = "audio.m4a";
           local.audioFile = selectedAudioFile;
@@ -3567,5 +3575,6 @@ function backToBase(){
 
 </div>
 
+<script>document.addEventListener("DOMContentLoaded",()=>{const el=document.getElementById("specialAudioFile");if(el)el.addEventListener("change",()=>{selectedSpecialAudioFile=el.files?.[0]||null;document.getElementById("selectedSpecialAudioName").textContent=selectedSpecialAudioFile?.name||"未選択（通常版で再生）";});});</script>
 </body>
 </html>

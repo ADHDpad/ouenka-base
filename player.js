@@ -172,6 +172,16 @@ async function playSongData(player) {
             throw lastError||new Error(fileName+" が見つかりません");
         }
 
+        // 特別版は個人再生のみ。完成音源なので通常伴奏を重ねない。
+        const special=await fetchFirst("special_audio.m4a","",true);
+        if(special){
+            if(attemptId!==playAttemptId){try{await ctx.close()}catch(_){}return;}
+            const src=ctx.createBufferSource();src.buffer=special;src.connect(ctx.destination);
+            homeAudioSources.push(src);src.start(ctx.currentTime+.04);
+            setNowPlaying("♪ 特別版再生中："+label);
+            src.addEventListener("ended",()=>{if(attemptId===playAttemptId){homePlaybackActive=false;homeAudioSources=[];homeAudioContext=null;setNowPlaying("");ctx.close().catch(()=>{});}}, {once:true});
+            return;
+        }
         // 前奏あり伴奏があれば再生用音源と同期。なければ通常伴奏。
         const [audio,normalAccompaniment,openingAccompaniment]=await Promise.all([
             fetchFirst("audio.m4a",player.audio||""),
@@ -268,3 +278,9 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(play) play.addEventListener("click",resumeHomePlayback);
     if(stop) stop.addEventListener("click",stopHomePlayback);
 });
+
+// 他アプリから戻った後のAudioContext復帰。ユーザー操作が必要な場合は再生ボタンで再試行。
+async function recoverHomeAudio(){if(homeAudioContext&&homePlaybackActive&&!homePaused&&homeAudioContext.state==="suspended"){try{await homeAudioContext.resume();}catch(e){console.warn("音声復帰待ち",e);}}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)recoverHomeAudio();});
+window.addEventListener("pageshow",recoverHomeAudio);
+window.addEventListener("focus",recoverHomeAudio);

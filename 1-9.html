@@ -753,11 +753,9 @@ function getSongBarCount(song){
  const end=Math.max(getAudibleEndSec(song.melody),getAudibleEndSec(song.accompaniment));
  return Math.max(2,Math.ceil(Math.max(0,end-0.035)/MEDLEY_BAR_SEC));
 }
-/* 「最後の小節の1個前」の頭。
-   8小節曲→7小節目頭＝6小節分後
-   16小節曲→15小節目頭＝14小節分後 */
+/* 音が鳴る最終小節の次の小節頭へ接続（8→9、16→17）。 */
 function getSongJoinOffsetSec(song){
- return Math.max(0,(getSongBarCount(song)-2)*MEDLEY_BAR_SEC);
+ return Math.max(0,(getSongBarCount(song)-1)*MEDLEY_BAR_SEC);
 }
 function buildDynamicSongStarts(songs,introDuration){
  const starts=[];let cursor=introDuration;
@@ -925,7 +923,7 @@ async function buildAndPlayOneNineMedley(){
    const chordExtra=normalAccompaniment?Math.max(0,separated[0].accompaniment.duration-normalAccompaniment.duration):0;
    openingExtraSec=Math.round(Math.max(melodyExtra,chordExtra)/MEDLEY_BAR_SEC)*MEDLEY_BAR_SEC;
   }
-  const starts=separated.map((_,i)=>i===0?0:i*MEDLEY_INTERVAL_SEC+openingExtraSec);
+  const starts=buildDynamicSongStarts(separated,openingExtraSec);
 
   /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
      メロディーとコード進行は別々に重複判定する。 */
