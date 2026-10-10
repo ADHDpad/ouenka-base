@@ -81,7 +81,7 @@ body.row-dragging{user-select:none;-webkit-user-select:none}
 body.row-dragging{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}
 body.row-dragging *{cursor:grabbing!important}
 </style>
-<script src="audio-recovery.js?v=54"></script>
+<script src="audio-recovery.js?v=55"></script>
 <script src="team-order.js"></script>
 </head>
 <body>
@@ -541,6 +541,8 @@ function separatedAudioCandidates(item,fileName){
 const oneNineAudioDataCache=new Map();
 const oneNineAudioFetchPromises=new Map();
 const oneNineDecodedCache=new WeakMap();
+const oneNineResolvedPaths=new Map();
+const oneNineMissingPaths=new Set();
 
 async function fetchAudioDataCached(url){
  if(oneNineAudioDataCache.has(url))return oneNineAudioDataCache.get(url).slice(0);
@@ -571,18 +573,26 @@ async function fetchDecodeAudioCached(ctx,url){
 }
 async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  let lastError=null;
- for(const path of separatedAudioCandidates(item,fileName)){
+ const key=String(item.name||item.playerName||'')+'/'+String(item.productionNumber||'')+'/'+fileName;
+ const preferred=oneNineResolvedPaths.get(key);
+ const candidates=[...new Set([preferred,...separatedAudioCandidates(item,fileName)].filter(Boolean))];
+ for(const path of candidates){
+  if(oneNineMissingPaths.has(path))continue;
   try{
    // 個人再生と同様、1曲目の再生用音源は常に最新ファイルを直接取得。
    // 先読み時の古い音源キャッシュ（force-cache）を使わない。
    if(fileName==="audio.m4a"){
     const url=toPublicAudioUrl(path);
     const response=await fetch(url,{cache:"default",credentials:"omit"});
-    if(!response.ok)throw new Error(`HTTP ${response.status}`);
-    return await ctx.decodeAudioData(await response.arrayBuffer());
+    if(!response.ok){if(response.status===404)oneNineMissingPaths.add(path);throw new Error(`HTTP ${response.status}`)}
+    const decoded=await ctx.decodeAudioData(await response.arrayBuffer());
+    oneNineResolvedPaths.set(key,path);
+    return decoded;
    }
-   return await fetchDecodeAudioCached(ctx,path);
-  }catch(e){lastError=e}
+   const decoded=await fetchDecodeAudioCached(ctx,path);
+   oneNineResolvedPaths.set(key,path);
+   return decoded;
+  }catch(e){lastError=e;if(/HTTP 404/.test(String(e)))oneNineMissingPaths.add(path)}
  }
  if(optional)return null;
  throw lastError||new Error(`${fileName} が見つかりません。`);

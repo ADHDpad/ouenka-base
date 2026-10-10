@@ -2,9 +2,17 @@
 (function(){
  'use strict';
  let lastError='';
+ // iOS Safari: playback audio session may bypass the hardware silent switch.
+ // Unsupported browsers safely ignore this setting.
+ function configureSession(){
+   try { if(navigator.audioSession && 'type' in navigator.audioSession) navigator.audioSession.type='playback'; }
+   catch(e){console.warn('audioSession playback not supported',e)}
+ }
+ configureSession();
  const contexts=new Set();
  function state(){return [...contexts].map(c=>c.state).join(', ')||'なし'}
  function makeContext(){
+   configureSession();
    const AC=window.AudioContext||window.webkitAudioContext;
    if(!AC)throw new Error('このブラウザはWeb Audioに対応していません');
    const ctx=new AC();contexts.add(ctx);
@@ -13,6 +21,7 @@
    return ctx;
  }
  async function unlock(ctx){
+   configureSession();
    if(!ctx||ctx.state==='closed')throw new Error('音声エンジンが終了しています');
    // Must be called synchronously in a user-initiated playback path when iOS requires a gesture.
    const buffer=ctx.createBuffer(1,1,ctx.sampleRate);

@@ -1,5 +1,7 @@
 window.ouenkaMissingAudio=window.ouenkaMissingAudio||new Set();
 window.ouenkaAudioBytes=window.ouenkaAudioBytes||new Map();
+window.ouenkaResolvedAudio=window.ouenkaResolvedAudio||new Map();
+window.ouenkaSpecialPresence=window.ouenkaSpecialPresence||new Map();
 // ========================================
 // OUENKA BASE 音楽プレイヤー
 // 個別再生：前奏(任意) → 再生用m4a＋コード進行/ベースm4a
@@ -158,14 +160,16 @@ async function playSongData(player) {
         // Successful URLs and decoded buffers are reused across individual plays.
         // Failed optional files are remembered to avoid repeated 404 downloads.
         async function fetchFirst(fileName,registeredUrl="",optional=false){
-            const urls=candidateUrls(fileName,registeredUrl);
+            const key=name+"/"+no+"/"+fileName+"/"+registeredUrl;
+            const preferred=window.ouenkaResolvedAudio.get(key);
+            const urls=[...new Set([preferred,...candidateUrls(fileName,registeredUrl)].filter(Boolean))];
             let lastError=null;
             for(const url of urls){
                 if(window.ouenkaMissingAudio?.has(url))continue;
                 try{
                     let bytes=window.ouenkaAudioBytes?.get(url);
                     if(!bytes){
-                        const response=await fetch(url,{credentials:"omit"});
+                        const response=await fetch(url,{credentials:"omit",cache:"force-cache"});
                         if(!response.ok){
                             if(response.status===404)window.ouenkaMissingAudio.add(url);
                             throw new Error(`HTTP ${response.status}`);
@@ -179,7 +183,9 @@ async function playSongData(player) {
                             }
                         }
                     }
-                    return await ctx.decodeAudioData(bytes.slice(0));
+                    const decoded=await ctx.decodeAudioData(bytes.slice(0));
+                    window.ouenkaResolvedAudio.set(key,url);
+                    return decoded;
                 }catch(e){lastError=e;}
             }
             if(optional)return null;
@@ -190,11 +196,15 @@ async function playSongData(player) {
         // Older code downloaded up to four missing files sequentially BEFORE normal playback.
         const specialUrl=root+n+"/"+pn+"/special_audio.m4a";
         const special=await (async()=>{
-            if(window.ouenkaMissingAudio.has(specialUrl))return null;
+            if(window.ouenkaMissingAudio.has(specialUrl) || window.ouenkaSpecialPresence.get(specialUrl)===false)return null;
             try{
-                const r=await fetch(specialUrl,{method:"HEAD",credentials:"omit"});
-                if(r.status===404){window.ouenkaMissingAudio.add(specialUrl);return null;}
-                if(!r.ok)return null;
+                // Cache the HEAD result so subsequent plays don't repeat a network round trip.
+                if(!window.ouenkaSpecialPresence.has(specialUrl)){
+                    const r=await fetch(specialUrl,{method:"HEAD",credentials:"omit",cache:"force-cache"});
+                    if(r.status===404){window.ouenkaMissingAudio.add(specialUrl);window.ouenkaSpecialPresence.set(specialUrl,false);return null;}
+                    if(!r.ok)return null;
+                    window.ouenkaSpecialPresence.set(specialUrl,true);
+                }
                 return await fetchFirst("special_audio.m4a",specialUrl,true);
             }catch(e){console.warn('特別版の確認:',e);return null;}
         })();
@@ -227,6 +237,15 @@ async function playSongData(player) {
             homeAudioSources.push(src);
         }
 
+        try{
+            if(navigator.mediaSession){
+                navigator.mediaSession.metadata=new MediaMetadata({title:label,artist:'OUENKA BASE',album:'FIGHT SONG'});
+                navigator.mediaSession.setActionHandler('play',()=>resumeHomePlayback());
+                navigator.mediaSession.setActionHandler('pause',()=>pauseHomePlayback());
+                navigator.mediaSession.setActionHandler('stop',()=>stopHomePlayback());
+                navigator.mediaSession.playbackState='playing';
+            }
+        }catch(e){console.warn('MediaSession',e)}
         const base=ctx.currentTime+.04;
         schedule(audio,base);
         schedule(accompaniment,base);
