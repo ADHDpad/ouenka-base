@@ -643,7 +643,8 @@ function selectPlayer(
         return;
     }
 
-    playSongData(player);
+    const gestureCtx=window.ouenkaAudioRecovery?.consumeGestureContext();
+    playSongData(player,gestureCtx);
 
     const lyricsTitle = document.getElementById("lyricsTitle");
     if (lyricsTitle) lyricsTitle.textContent = player.name + " 応援歌";

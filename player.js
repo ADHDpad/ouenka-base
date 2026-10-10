@@ -121,7 +121,7 @@ async function playPair(primarySrc, accompanimentSrc, attemptId, label) {
     }
 }
 
-async function playSongData(player) {
+async function playSongData(player, gestureCtx=null) {
     showHomeMiniPlayer();
     homePaused=false;
     if (!player || !player.name || !player.productionNumber) {
@@ -139,11 +139,17 @@ async function playSongData(player) {
     setNowPlaying("音源を検索中…");
 
     try{
-        ctx=await window.ouenkaAudioRecovery.create();
+        ctx=gestureCtx || window.ouenkaAudioRecovery.create();
         homeAudioContext=ctx;
         homePlaybackActive=true;
         homePaused=false;
-        // resume() was already started synchronously by create(); do not block fetching.
+        // WebKit standalone can leave resume() pending. Show an explicit user-gesture retry.
+        if(ctx.state!=='running'){
+            setTimeout(()=>{if(attemptId===playAttemptId && ctx.state==='suspended')window.ouenkaAudioRecovery.showRetry(ctx)},1200);
+        }
+        ctx.addEventListener('statechange',()=>{
+            if(ctx.state==='running')window.ouenkaAudioRecovery.hideRetry();
+        });
 
         /*と同じ公開GitHub Pagesを基準にする。
            トップページ自身の相対URLには依存しない。 */
@@ -285,7 +291,7 @@ function playSong(playerId) {
         console.error("選手データが見つかりません:", playerId);
         return;
     }
-    playSongData(players[playerId]);
+    playSongData(players[playerId],window.ouenkaAudioRecovery?.consumeGestureContext());
 }
 
 
