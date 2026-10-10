@@ -52,21 +52,27 @@
  // Deliberately not async: calling create() must not yield before initiating resume().
  function create(){const ctx=makeContext();try{return unlock(ctx)}catch(e){try{ctx.close()}catch(_){}throw e}}
  // Explicit second user gesture if standalone WebKit defers resume() indefinitely.
- function showRetry(ctx){
+ function showRetry(ctx, retryPlayback){
    if(!ctx || ctx.state==='running' || ctx.state==='closed')return;
    if(!retryButton){
      retryButton=document.createElement('button');
-     retryButton.type='button';retryButton.textContent='▶ 音声を開始';
+     retryButton.type='button';retryButton.textContent='▶ 音声を再起動';
      retryButton.style.cssText='position:fixed;bottom:82px;left:50%;transform:translateX(-50%);z-index:2147483645;background:#0b2f55;color:white;border:2px solid white;border-radius:14px;padding:13px 24px;font-size:17px;font-weight:bold;box-shadow:0 3px 15px #0006';
      document.body.appendChild(retryButton);
    }
    retryButton.hidden=false;
    retryButton.onclick=()=>{
-     configureSession();
-     // Both calls occur inside this trusted tap, not after an await.
-     try{unlock(ctx)}catch(e){console.warn('再起動',e)}
-     const p=ctx.resume();if(p&&p.catch)p.catch(e=>console.warn('再開失敗',e));
-     if(ctx.state==='running')retryButton.hidden=true;
+     // An iOS audio interruption can leave the old context permanently suspended.
+     // Retry with a NEW context inside this exact user gesture (not after await).
+     if(typeof retryPlayback==='function'){
+       const fresh=create();
+       retryButton.hidden=true;
+       retryPlayback(fresh);
+     }else{
+       try{unlock(ctx)}catch(e){console.warn('再起動',e)}
+       const p=ctx.resume();if(p&&p.catch)p.catch(e=>console.warn('再開失敗',e));
+       if(ctx.state==='running')retryButton.hidden=true;
+     }
    };
    const onstate=()=>{if(ctx.state==='running'){retryButton.hidden=true;ctx.removeEventListener('statechange',onstate)}};
    ctx.addEventListener('statechange',onstate);
@@ -75,7 +81,7 @@
 
  async function resumeExisting(){
    const list=[...contexts].filter(c=>c.state==='suspended');
-   return Promise.allSettled(list.map(c=>c.resume()));
+   return Promise.allSettled(list.map(c=>Promise.race([c.resume(),new Promise(resolve=>setTimeout(resolve,1500))])));
  }
  async function reset(){
    // Do not close contexts of currently playing songs: reset is explicitly user-invoked.

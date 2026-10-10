@@ -42,6 +42,7 @@ function destroyAudio(audio) {
 }
 
 function stopCurrentSong() {
+    window.ouenkaAudioRecovery?.hideRetry();
     playAttemptId++;
     audioPlayers.forEach(destroyAudio);
     audioPlayers = [];
@@ -145,7 +146,7 @@ async function playSongData(player, gestureCtx=null) {
         homePaused=false;
         // WebKit standalone can leave resume() pending. Show an explicit user-gesture retry.
         if(ctx.state!=='running'){
-            setTimeout(()=>{if(attemptId===playAttemptId && ctx.state==='suspended')window.ouenkaAudioRecovery.showRetry(ctx)},1200);
+            setTimeout(()=>{if(attemptId===playAttemptId && ctx.state==='suspended')window.ouenkaAudioRecovery.showRetry(ctx,(fresh)=>playSongData(player,fresh))},1200);
         }
         ctx.addEventListener('statechange',()=>{
             if(ctx.state==='running')window.ouenkaAudioRecovery.hideRetry();
@@ -225,7 +226,8 @@ async function playSongData(player, gestureCtx=null) {
             if(attemptId!==playAttemptId){try{await ctx.close()}catch(_){}return;}
             const src=ctx.createBufferSource();src.buffer=special;src.connect(ctx.destination);
             homeAudioSources.push(src);src.start(ctx.currentTime+.04);
-            setNowPlaying("♪ 特別版再生中："+label);
+            if(ctx.state==="running") setNowPlaying("♪ 特別版再生中："+label);
+            else {setNowPlaying("音声エンジンの起動待ち…");ctx.addEventListener("statechange",()=>{if(ctx.state==="running"&&attemptId===playAttemptId)setNowPlaying("♪ 特別版再生中："+label)})}
             src.addEventListener("ended",()=>{if(attemptId===playAttemptId){homePlaybackActive=false;homeAudioSources=[];homeAudioContext=null;setNowPlaying("");ctx.close().catch(()=>{});}}, {once:true});
             return;
         }
@@ -262,19 +264,23 @@ async function playSongData(player, gestureCtx=null) {
         const base=ctx.currentTime+.04;
         schedule(audio,base);
         schedule(accompaniment,base);
-        setNowPlaying("♪ 再生中："+label);
+        if(ctx.state==="running") setNowPlaying("♪ 再生中："+label);
+        else {setNowPlaying("音声エンジンの起動待ち…");ctx.addEventListener("statechange",()=>{if(ctx.state==="running"&&attemptId===playAttemptId)setNowPlaying("♪ 再生中："+label)})}
         const total=Math.max(audio.duration,accompaniment.duration);
         if(homeEndTimer) clearTimeout(homeEndTimer);
-        homeEndTimer=setTimeout(async()=>{
-            if(attemptId===playAttemptId){
-                setNowPlaying("");
-                homePlaybackActive=false;
-                homePaused=false;
-                homeAudioSources=[];
-                if(homeAudioContext===ctx) homeAudioContext=null;
-                try{await ctx.close()}catch(e){}
-            }
-        },Math.ceil((total+.15)*1000));
+        const armEndTimer=()=>{
+            if(attemptId!==playAttemptId || ctx.state!=="running")return;
+            if(homeEndTimer)clearTimeout(homeEndTimer);
+            homeEndTimer=setTimeout(async()=>{
+                if(attemptId===playAttemptId){
+                    setNowPlaying("");homePlaybackActive=false;homePaused=false;homeAudioSources=[];
+                    if(homeAudioContext===ctx)homeAudioContext=null;
+                    try{await ctx.close()}catch(e){}
+                }
+            },Math.ceil((total+.15)*1000));
+        };
+        if(ctx.state==="running")armEndTimer();
+        else ctx.addEventListener("statechange",armEndTimer,{once:true});
 
     }catch(error){
         console.error("トップ個人再生エラー:",error);
