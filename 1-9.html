@@ -499,7 +499,7 @@ function toPublicAudioUrl(path){
 async function fetchDecodeAudio(ctx,path){
  if(!path)throw new Error("登録音源情報を取得できませんでした。");
  const url=toPublicAudioUrl(path);
- const response=await fetch(url,{cache:"default",credentials:"omit"});
+ const response=await fetch(url,{cache:"default",credentials:"omit",signal:AbortSignal.timeout(6500)});
  if(!response.ok)throw new Error(`音源取得失敗 (${response.status})：${url}`);
  const arrayBuffer=await response.arrayBuffer();
  return await ctx.decodeAudioData(arrayBuffer.slice(0));
@@ -551,7 +551,7 @@ async function fetchAudioDataCached(url){
   return data.slice(0);
  }
  const promise=(async()=>{
-  const r=await fetch(url,{cache:"force-cache"});
+  const r=await fetch(url,{cache:"force-cache",signal:AbortSignal.timeout(6500)});
   if(!r.ok)throw new Error(`HTTP ${r.status}`);
   const data=await r.arrayBuffer();
   oneNineAudioDataCache.set(url,data);
@@ -583,7 +583,7 @@ async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
    // 先読み時の古い音源キャッシュ（force-cache）を使わない。
    if(fileName==="audio.m4a"){
     const url=toPublicAudioUrl(path);
-    const response=await fetch(url,{cache:"default",credentials:"omit"});
+    const response=await fetch(url,{cache:"default",credentials:"omit",signal:AbortSignal.timeout(6500)});
     if(!response.ok){if(response.status===404)oneNineMissingPaths.add(path);throw new Error(`HTTP ${response.status}`)}
     const decoded=await ctx.decodeAudioData(await response.arrayBuffer());
     oneNineResolvedPaths.set(key,path);

@@ -2,6 +2,13 @@ window.ouenkaMissingAudio=window.ouenkaMissingAudio||new Set();
 window.ouenkaAudioBytes=window.ouenkaAudioBytes||new Map();
 window.ouenkaResolvedAudio=window.ouenkaResolvedAudio||new Map();
 window.ouenkaSpecialPresence=window.ouenkaSpecialPresence||new Map();
+// iPhone PWA: stop an unresponsive network candidate from blocking all later candidates.
+async function ouenkaTimedFetch(url, options={}, timeoutMs=6500){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try { return await fetch(url,{...options,signal:controller.signal}); }
+    finally { clearTimeout(timer); }
+}
 // ========================================
 // OUENKA BASE 音楽プレイヤー
 // 個別再生：前奏(任意) → 再生用m4a＋コード進行/ベースm4a
@@ -169,7 +176,7 @@ async function playSongData(player) {
                 try{
                     let bytes=window.ouenkaAudioBytes?.get(url);
                     if(!bytes){
-                        const response=await fetch(url,{credentials:"omit",cache:"force-cache"});
+                        const response=await ouenkaTimedFetch(url,{credentials:"omit",cache:"force-cache"},6500);
                         if(!response.ok){
                             if(response.status===404)window.ouenkaMissingAudio.add(url);
                             throw new Error(`HTTP ${response.status}`);
@@ -200,7 +207,7 @@ async function playSongData(player) {
             try{
                 // Cache the HEAD result so subsequent plays don't repeat a network round trip.
                 if(!window.ouenkaSpecialPresence.has(specialUrl)){
-                    const r=await fetch(specialUrl,{method:"HEAD",credentials:"omit",cache:"force-cache"});
+                    const r=await ouenkaTimedFetch(specialUrl,{method:"HEAD",credentials:"omit",cache:"force-cache"},1800);
                     if(r.status===404){window.ouenkaMissingAudio.add(specialUrl);window.ouenkaSpecialPresence.set(specialUrl,false);return null;}
                     if(!r.ok)return null;
                     window.ouenkaSpecialPresence.set(specialUrl,true);
