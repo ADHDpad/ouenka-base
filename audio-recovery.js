@@ -20,18 +20,24 @@
    ctx.close=function(){contexts.delete(ctx);return close()};
    return ctx;
  }
- async function unlock(ctx){
+ // iPhone standalone can leave resume() pending for ~60 seconds even after a tap.
+ // Kick off unlocking inside the user gesture, but never await its promise before fetching audio.
+ function unlock(ctx){
    configureSession();
    if(!ctx||ctx.state==='closed')throw new Error('音声エンジンが終了しています');
-   // Must be called synchronously in a user-initiated playback path when iOS requires a gesture.
-   const buffer=ctx.createBuffer(1,1,ctx.sampleRate);
-   const source=ctx.createBufferSource();source.buffer=buffer;source.connect(ctx.destination);
-   source.start(0);
-   if(ctx.state!=='running')await ctx.resume();
-   if(ctx.state!=='running')throw new Error('音声エンジンの状態: '+ctx.state);
+   try{
+     const buffer=ctx.createBuffer(1,1,ctx.sampleRate);
+     const source=ctx.createBufferSource();source.buffer=buffer;source.connect(ctx.destination);
+     source.start(0);
+     if(ctx.state!=='running'){
+       const pending=ctx.resume();
+       if(pending&&typeof pending.catch==='function')pending.catch(e=>{lastError=String(e);console.warn('AudioContext resume:',e)});
+     }
+   }catch(e){lastError=String(e);throw e}
    return ctx;
  }
- async function create(){const ctx=makeContext();try{return await unlock(ctx)}catch(e){lastError=String(e);try{await ctx.close()}catch(_){}throw e}}
+ // Deliberately not async: calling create() must not yield before initiating resume().
+ function create(){const ctx=makeContext();try{return unlock(ctx)}catch(e){try{ctx.close()}catch(_){}throw e}}
  async function resumeExisting(){
    const list=[...contexts].filter(c=>c.state==='suspended');
    return Promise.allSettled(list.map(c=>c.resume()));

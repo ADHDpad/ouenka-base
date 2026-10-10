@@ -143,9 +143,9 @@ async function playSongData(player) {
         homeAudioContext=ctx;
         homePlaybackActive=true;
         homePaused=false;
-        await ctx.resume();
+        // resume() was already started synchronously by create(); do not block fetching.
 
-        /* 1-9と同じ公開GitHub Pagesを基準にする。
+        /*と同じ公開GitHub Pagesを基準にする。
            トップページ自身の相対URLには依存しない。 */
         const PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
         const root=PUBLIC_BASE+"%E3%83%87%E3%83%BC%E3%82%BF/";
