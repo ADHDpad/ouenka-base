@@ -480,7 +480,7 @@ async function getSelectedMedleyPlayers(){
   const name=(row.querySelector(".player-search")?.value||"").trim();
   const productionNumber=String(row.dataset.productionNumber||"").trim();
   if(!name)continue;
-  if(!productionNumber)throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。`);
+  if(!productionNumber)throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。管理者へ応援歌の追加をリクエストするか、汎用登録をしてください。`);
   if(row.dataset.reuseName&&row.dataset.reuseProductionNumber){
    const sourceName=row.dataset.reuseName,sourceNumber=row.dataset.reuseProductionNumber;
    const sourceSong=await getRegisteredSongFor19(sourceName,sourceNumber);
