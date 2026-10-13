@@ -316,8 +316,23 @@ async function searchPlayers() {
                     candidate.className =
                         "search-candidate";
 
-                    candidate.textContent =
-                        player.name;
+                    // 1-9と同じ「名前・球団・歌詞1行目」の3行表示
+                    const candidateName = document.createElement("strong");
+                    candidateName.className = "candidate-name";
+                    candidateName.textContent = player.name;
+
+                    const candidateTeam = document.createElement("small");
+                    candidateTeam.className = "candidate-team";
+                    candidateTeam.textContent = (player.team || "球団未設定") +
+                        (player.productionNumber != null && player.productionNumber !== ""
+                            ? " ／ 制作番号 " + player.productionNumber : "");
+
+                    const candidateLyric = document.createElement("small");
+                    candidateLyric.className = "candidate-lyric";
+                    candidateLyric.textContent = (player.lyrics || "")
+                        .split(/\r?\n/).map(line => line.trim()).find(Boolean) || "歌詞未登録";
+
+                    candidate.append(candidateName, candidateTeam, candidateLyric);
 
 
                     candidate.onclick =

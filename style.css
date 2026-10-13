@@ -1553,3 +1553,11 @@ main {
         font-size: 13px;
     }
 }
+
+/* v72: トップ画面の選手検索候補を3行表示 */
+.search-candidate .candidate-name,
+.search-candidate .candidate-team,
+.search-candidate .candidate-lyric { display:block; text-align:left; overflow-wrap:anywhere; }
+.search-candidate .candidate-name { font-size:16px; font-weight:700; line-height:1.45; }
+.search-candidate .candidate-team { margin-top:3px; font-size:12px; font-weight:400; color:#526a7f; line-height:1.4; }
+.search-candidate .candidate-lyric { margin-top:4px; font-size:13px; font-weight:400; color:#263f58; line-height:1.45; }
