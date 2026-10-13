@@ -54,14 +54,23 @@
   document.addEventListener('DOMContentLoaded',()=>{
     const b=document.createElement('button');b.textContent='診断';
     b.setAttribute('aria-label','音源読み込み診断を表示');
-    Object.assign(b.style,{position:'fixed',right:'8px',bottom:'85px',zIndex:'2147483646',background:'#0b2f55',color:'white',border:'1px solid white',borderRadius:'10px',padding:'9px 13px',fontSize:'13px'});
+    b.id='ouenka-audio-diagnostic-button';
+    Object.assign(b.style,{background:'#0b2f55',color:'white',border:'2px solid white',borderRadius:'14px',padding:'12px 16px',fontSize:'16px',fontWeight:'bold',whiteSpace:'nowrap',boxShadow:'0 3px 15px #0006'});
+    b.hidden=true;
     const panel=document.createElement('div');
     Object.assign(panel.style,{display:'none',position:'fixed',inset:'12% 3% 7%',zIndex:'2147483647',background:'#fff',color:'#111',padding:'12px',border:'2px solid #0b2f55',borderRadius:'12px',overflow:'auto',fontSize:'12px'});
     const title=document.createElement('div');title.textContent='iPhone 音源読み込み診断';title.style.fontWeight='bold';
     const copy=document.createElement('button');copy.textContent='ログをコピー';copy.style.margin='8px';
     const close=document.createElement('button');close.textContent='閉じる';close.style.margin='8px';
     const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;word-break:break-all;font-size:11px;';
-    panel.append(title,copy,close,pre);document.body.append(b,panel);
+    panel.append(title,copy,close,pre);document.body.append(panel);
+    const attach=()=>{
+      const actions=document.getElementById('ouenka-audio-recovery-actions');
+      if(actions){if(b.parentElement!==actions)actions.appendChild(b);b.hidden=false;}
+      else b.hidden=true;
+    };
+    attach();
+    new MutationObserver(attach).observe(document.body,{childList:true,subtree:false});
     window.__ouenkaDiagnosticRefresh=()=>{if(panel.style.display!=='none')pre.textContent=logs.join('\n');};
     b.onclick=()=>{panel.style.display='block';window.__ouenkaDiagnosticRefresh();};
     close.onclick=()=>panel.style.display='none';

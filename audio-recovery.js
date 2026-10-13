@@ -12,6 +12,7 @@
  const contexts=new Set();
  let pendingGestureContext=null;
  let retryButton=null;
+ let retryWrap=null;
  let recoveryNeeded=false;
  let retryCallback=null;
  function state(){return [...contexts].map(c=>c.state).join(', ')||'なし'}
@@ -60,27 +61,32 @@
    if(!retryButton){
      retryButton=document.createElement('button');
      retryButton.type='button';retryButton.textContent='▶ 音声を再起動';
-     retryButton.style.cssText='position:fixed;bottom:82px;left:50%;transform:translateX(-50%);z-index:2147483645;background:#0b2f55;color:white;border:2px solid white;border-radius:14px;padding:13px 24px;font-size:17px;font-weight:bold;box-shadow:0 3px 15px #0006';
-     document.body.appendChild(retryButton);
+     retryWrap=document.createElement('div');
+     retryWrap.id='ouenka-audio-recovery-actions';
+     retryWrap.style.cssText='position:fixed;bottom:82px;left:50%;transform:translateX(-50%);z-index:2147483645;display:flex;align-items:center;justify-content:center;gap:8px;width:max-content;max-width:calc(100vw - 20px)';
+     retryButton.style.cssText='background:#0b2f55;color:white;border:2px solid white;border-radius:14px;padding:12px 16px;font-size:16px;font-weight:bold;box-shadow:0 3px 15px #0006;white-space:nowrap';
+     retryWrap.appendChild(retryButton);
+     document.body.appendChild(retryWrap);
    }
+   retryWrap.hidden=false;
    retryButton.hidden=false;
    retryButton.onclick=()=>{
      // An iOS audio interruption can leave the old context permanently suspended.
      // Retry with a NEW context inside this exact user gesture (not after await).
      if(typeof retryPlayback==='function'){
        const fresh=create();
-       retryButton.hidden=true;recoveryNeeded=false;
+       retryWrap.hidden=true;recoveryNeeded=false;
        retryPlayback(fresh);
      }else{
        try{unlock(ctx)}catch(e){console.warn('再起動',e)}
        const p=ctx.resume();if(p&&p.catch)p.catch(e=>console.warn('再開失敗',e));
-       if(ctx.state==='running')retryButton.hidden=true;
+       if(ctx.state==='running')retryWrap.hidden=true;
      }
    };
-   const onstate=()=>{if(ctx.state==='running'){retryButton.hidden=true;ctx.removeEventListener('statechange',onstate)}};
+   const onstate=()=>{if(ctx.state==='running'){retryWrap.hidden=true;ctx.removeEventListener('statechange',onstate)}};
    ctx.addEventListener('statechange',onstate);
  }
- function hideRetry(){recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
+ function hideRetry(){recoveryNeeded=false;retryCallback=null;if(retryWrap)retryWrap.hidden=true}
 
  async function resumeExisting(){
    const list=[...contexts].filter(c=>c.state==='suspended');
