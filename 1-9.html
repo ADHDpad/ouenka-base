@@ -83,7 +83,7 @@ body.row-dragging *{cursor:grabbing!important}
 </style>
 <script src="audio-recovery.js?v=60"></script>
 <script src="team-order.js"></script>
-<script src="pwa-diagnostic.js?v=60"></script>
+<style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
 </head>
 <body>
 <header class="topbar">
@@ -98,7 +98,7 @@ body.row-dragging *{cursor:grabbing!important}
    <select id="teamSelect" class="control"><option value="" selected disabled hidden>⚾ 球団選択</option></select>
    <button id="chatSearch" class="chat" type="button">✦ ChatGPTで検索</button>
   </div>
-  <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など"></div>
+  <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
   <div id="lineup" class="lineup"></div>
   <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div>
   <div class="bottom-actions">

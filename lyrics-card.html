@@ -1,10 +1,69 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>応援歌BASE｜歌詞カード試作</title><style>
 :root{font-family:system-ui,-apple-system,'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;color:#112a43}*{box-sizing:border-box}body{margin:0;background:#e8eef4}.toolbar{position:sticky;top:0;z-index:5;background:#082b50;color:white;padding:12px 16px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}.toolbar strong{margin-right:auto}.toolbar button,.toolbar label{border:0;border-radius:7px;padding:9px 12px;background:#fff;color:#103c6b;font-weight:700;cursor:pointer}.toolbar button.primary{background:#45b4f5;color:#001d39}.toolbar input[type=file]{display:none}.status{font-size:12px;color:#d4eaff}.layout{display:flex;align-items:flex-start;justify-content:center;padding:20px}.editor{width:310px;flex-shrink:0;background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 10px #173c5c1c}.editor h2{font-size:17px;margin:0 0 10px}.editor p{font-size:12px;line-height:1.6}.editor textarea{width:100%;min-height:360px;resize:vertical;border:1px solid #abc0d3;border-radius:8px;padding:10px;font-size:12px;line-height:1.6}.editor button{padding:10px;border:0;background:#0c5596;color:#fff;border-radius:7px;margin-top:8px;cursor:pointer}.page-wrap{width:min(210mm,calc(100vw - 365px));overflow:hidden}.page{width:210mm;height:297mm;background:white;box-shadow:0 4px 24px #0002;display:flex;flex-direction:column;overflow:hidden;position:relative}.head{height:27mm;flex-shrink:0;color:white;background:linear-gradient(110deg,#052544,#0869ad 70%,#042b51);padding:4mm 6mm 3mm;display:flex;justify-content:space-between;align-items:center}.head .small{font-size:10pt;letter-spacing:1.3px}.head .brand{font-size:23pt;font-weight:1000;line-height:1.05;letter-spacing:1px}.head .sub{font-size:12pt;font-weight:900;margin-top:2mm}.head .mark{font-size:27pt;font-weight:1000;opacity:.85}.cards{flex:1;min-height:0;padding:3mm 4mm 2mm;display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));grid-template-rows:repeat(var(--rows,10),minmax(0,1fr));gap:.8mm}.card{min-height:0;min-width:0;border:1px solid #bcd6ed;border-radius:1.4mm;overflow:hidden;background:linear-gradient(#e4f2ff,#fff 52%);display:flex;align-items:stretch}.num{background:#0756a0;color:white;font-weight:900;display:flex;justify-content:center;align-items:flex-start;padding-top:1.4mm;flex:0 0 var(--numw,12mm);font-size:var(--numfs,15pt)}.card-body{min-width:0;flex:1;padding:.65mm 1.3mm;display:flex;flex-direction:column;justify-content:center;overflow:hidden}.name{font-weight:900;font-size:var(--namefs,10pt);line-height:1.2;color:#063b6b;white-space:nowrap}.lyrics{font-size:var(--lyricfs,7pt);line-height:1.28;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:.35mm}.foot{height:7mm;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:0 5mm;color:#426887;font-size:7pt;border-top:1px solid #d8e6f2}.warn{color:#a02020;font-weight:700}.screen-hint{font-size:12px;text-align:center;color:#536c80;margin-top:8px}@media(max-width:1050px){.layout{flex-direction:column;align-items:center}.editor{width:min(100%,680px)}.page-wrap{width:min(100%,210mm)}.page{transform-origin:top left}}@page{size:A4 portrait;margin:0}@media print{html,body{width:210mm;height:297mm;margin:0;background:white}.toolbar,.editor,.screen-hint{display:none!important}.layout{display:block;padding:0}.page-wrap{width:210mm!important;height:297mm!important}.page{width:210mm;height:297mm;transform:none!important;box-shadow:none}.head{-webkit-print-color-adjust:exact;print-color-adjust:exact}.card,.num{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-</style><script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script></head><body><div class="toolbar"><strong id="toolbarTitle">応援歌BASE｜歌詞カード</strong><button id="save" class="primary">アルバムに保存</button></div><div class="layout"><div><div class="page-wrap" id="wrap"><article class="page" id="page"><header class="head"><div><div class="small" id="teamEn">HOKKAIDO NIPPONHAM</div><div class="brand" id="teamBrand">FIGHTERS</div><div class="sub">現役選手 応援歌</div></div><div class="mark" id="teamMark">F</div></header><main class="cards" id="cards"></main><footer class="foot"><span id="teamFooter">HOKKAIDO NIPPONHAM FIGHTERS</span><span id="count"></span></footer></article></div><div class="screen-hint">A4縦・3列・1ページ（歌詞が多い場合は文字が小さくなります）</div></div></div><script>
+.toolbar{background:var(--team-dark,#082b50)}
+.toolbar button.primary{background:var(--team-light,#45b4f5);color:#fff}
+.head{background:linear-gradient(110deg,var(--team-dark,#052544),var(--team-light,#0869ad) 70%,var(--team-main,#042b51))}
+.num{background:var(--team-main,#0756a0)}
+.name{color:var(--team-dark,#063b6b)}
+
+/* 端末ごとの閲覧用レイアウト。画像保存時はA4に戻す */
+@media screen and (max-width:700px){
+ body:not(.exporting) .layout{padding:10px 8px;display:block}
+ body:not(.exporting) .page-wrap{width:100%;overflow:visible;height:auto!important}
+ body:not(.exporting) .page{width:100%;height:auto;min-height:0;transform:none!important;overflow:visible;box-shadow:0 2px 12px #0002}
+ body:not(.exporting) .head{height:auto;min-height:80px;padding:13px 15px}
+ body:not(.exporting) .head .small{font-size:10px}
+ body:not(.exporting) .head .brand{font-size:25px}
+ body:not(.exporting) .head .sub{font-size:13px;margin-top:4px}
+ body:not(.exporting) .head .mark{font-size:29px}
+ body:not(.exporting) .cards{display:grid;grid-template-columns:1fr!important;grid-template-rows:none!important;gap:5px;padding:8px}
+ body:not(.exporting) .card{min-height:65px;border-radius:6px}
+ body:not(.exporting) .num{flex:0 0 54px!important;font-size:20px!important;padding-top:12px}
+ body:not(.exporting) .card-body{padding:7px 10px;overflow:visible}
+ body:not(.exporting) .name{font-size:15px!important;white-space:normal}
+ body:not(.exporting) .lyrics{font-size:13px!important;line-height:1.5;overflow:visible}
+ body:not(.exporting) .foot{height:auto;min-height:28px;font-size:9px}
+ body:not(.exporting) .toolbar{padding:8px;gap:6px;flex-wrap:nowrap}
+ body:not(.exporting) .toolbar strong{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body:not(.exporting) .toolbar button{padding:9px 8px;font-size:12px;white-space:nowrap}
+ body:not(.exporting) .screen-hint{font-size:11px}
+}
+@media screen and (min-width:701px) and (max-width:900px){.layout{padding:12px}}
+/* 画像出力中は端末サイズにかかわらずA4を再現 */
+body.exporting .layout{display:block;padding:0}
+body.exporting .page-wrap{width:210mm!important;height:297mm!important;overflow:hidden}
+body.exporting .page{width:210mm!important;height:297mm!important;min-height:0;transform:none!important;overflow:hidden}
+body.exporting .cards{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr))!important;grid-template-rows:repeat(var(--rows,10),minmax(0,1fr))!important;gap:.8mm;padding:3mm 4mm 2mm}
+body.exporting .card{min-height:0;border-radius:1.4mm}
+body.exporting .num{flex:0 0 var(--numw,12mm)!important;font-size:var(--numfs,15pt)!important;padding-top:1.4mm}
+body.exporting .card-body{padding:.65mm 1.3mm;overflow:hidden}
+body.exporting .name{font-size:var(--namefs,10pt)!important;white-space:nowrap}
+body.exporting .lyrics{font-size:var(--lyricfs,7pt)!important;line-height:1.28;overflow-wrap:anywhere}
+</style><script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script><style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
+</head><body><div class="toolbar"><button id="backToTeam" type="button" aria-label="球団別応援歌に戻る">‹ 戻る</button><strong id="toolbarTitle">応援歌BASE｜歌詞カード</strong><button id="save" class="primary">アルバムに保存</button></div><div class="layout"><div><div class="page-wrap" id="wrap"><article class="page" id="page"><header class="head"><div><div class="small" id="teamEn">HOKKAIDO NIPPONHAM</div><div class="brand" id="teamBrand">FIGHTERS</div><div class="sub">現役選手 応援歌</div></div><div class="mark" id="teamMark">F</div></header><main class="cards" id="cards"></main><footer class="foot"><span id="teamFooter">HOKKAIDO NIPPONHAM FIGHTERS</span><span id="count"></span></footer></article></div><div class="screen-hint">スマホは読みやすく表示／保存画像はA4縦・3列（曲数が多い場合は文字が小さくなります）</div></div></div><script>
 const $=s=>document.querySelector(s);const DATA_API="https://ouenka-base-data.ninzin5600.workers.dev";
 const team=new URLSearchParams(location.search).get('team')||'北海道日本ハムファイターズ';
 const teamNames={'北海道日本ハムファイターズ':['HOKKAIDO NIPPONHAM','FIGHTERS','F'],'福岡ソフトバンクホークス':['FUKUOKA SOFTBANK','HAWKS','H'],'東北楽天ゴールデンイーグルス':['TOHOKU RAKUTEN','EAGLES','E'],'埼玉西武ライオンズ':['SAITAMA SEIBU','LIONS','L'],'千葉ロッテマリーンズ':['CHIBA LOTTE','MARINES','M'],'オリックス・バファローズ':['ORIX','BUFFALOES','B'],'読売ジャイアンツ':['YOMIURI','GIANTS','G'],'阪神タイガース':['HANSHIN','TIGERS','T'],'横浜DeNAベイスターズ':['YOKOHAMA DENA','BAYSTARS','B'],'広島東洋カープ':['HIROSHIMA TOYO','CARP','C'],'中日ドラゴンズ':['CHUNICHI','DRAGONS','D'],'東京ヤクルトスワローズ':['TOKYO YAKULT','SWALLOWS','S']};
 const labels=teamNames[team]||[team,'OUENKA BASE','B'];
+// 球団ごとの基調色（タイトルバーとカードの背番号帯に反映）
+const teamColors={
+ '北海道日本ハムファイターズ':['#07549a','#1392c6','#062e55'],
+ '福岡ソフトバンクホークス':['#d6a500','#f3c930','#665000'],
+ '東北楽天ゴールデンイーグルス':['#8d1538','#bf3157','#510c24'],
+ '埼玉西武ライオンズ':['#153e70','#3278ac','#071f41'],
+ '千葉ロッテマリーンズ':['#202c39','#536477','#0b1017'],
+ 'オリックス・バファローズ':['#172c59','#5477a4','#0c1733'],
+ '読売ジャイアンツ':['#a84c05','#ed861c','#5e2803'],
+ '阪神タイガース':['#c49a00','#e4c738','#3c3500'],
+ '横浜DeNAベイスターズ':['#0752a0','#269ad5','#032b60'],
+ '広島東洋カープ':['#a9132b','#e34150','#620818'],
+ '中日ドラゴンズ':['#0753a2','#2d90d2','#032f61'],
+ '東京ヤクルトスワローズ':['#087c69','#30a895','#06463e']
+};
+const palette=teamColors[team]||['#07549a','#1392c6','#062e55'];
+const root=document.documentElement;
+root.style.setProperty('--team-main',palette[0]);root.style.setProperty('--team-light',palette[1]);root.style.setProperty('--team-dark',palette[2]);
+$('#backToTeam').addEventListener('click',()=>{location.href='./team.html?team='+encodeURIComponent(team)});
 document.title=team+'｜歌詞カード';$('#toolbarTitle').textContent=team+'｜歌詞カード';$('#teamEn').textContent=labels[0];$('#teamBrand').textContent=labels[1];$('#teamMark').textContent=labels[2];$('#teamFooter').textContent=team;
 let current=[];
 function activeOf(s){return ['現在使用','現役','1','true'].includes(String(s.player_type??s.active??'').trim())}
@@ -23,26 +82,26 @@ async function loadSongs(){
 }
 function addText(parent,cls,value){let el=document.createElement('div');el.className=cls;el.textContent=value;parent.appendChild(el);return el}
 function makeCards(items){let host=$('#cards');host.replaceChildren();items.forEach(x=>{let card=document.createElement('section');card.className='card';addText(card,'num',String(x.number));let body=document.createElement('div');body.className='card-body';addText(body,'name',x.name);addText(body,'lyrics',x.lyrics);card.appendChild(body);host.appendChild(card)});$('#count').textContent=`掲載 ${items.length} 曲`}
-function fit(){let host=$('#cards'),cards=[...host.children],n=cards.length;if(!n)return;let best=null;for(let cols=3;cols<=3;cols++){let rows=Math.ceil(n/cols);if(rows>25)continue;host.style.setProperty('--cols',cols);host.style.setProperty('--rows',rows);for(let fs=11;fs>=4;fs-=.25){host.style.setProperty('--lyricfs',fs+'pt');host.style.setProperty('--namefs',Math.min(13,fs+2.5)+'pt');host.style.setProperty('--numfs',Math.min(18,fs+6)+'pt');host.style.setProperty('--numw',Math.max(7,Math.min(13,fs+4))+'mm');let valid=cards.every(c=>{let b=c.querySelector('.card-body'),ly=c.querySelector('.lyrics'),name=c.querySelector('.name');return b.scrollHeight<=b.clientHeight+1&&ly.scrollHeight<=ly.clientHeight+1&&name.scrollWidth<=name.clientWidth+1});if(valid){let score=fs-(cols-3)*.18;if(!best||score>best.score)best={cols,rows,fs,score};break}}}if(!best){best={cols:3,rows:Math.ceil(n/3),fs:4};console.warn('一部の歌詞が収まらない可能性があります')}else{}host.style.setProperty('--cols',best.cols);host.style.setProperty('--rows',best.rows);host.style.setProperty('--lyricfs',best.fs+'pt');host.style.setProperty('--namefs',Math.min(13,best.fs+2.5)+'pt');host.style.setProperty('--numfs',Math.min(18,best.fs+6)+'pt');host.style.setProperty('--numw',Math.max(7,Math.min(13,best.fs+4))+'mm');scalePage()}
-function scalePage(){let wrap=$('#wrap'),page=$('#page');page.style.transform='none';wrap.style.height='';if(window.matchMedia('print').matches)return;let w=wrap.clientWidth,real=page.getBoundingClientRect().width;let scale=Math.min(1,w/real);page.style.transform=`scale(${scale})`;wrap.style.height=(page.offsetHeight*scale)+'px'}
+function fit(){if(window.innerWidth<=700&&!document.body.classList.contains('exporting')){scalePage();return}let host=$('#cards'),cards=[...host.children],n=cards.length;if(!n)return;let best=null;for(let cols=3;cols<=3;cols++){let rows=Math.ceil(n/cols);if(rows>25)continue;host.style.setProperty('--cols',cols);host.style.setProperty('--rows',rows);for(let fs=11;fs>=4;fs-=.25){host.style.setProperty('--lyricfs',fs+'pt');host.style.setProperty('--namefs',Math.min(13,fs+2.5)+'pt');host.style.setProperty('--numfs',Math.min(18,fs+6)+'pt');host.style.setProperty('--numw',Math.max(7,Math.min(13,fs+4))+'mm');let valid=cards.every(c=>{let b=c.querySelector('.card-body'),ly=c.querySelector('.lyrics'),name=c.querySelector('.name');return b.scrollHeight<=b.clientHeight+1&&ly.scrollHeight<=ly.clientHeight+1&&name.scrollWidth<=name.clientWidth+1});if(valid){let score=fs-(cols-3)*.18;if(!best||score>best.score)best={cols,rows,fs,score};break}}}if(!best){best={cols:3,rows:Math.ceil(n/3),fs:4};console.warn('一部の歌詞が収まらない可能性があります')}else{}host.style.setProperty('--cols',best.cols);host.style.setProperty('--rows',best.rows);host.style.setProperty('--lyricfs',best.fs+'pt');host.style.setProperty('--namefs',Math.min(13,best.fs+2.5)+'pt');host.style.setProperty('--numfs',Math.min(18,best.fs+6)+'pt');host.style.setProperty('--numw',Math.max(7,Math.min(13,best.fs+4))+'mm');scalePage()}
+function scalePage(){if(window.innerWidth<=700&&!document.body.classList.contains('exporting')){let w=$('#wrap'),p=$('#page');p.style.transform='none';w.style.height='auto';return}let wrap=$('#wrap'),page=$('#page');page.style.transform='none';wrap.style.height='';if(window.matchMedia('print').matches)return;let w=wrap.clientWidth,real=page.getBoundingClientRect().width;let scale=Math.min(1,w/real);page.style.transform=`scale(${scale})`;wrap.style.height=(page.offsetHeight*scale)+'px'}
 
 async function saveAlbum(){
  const btn=$('#save');btn.disabled=true;btn.textContent='画像を作成中…';
  try{
   if(!window.html2canvas)throw Error('画像保存ライブラリを読み込めません。ネット接続を確認してください。');
-  const page=$('#page'),old=page.style.transform;page.style.transform='none';
-  let canvas;try{canvas=await html2canvas(page,{scale:2.3,backgroundColor:'#ffffff',useCORS:true,logging:false})}finally{page.style.transform=old}
+  const page=$('#page'),old=page.style.transform;document.body.classList.add('exporting');fit();page.style.transform='none';
+  let canvas;try{canvas=await html2canvas(page,{scale:2.3,backgroundColor:'#ffffff',useCORS:true,logging:false})}finally{document.body.classList.remove('exporting');page.style.transform=old;fit()}
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
   if(!blob)throw Error('画像を生成できませんでした');
   const file=new File([blob],'ouenka_lyrics_card.png',{type:'image/png'});
   if(navigator.canShare?.({files:[file]})){
-   try{await navigator.share({files:[file],title:'日ハム応援歌 歌詞カード'});return}catch(e){if(e.name==='AbortError')return}
+   try{await navigator.share({files:[file],title:team+' 応援歌 歌詞カード'});return}catch(e){if(e.name==='AbortError')return}
   }
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
   alert('画像を保存しました。スマホでは画像を開いて「写真に保存」を選んでください。');
  }catch(e){alert('保存できませんでした：'+e.message)}finally{btn.disabled=false;btn.textContent='アルバムに保存';}
 }
 $('#save').addEventListener('click',saveAlbum);
-window.addEventListener('resize',scalePage);
+window.addEventListener('resize',()=>{if(current.length)fit();else scalePage()});
 document.fonts.ready.then(()=>{if(current.length)fit()});loadSongs();
 </script></body></html>
