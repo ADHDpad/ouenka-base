@@ -12,6 +12,8 @@
  const contexts=new Set();
  let pendingGestureContext=null;
  let retryButton=null;
+ let recoveryNeeded=false;
+ let retryCallback=null;
  function state(){return [...contexts].map(c=>c.state).join(', ')||'なし'}
  function makeContext(){
    configureSession();
@@ -54,6 +56,7 @@
  // Explicit second user gesture if standalone WebKit defers resume() indefinitely.
  function showRetry(ctx, retryPlayback){
    if(!ctx || ctx.state==='running' || ctx.state==='closed')return;
+   recoveryNeeded=true;retryCallback=typeof retryPlayback==='function'?retryPlayback:null;
    if(!retryButton){
      retryButton=document.createElement('button');
      retryButton.type='button';retryButton.textContent='▶ 音声を再起動';
@@ -66,7 +69,7 @@
      // Retry with a NEW context inside this exact user gesture (not after await).
      if(typeof retryPlayback==='function'){
        const fresh=create();
-       retryButton.hidden=true;
+       retryButton.hidden=true;recoveryNeeded=false;
        retryPlayback(fresh);
      }else{
        try{unlock(ctx)}catch(e){console.warn('再起動',e)}
@@ -77,7 +80,7 @@
    const onstate=()=>{if(ctx.state==='running'){retryButton.hidden=true;ctx.removeEventListener('statechange',onstate)}};
    ctx.addEventListener('statechange',onstate);
  }
- function hideRetry(){if(retryButton)retryButton.hidden=true}
+ function hideRetry(){recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
 
  async function resumeExisting(){
    const list=[...contexts].filter(c=>c.state==='suspended');
@@ -96,4 +99,7 @@
  window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,diagnostics:()=>({contexts:state(),lastError,visibility:document.visibilityState})};
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)resumeExisting()});
  window.addEventListener('pageshow',()=>{resumeExisting()});
+ // A fresh user tap is required by iOS after some audio interruptions.
+ // Do not silently start playback; retain the existing retry control.
+ window.addEventListener('focus',()=>{resumeExisting()});
 })();

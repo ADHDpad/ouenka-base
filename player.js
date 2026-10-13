@@ -146,10 +146,13 @@ async function playSongData(player, gestureCtx=null) {
         homePaused=false;
         // WebKit standalone can leave resume() pending. Show an explicit user-gesture retry.
         if(ctx.state!=='running'){
-            setTimeout(()=>{if(attemptId===playAttemptId && ctx.state==='suspended')window.ouenkaAudioRecovery.showRetry(ctx,(fresh)=>playSongData(player,fresh))},1200);
+            setTimeout(()=>{if(attemptId===playAttemptId && (ctx.state==='suspended'||ctx.state==='interrupted'))window.ouenkaAudioRecovery.showRetry(ctx,(fresh)=>playSongData(player,fresh))},1200);
         }
         ctx.addEventListener('statechange',()=>{
             if(ctx.state==='running')window.ouenkaAudioRecovery.hideRetry();
+            else if((ctx.state==='suspended'||ctx.state==='interrupted') && attemptId===playAttemptId && !homePaused){
+              setTimeout(()=>{if(attemptId===playAttemptId && homeAudioContext===ctx && ctx.state!=='running' && !homePaused)window.ouenkaAudioRecovery.showRetry(ctx,(fresh)=>playSongData(player,fresh));},1500);
+            }
         });
 
         /*と同じ公開GitHub Pagesを基準にする。
