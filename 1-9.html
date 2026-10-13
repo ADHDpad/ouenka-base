@@ -39,7 +39,7 @@ button,input,select{font:inherit} button{cursor:pointer}
 .suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:#174A7A;text-align:left;padding:11px 13px;color:#fff}
 .suggestion:hover,.suggestion:focus{background:#0F3B66}.suggestion strong{color:#fff}.suggestion small{display:block;color:#dbe9f5!important;margin-top:2px}
 .add-row-wrap{padding:2px 14px 10px}.add-row{width:100%;min-height:48px;border:1.5px dashed #7aa8ca;border-radius:10px;background:#f2f8fc;color:#0B2F55;font-weight:900;font-size:15px}
-.bottom-actions{display:grid;grid-template-columns:.8fr 1.6fr;gap:8px;padding:3px 14px 16px}
+.reuse-action-wrap{padding:0 14px 10px}.reuse-action{width:100%;min-height:48px;background:#0B2F55;color:#fff;border:0;border-radius:10px;font-weight:850;font-size:15px}.bottom-actions{display:grid;grid-template-columns:.8fr 1.6fr;gap:8px;padding:3px 14px 16px}
 .action{min-height:62px;border:0;border-radius:10px;font-weight:900;font-size:16px}
 .reset{background:#e7eef5;color:var(--text)}.add{background:var(--yellow);color:#082a4a}.create{background:linear-gradient(135deg,#168df5,#0575df);color:#fff}
 .status{display:none;margin:0 14px 15px;padding:11px;border-radius:9px;background:#eef6ff;color:#174f7e}
@@ -102,6 +102,7 @@ body.row-dragging *{cursor:grabbing!important}
   <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
   <div id="lineup" class="lineup"></div>
   <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div>
+  <div class="reuse-action-wrap"><button class="reuse-action" id="reuseRegisterButton" type="button">♫ 流用・汎用登録</button></div>
   <div class="bottom-actions">
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
    <button id="medleyPlayButton" class="action create" type="button">▶ 1-9を作成・再生</button>
@@ -191,6 +192,7 @@ function createRow(n,data={}){
  row.dataset.team=data.team||"";
  row.dataset.audioUrl=data.audioUrl||"";
  row.dataset.medleyUrl=data.medleyUrl||"";
+ row.dataset.reuseMode=data.reuseMode||"";row.dataset.reuseName=data.reuseName||"";row.dataset.reuseProductionNumber=data.reuseProductionNumber||"";
 
  const options=positions.map((p,i)=>{
   let cls="";
@@ -222,7 +224,7 @@ function createRow(n,data={}){
 
  input.addEventListener("input",()=>{
   row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
-  row.dataset.audioUrl="";row.dataset.medleyUrl="";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
   showSuggestions(row,input,sug);checkDuplicates();saveDraft();updateInputFieldColor(input);
  });
  input.addEventListener("focus",()=>showSuggestions(row,input,sug));
@@ -230,7 +232,7 @@ function createRow(n,data={}){
  row.querySelector(".clear").addEventListener("click",()=>{
   input.value="";pos.value="";
   row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
-  row.dataset.audioUrl="";row.dataset.medleyUrl="";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
   sug.style.display="none";row.classList.remove("row-warning");
   if(currentPlayingRow===row)stopRowAudio();
   saveDraft();updateInputFieldColor(input);updateInputFieldColor(pos);
@@ -371,13 +373,16 @@ async function showSuggestions(row,input,box){
   songs.forEach(song=>{
    const b=document.createElement("button");b.type="button";b.className="suggestion";
    const name=getName(song),prod=song.production_number||"";
-   b.innerHTML=`<strong>${name}</strong>${prod?`<small>${getTeam(song)||""}${getTeam(song)?" / ":""}制作番号 ${prod}</small>`:""}`;
+   const clean=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+   const lyricFirst=String(song.lyrics||song.lyric||"").replace(/<br\s*\/?\s*>/gi,"\n").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"";
+   b.innerHTML=`<strong>${clean(name)}</strong><small>${clean(getTeam(song)||"球団未設定")}${prod?" / 制作番号 "+clean(prod):""}</small><small>${clean(lyricFirst||"歌詞未登録")}</small>`;
    b.addEventListener("click",()=>{
     input.value=name;
     row.dataset.songId=song.id||"";
     row.dataset.productionNumber=prod;
     row.dataset.team=getTeam(song);
     const basePath="データ/"+encodeURIComponent(song.player_name||"")+"/"+encodeURIComponent(song.production_number||"")+"/";
+    row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
     row.dataset.audioUrl=basePath+encodeURIComponent(song.audio_filename||"audio.m4a");
     row.dataset.medleyUrl=basePath+encodeURIComponent(song.medley_filename||"medley.m4a");
 
@@ -426,7 +431,8 @@ async function playSelectedRow(row){
  let ctx=null;
  try{
   ctx=await prepareOneNineAudioContext();
-  const item={name,productionNumber,audioUrl:row.dataset.audioUrl||""};
+  const reuseName=row.dataset.reuseName||"";const reuseNumber=row.dataset.reuseProductionNumber||"";
+ const item={name:reuseName||name,productionNumber:reuseNumber||productionNumber,audioUrl:reuseName?"":(row.dataset.audioUrl||"")};
 
   const [audio,normalAccompaniment,openingAccompaniment]=await Promise.all([
    fetchFirstExistingAudio(ctx,item,"audio.m4a"),
@@ -475,6 +481,12 @@ async function getSelectedMedleyPlayers(){
   const productionNumber=String(row.dataset.productionNumber||"").trim();
   if(!name)continue;
   if(!productionNumber)throw new Error(`${name} の制作番号が取得できません。検索候補から選び直してください。`);
+  if(row.dataset.reuseName&&row.dataset.reuseProductionNumber){
+   const sourceName=row.dataset.reuseName,sourceNumber=row.dataset.reuseProductionNumber;
+   const sourceSong=await getRegisteredSongFor19(sourceName,sourceNumber);
+   const urls=registeredSongUrls(sourceSong||{player_name:sourceName,production_number:sourceNumber},sourceName,sourceNumber);
+   selected.push({name:sourceName,productionNumber:sourceNumber,audioUrl:urls.audioUrl,medleyUrl:urls.medleyUrl,melodyUrl:urls.melodyUrl,accompanimentUrl:urls.accompanimentUrl,introMelodyUrl:urls.introMelodyUrl,introAccompanimentUrl:urls.introAccompanimentUrl});continue;
+  }
   if(row.dataset.audioUrl&&row.dataset.medleyUrl){
    selected.push({name,productionNumber,audioUrl:row.dataset.audioUrl,medleyUrl:row.dataset.medleyUrl,melodyUrl:row.dataset.melodyUrl||"",accompanimentUrl:row.dataset.accompanimentUrl||"",introMelodyUrl:row.dataset.introMelodyUrl||"",introAccompanimentUrl:row.dataset.introAccompanimentUrl||""});continue;
   }
@@ -974,7 +986,7 @@ function currentRows(){
   position:row.querySelector(".position").value,
   name:row.querySelector(".player-search").value.trim(),
   songId:row.dataset.songId||"",productionNumber:row.dataset.productionNumber||"",team:row.dataset.team||"",
-  audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||""
+  audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||"",reuseMode:row.dataset.reuseMode||"",reuseName:row.dataset.reuseName||"",reuseProductionNumber:row.dataset.reuseProductionNumber||""
  }));
 }
 function checkDuplicates(){
@@ -1053,6 +1065,7 @@ function fillYears(){
  for(let y=now;y>=1950;y--){const o=document.createElement("option");o.value=y;o.textContent=y+"年度";s.appendChild(o)}
 }
 
+document.getElementById("reuseRegisterButton").addEventListener("click",()=>{saveDraft();location.href="./reuse-register.html"});
 document.getElementById("resetButton").addEventListener("click",resetAll);
 document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
