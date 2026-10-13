@@ -2711,6 +2711,7 @@ async function downloadPcPatchZip(
   introMelodyFile, introAccompanimentFile
 ){
   const zip = new JSZip();
+  // 差し替え対象だけを出力。既存ファイルの事前削除は不要。
   const folderName = `${name}_${productionNumber}_差分更新`;
   const folder = zip.folder(folderName);
   if(audioFile) folder.file("audio.m4a", audioFile);
@@ -2721,7 +2722,7 @@ async function downloadPcPatchZip(
   if(introMelodyFile) folder.file("intro_melody.m4a", introMelodyFile);
   if(introAccompanimentFile) folder.file("intro_accompaniment.m4a", introAccompanimentFile);
   folder.file("差分更新.txt",
-    "このZIPには今回変更したファイルだけが入っています。未添付の既存ファイルはそのまま維持してください。"
+    "【音源更新の手順】\n1. このZIPを展開してください。\n2. 中の変更ファイルを、GitHub Desktopで管理している対象選手の公開フォルダへコピーし、同名ファイルを上書きしてください。\n3. GitHub DesktopでCommit→Push originしてください。\n4. GitHub Pagesの公開後に再生を確認してください。\n\n古いファイルを事前に削除する必要はありません。\n\n重要：この画面の『更新』は選手情報のAPI更新と端末内データ更新です。GitHub公開音源の上書きは自動ではありません。\nGarageBand ZIP/MIDIだけ変更しても、再生に使うaccompaniment.m4aは自動生成されません。伴奏を変更した場合は新しいaccompaniment.m4aも一緒に指定してください。\n同じ端末の旧キャッシュが残る場合は再読み込みしてください。"
   );
   const blob = await zip.generateAsync({type:"blob"});
   const a = document.createElement("a");
@@ -2814,6 +2815,15 @@ async function updateExistingSong(){
     return;
   }
 
+
+  if(selectedZipFile && !selectedAccompanimentAudioFile){
+    const proceed = confirm(
+      "GarageBand ZIPを変更していますが、新しい伴奏音源（accompaniment.m4a）が選択されていません。\n" +
+      "ZIPだけでは公開中のコード進行・ベース音源は変わりません。\n" +
+      "選手情報の更新を続けますか？"
+    );
+    if(!proceed) return;
+  }
 
   $("registerButton")
     .disabled =
@@ -2979,7 +2989,9 @@ async function updateExistingSong(){
     }
 
     showSuccess(
-      "✓ 更新しました：" +
+      (changingFiles
+        ? "✓ 選手情報を更新し、差分ZIPを保存しました。公開音源はまだ更新されていません。ZIPの中身を対象選手フォルダに上書きし、GitHub DesktopでCommit→Pushしてください。伴奏変更時は新しいaccompaniment.m4aも必要です。　"
+        : "✓ 更新しました：") +
       updated.player_name +
       "　制作番号 " +
       updated.production_number
