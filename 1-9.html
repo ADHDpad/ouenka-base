@@ -1037,10 +1037,27 @@ function buildPreview(){
  filled.forEach((r,i)=>{const li=document.createElement("li");li.className="preview-item";li.innerHTML=`<span class="preview-num">${i+1}</span><span class="preview-pos">${r.position}</span><span class="preview-name">${r.name}</span>`;list.appendChild(li)});
  document.getElementById("previewCard").style.display="block";saveDraft();setStatus("1-9の並びを作成しました。","ok");
 }
-function chatGPTSearch(){
+async function chatGPTSearch(){
  const year=document.getElementById("yearSelect").value,team=document.getElementById("teamSelect").value;
  if(!year||!team){setStatus("ChatGPTで検索する前に「年度」と「球団」を選択してください。","error");return}
- autoTitle();saveDraft();setStatus(`${year}年度・${team}の1-9候補を検索する準備ができました。`);
+ const button=document.getElementById("chatSearch");button.disabled=true;
+ const oldText=button.textContent;button.textContent="✦ 検索中…";
+ try{
+  setStatus(`${year}年度・${team}の1-9をYouTube優先で調べています…`);
+  const response=await fetch(DATA_API+"/lineup/suggest?year="+encodeURIComponent(year)+"&team="+encodeURIComponent(team),{cache:"no-store",signal:AbortSignal.timeout(55000)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||`検索サーバーの応答エラー（${response.status}）`);
+  if(!Array.isArray(data.lineup)||!data.lineup.length)throw new Error("打順候補を取得できませんでした");
+  const proposed=data.lineup.slice(0,9).map(x=>({name:String(x.name||"").trim(),position:String(x.position||"").trim()}));
+  if(!proposed.some(x=>x.name))throw new Error("選手候補が空でした");
+  if(currentRows().some(x=>x.name)&&!confirm("現在の1-9入力を検索結果で置き換えますか？"))return;
+  // 選手名だけでは制作番号を確定できないため、候補検索での選び直しが必要。
+  renderRows(proposed);autoTitle();saveDraft();updateAllInputFieldColors();
+  const source=data.source==="youtube"?"YouTubeの1-9動画を参考":"AIによる起用実績ベースの候補";
+  const link=data.sourceUrl?` 参照元: ${data.sourceUrl}`:"";
+  setStatus(`${source}から${proposed.filter(x=>x.name).length}名を入力しました。各選手を検索候補から選択し、制作番号を確定してください。${link}`,"ok");
+ }catch(err){setStatus("検索できませんでした: "+(err?.message||String(err))+"。Cloudflare Workersの検索API設定を確認してください。","error")}
+ finally{button.disabled=false;button.textContent=oldText}
 }
 
 function renderTeamSelect(){
