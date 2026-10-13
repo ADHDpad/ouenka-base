@@ -85,7 +85,7 @@ render();
 <p id="audioResetResult" role="status" aria-live="polite"></p>
 </section>
 <script src="audio-recovery.js?v=67"></script>
-<script src="pwa-diagnostic.js?v=67"></script>
+<script src="pwa-diagnostic.js?v=68"></script>
 <script>document.getElementById('audioResetButton').addEventListener('click',async function(){
  const out=document.getElementById('audioResetResult');out.textContent='音声を確認中…';
  try{out.textContent=await window.ouenkaAudioRecovery.reset()}catch(e){out.textContent='復旧できませんでした: '+e.message+'。iOSの音声サービス側の問題の可能性があります。'}

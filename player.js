@@ -71,7 +71,10 @@ function createAudio(src) {
     audio.volume = 1;
     audio.muted = false;
     audio.playsInline = true;
-    audio.src = src;
+    // Avoid reusing a stale HTTP media cache when the file is overwritten at the same URL.
+    const mediaUrl = new URL(src, location.href);
+    mediaUrl.searchParams.set("ouenka_audio_refresh", String(Date.now()));
+    audio.src = mediaUrl.href;
     return audio;
 }
 
@@ -186,7 +189,7 @@ async function playSongData(player, gestureCtx=null) {
                 try{
                     let bytes=window.ouenkaAudioBytes?.get(url);
                     if(!bytes){
-                        const response=await ouenkaTimedFetch(url,{credentials:"omit",cache:"force-cache"},6500);
+                        const response=await ouenkaTimedFetch(url,{credentials:"omit",cache:"no-store"},6500);
                         if(!response.ok){
                             if(response.status===404)window.ouenkaMissingAudio.add(url);
                             throw new Error(`HTTP ${response.status}`);
@@ -217,7 +220,7 @@ async function playSongData(player, gestureCtx=null) {
             try{
                 // Cache the HEAD result so subsequent plays don't repeat a network round trip.
                 if(!window.ouenkaSpecialPresence.has(specialUrl)){
-                    const r=await ouenkaTimedFetch(specialUrl,{method:"HEAD",credentials:"omit",cache:"force-cache"},1800);
+                    const r=await ouenkaTimedFetch(specialUrl,{method:"HEAD",credentials:"omit",cache:"no-store"},1800);
                     if(r.status===404){window.ouenkaMissingAudio.add(specialUrl);window.ouenkaSpecialPresence.set(specialUrl,false);return null;}
                     if(!r.ok)return null;
                     window.ouenkaSpecialPresence.set(specialUrl,true);

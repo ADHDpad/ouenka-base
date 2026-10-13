@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-v67";
+const CACHE_NAME = "ouenka-base-v68";
 
 // 2026-10-06
 // 1-9分離音源方式：メロディー重複時のみ前曲メロディーを抑止。
@@ -42,6 +42,8 @@ self.addEventListener("fetch", (event) => {
         lower.endsWith(".mid") ||
         lower.endsWith(".zip")
     ) {
+        // Explicitly bypass HTTP and service-worker caches for published audio assets.
+        event.respondWith(fetch(event.request, { cache: "no-store" }));
         return;
     }
 
