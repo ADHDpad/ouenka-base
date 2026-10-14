@@ -80,6 +80,9 @@ body.row-dragging{user-select:none;-webkit-user-select:none}
 .drag-ghost{display:grid!important;opacity:.96!important;box-shadow:0 16px 34px rgba(7,29,51,.38)!important;background:#fff!important;border-radius:10px!important;box-sizing:border-box}
 body.row-dragging{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}
 body.row-dragging *{cursor:grabbing!important}
+.filters .chat{min-width:0;white-space:nowrap;font-size:14px;font-weight:500;background:#0B2F55;color:white;border:0;min-height:44px}
+#savedLineupsDialog{width:min(92vw,560px);max-height:80vh;border:0;border-radius:16px;padding:20px;color:#0b2b4a}#savedLineupsDialog::backdrop{background:#071d3399}#savedLineupsDialog h2{font-size:20px}#savedLineupsDialog button{border:0;border-radius:8px;padding:12px;background:#0B2F55;color:white} .saved-entry{display:flex;gap:8px;margin-bottom:10px;align-items:center}.saved-entry .saved-load{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}.saved-entry small{display:block;margin-top:5px;font-size:11px;color:#d9e6f2}.saved-entry .saved-delete{background:#e9eef3!important;color:#0b2b4a!important}
+@media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
 </style>
 <script src="audio-recovery.js?v=67"></script>
 <script src="pwa-diagnostic.js?v=68"></script>
@@ -95,10 +98,12 @@ body.row-dragging *{cursor:grabbing!important}
  <section class="hero"><h1>1-9作成</h1><p>選手を検索して1-9を作成できます。</p></section>
  <section class="panel">
   <div class="filters">
-   <select id="yearSelect" class="control"><option value="" selected disabled hidden>📅 年度選択</option></select>
-   <select id="teamSelect" class="control"><option value="" selected disabled hidden>⚾ 球団選択</option></select>
-   <button id="chatSearch" class="chat" type="button">✦ ChatGPTで検索</button>
+   <button id="saveLineupButton" class="chat" type="button">保存</button>
+   <button id="loadLineupButton" class="chat" type="button">保存済を読込</button>
+   <button id="illustrationButton" class="chat" type="button">挿絵作成</button>
   </div>
+  <div hidden><select id="yearSelect"><option value=""></option></select><select id="teamSelect"><option value=""></option></select></div>
+  <dialog id="savedLineupsDialog"><h2>保存済の1-9</h2><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
   <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
   <div id="lineup" class="lineup"></div>
   <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div>
@@ -187,6 +192,7 @@ function updateAllInputFieldColors(){
 function createRow(n,data={}){
  const row=document.createElement("div");
  row.className="player-row";row.dataset.row=n;
+ row.dataset.lyrics=data.lyrics||"";
  row.dataset.songId=data.songId||"";
  row.dataset.productionNumber=data.productionNumber||"";
  row.dataset.team=data.team||"";
@@ -223,7 +229,7 @@ function createRow(n,data={}){
  input.value=data.name||"";
 
  input.addEventListener("input",()=>{
-  row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
+  row.dataset.lyrics="";row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
   row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
   showSuggestions(row,input,sug);checkDuplicates();saveDraft();updateInputFieldColor(input);
  });
@@ -231,7 +237,7 @@ function createRow(n,data={}){
  pos.addEventListener("change",()=>{saveDraft();updateInputFieldColor(pos)});
  row.querySelector(".clear").addEventListener("click",()=>{
   input.value="";pos.value="";
-  row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
+  row.dataset.lyrics="";row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
   row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
   sug.style.display="none";row.classList.remove("row-warning");
   if(currentPlayingRow===row)stopRowAudio();
@@ -378,6 +384,7 @@ async function showSuggestions(row,input,box){
    b.innerHTML=`<strong>${clean(name)}</strong><small>${clean(getTeam(song)||"球団未設定")}${prod?" / 制作番号 "+clean(prod):""}</small><small>${clean(lyricFirst||"歌詞未登録")}</small>`;
    b.addEventListener("click",()=>{
     input.value=name;
+    row.dataset.lyrics=String(song.lyrics||song.lyric||"").replace(/<br\s*\/?\s*>/gi,"\n");
     row.dataset.songId=song.id||"";
     row.dataset.productionNumber=prod;
     row.dataset.team=getTeam(song);
@@ -985,7 +992,7 @@ function currentRows(){
  return[...document.querySelectorAll(".player-row")].map(row=>({
   position:row.querySelector(".position").value,
   name:row.querySelector(".player-search").value.trim(),
-  songId:row.dataset.songId||"",productionNumber:row.dataset.productionNumber||"",team:row.dataset.team||"",
+  lyrics:row.dataset.lyrics||"",songId:row.dataset.songId||"",productionNumber:row.dataset.productionNumber||"",team:row.dataset.team||"",
   audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||"",reuseMode:row.dataset.reuseMode||"",reuseName:row.dataset.reuseName||"",reuseProductionNumber:row.dataset.reuseProductionNumber||""
  }));
 }
@@ -1014,6 +1021,26 @@ function loadDraft(){
   renderRows(data.rows||[]);setStatus("前回編集中だった1-9を復元しました。");
  }catch(e){renderRows()}
  setTimeout(updateAllInputFieldColors,0);
+}
+const SAVED_LINEUPS_KEY="ouenkaBaseSavedLineupsV1";
+function lineupSnapshot(){return {title:document.getElementById("lineupTitle").value.trim(),year:document.getElementById("yearSelect").value,team:document.getElementById("teamSelect").value,rows:currentRows()}}
+function readSavedLineups(){const value=JSON.parse(localStorage.getItem(SAVED_LINEUPS_KEY)||"[]");if(!Array.isArray(value))throw new Error("保存形式が不正です");return value}
+function saveNamedLineup(){
+ const data=lineupSnapshot();if(!data.rows.some(r=>r.name)){setStatus("選手を入力してから保存してください。","error");return}
+ const name=prompt("保存する1-9の名前を入力してください。",data.title||"無題の1-9");if(name===null)return;if(!name.trim()){setStatus("保存名を入力してください。","error");return}
+ try{const saved=readSavedLineups();data.title=name.trim();const existing=saved.findIndex(x=>x.title===data.title);if(existing>=0&&!confirm("同じ名前の1-9を上書きしますか？"))return;
+ const entry={...data,id:existing>=0?saved[existing].id:Date.now().toString(36)+Math.random().toString(36).slice(2),savedAt:new Date().toISOString()};
+ if(existing>=0)saved[existing]=entry;else saved.push(entry);localStorage.setItem(SAVED_LINEUPS_KEY,JSON.stringify(saved));document.getElementById("lineupTitle").value=data.title;saveDraft();updateAllInputFieldColors();setStatus("「"+data.title+"」を保存しました。保存済を読込から呼び出せます。","ok")
+ }catch(e){setStatus("保存できませんでした。端末の保存容量やブラウザの設定を確認してください。","error")}
+}
+function showSavedLineups(){
+ const dialog=document.getElementById("savedLineupsDialog"),list=document.getElementById("savedLineupsList");list.replaceChildren();
+ try{const saved=readSavedLineups();if(!saved.length){const text=document.createElement("p");text.textContent="保存済の1-9はありません。保存ボタンで追加できます。";list.append(text)}
+ saved.slice().reverse().forEach(entry=>{const wrapper=document.createElement("div");wrapper.className="saved-entry";const load=document.createElement("button");load.type="button";load.className="saved-load";load.textContent=entry.title;const meta=document.createElement("small");meta.textContent=(entry.rows||[]).filter(r=>r.name).length+"人 · "+new Date(entry.savedAt).toLocaleString("ja-JP");load.append(meta);
+ load.addEventListener("click",()=>{if(!confirm("編集中の1-9を「"+entry.title+"」に入れ替えますか？"))return;stopOneNineMedley();document.getElementById("lineupTitle").value=entry.title||"";document.getElementById("yearSelect").value=entry.year||"";document.getElementById("teamSelect").value=entry.team||"";renderRows(entry.rows||[]);document.getElementById("previewCard").style.display="none";saveDraft();updateAllInputFieldColors();dialog.close();setStatus("「"+entry.title+"」を読み込みました。","ok")});
+ const del=document.createElement("button");del.type="button";del.className="saved-delete";del.textContent="削除";del.addEventListener("click",()=>{if(!confirm("「"+entry.title+"」を削除しますか？"))return;try{localStorage.setItem(SAVED_LINEUPS_KEY,JSON.stringify(readSavedLineups().filter(x=>x.id!==entry.id)));dialog.close();showSavedLineups()}catch(e){setStatus("削除できませんでした。","error")}});wrapper.append(load,del);list.append(wrapper)});
+ if(!dialog.open)dialog.showModal();
+ }catch(e){setStatus("保存済の1-9を読み込めませんでした。","error")}
 }
 function resetAll(){
  stopOneNineMedley();
@@ -1188,7 +1215,13 @@ function fillYears(){
 document.getElementById("reuseRegisterButton").addEventListener("click",()=>{saveDraft();location.href="./reuse-register.html"});
 document.getElementById("resetButton").addEventListener("click",resetAll);
 document.getElementById("addButton").addEventListener("click",addPlayer);
-document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
+document.getElementById("saveLineupButton").addEventListener("click",saveNamedLineup);
+document.getElementById("loadLineupButton").addEventListener("click",showSavedLineups);
+document.getElementById("illustrationButton").addEventListener("click",()=>{
+ const data=lineupSnapshot();if(!data.rows.some(r=>r.name)){setStatus("選手を入力してから挿絵を作成してください。","error");return}
+ try{saveDraft();localStorage.setItem("ouenkaBaseIllustrationV1",JSON.stringify({...data,transferId:Date.now().toString(36)+Math.random().toString(36).slice(2)}));location.href="./illustration.html?from=lineup"}catch(e){setStatus("挿絵データを保存できませんでした。","error")}
+});
+document.getElementById("closeSavedLineups").addEventListener("click",()=>document.getElementById("savedLineupsDialog").close());
 
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
