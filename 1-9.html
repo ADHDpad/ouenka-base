@@ -1117,8 +1117,8 @@ async function chatGPTSearch(){
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||`検索サーバーの応答エラー（${response.status}）`);
   if(!Array.isArray(data.lineup)||!data.lineup.length){
-   const title=data.video?.title ? `「${data.video.title}」` : "人気順1位の動画";
-   throw new Error(data.message||`${title}の説明欄から9人の打順を取得できませんでした。人気順1位のみを採用する設定のため、別動画には切り替えません。`);
+   const title=data.video?.title ? `「${data.video.title}」` : "検索した動画";
+   throw new Error(data.message||`${title}の説明欄から9人の打順を取得できませんでした。年度の代表的な動画を優先して調べましたが、9人を確定できませんでした。`);
   }
   const parsed=data.lineup.slice(0,9).map(parseYouTubeLineupEntry);
   const proposed=await Promise.all(parsed.map(player=>resolveYouTubePlayer(player,team).catch(()=>player)));

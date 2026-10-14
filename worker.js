@@ -1,4 +1,4 @@
-const WORKER_BUILD = "lineup-relevance-season-20261014-r4";
+const WORKER_BUILD = "lineup-popular-filtered-20261014-r6";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -41,7 +41,7 @@ export default {
       // ==========================================
       // 公開中コードの確認（YouTube APIを消費しない）
       if (url.pathname === "/lineup/version" && request.method === "GET") {
-        return json({ok:true,build:WORKER_BUILD,selection:"relevance_season_first_complete"});
+        return json({ok:true,build:WORKER_BUILD,selection:"viewcount_exclude_opening_require_1-9"});
       }
       // ==========================================
       // 応援歌一覧
@@ -685,8 +685,7 @@ export default {
         }
         
         try {
-          const verified = await verifiedSeasonLineup(env,team,year);
-          if (verified) return json({...verified, build:WORKER_BUILD});
+          // 今回は指定条件のYouTube人気順を優先。確認済みD1打順による先取りは行わない。
           if (!env.YOUTUBE_API_KEY) return json({ok:false,error:"YOUTUBE_API_KEY が設定されていません"},503);
           return json({...await youtubeLineupSearch(team, year, env.YOUTUBE_API_KEY), build:WORKER_BUILD});
         }
@@ -835,57 +834,54 @@ function json(
 async function youtubeLineupSearch(team, year, key) {
   const query = `${year} ${team} 1-9 応援歌`;
   const searchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
-  searchUrl.search = new URLSearchParams({part:"snippet",type:"video",maxResults:"10",order:"relevance",q:query,key});
+  // YouTube公式の再生回数順。最大50件を検索し、タイトル条件を厳密に適用する。
+  searchUrl.search = new URLSearchParams({part:"snippet",type:"video",maxResults:"50",order:"viewCount",q:query,key});
   const search = await youtubeJson(searchUrl);
   const ids = (search.items || []).map(item => item.id?.videoId).filter(Boolean);
-  if (!ids.length) return {ok:true,source:"youtube",team,year,query,found:false,lineup:[],players:[],videos:[],message:"該当するYouTube動画が見つかりませんでした"};
+  if (!ids.length) return {ok:true,source:"youtube_popular_filtered",team,year,query,found:false,lineup:[],players:[],videos:[],message:"該当するYouTube動画が見つかりませんでした",sort:"viewCount",selection:"exclude_opening_require_1-9"};
   const detailsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
-  detailsUrl.search = new URLSearchParams({part:"snippet",id:ids.join(","),key});
+  detailsUrl.search = new URLSearchParams({part:"snippet,statistics",id:ids.join(","),key});
   const details = await youtubeJson(detailsUrl);
-  const lookup = new Map((details.items || []).map(item => [item.id,item.snippet || {}]));
-  const videos = ids.map(id => {
-    const item = lookup.get(id) || {};
-    const lineup = parseDescriptionLineup(item.description || "");
-    return {
-      id, videoId:id, url:`https://www.youtube.com/watch?v=${id}`,
-      title:item.title || "", channel:item.channelTitle || "",
-      publishedAt:item.publishedAt || "", lineup, players:lineup.map(x=>x.name),
-      descriptionHasLineup:lineup.length >= 7
-    };
-  });
-  // 関連度順を基本に、年度の代表的な1-9を優先する。
-  // 一試合のスタメン発表より「決定版」「シーズン」「年度版」を優先。
-  // 説明欄から9人を確定できない動画は採用しない。複数動画を混ぜない。
-  const isComplete = v => v.lineup.length === 9 &&
-    v.lineup.every((entry,index)=>entry.order===index+1) &&
-    new Set(v.lineup.map(entry=>normalizeLineupName(entry.name))).size===9;
-  const yearMatches = v => {
-    const years = [...String(v.title||"").matchAll(/(?:19|20)\d{2}/g)].map(x=>Number(x[0]));
+  const lookup = new Map((details.items || []).map(item => [item.id,item]));
+  const titleAllowed = title => {
+    const t = String(title||"").normalize("NFKC");
+    return /1\s*[-－ー–〜~]\s*9/.test(t) && !/開幕/.test(t);
+  };
+  const yearMatches = title => {
+    const years = [...String(title||"").matchAll(/(?:19|20)\d{2}/g)].map(x=>Number(x[0]));
     return !years.length || years.includes(year);
   };
-  const rankVideo = (v,index) => {
-    const title = String(v.title||"").normalize("NFKC");
-    let score = 100 - index;
-    if (/決定版|総集編|シーズン|年間|年度版|完全版/.test(title)) score += 50;
-    if (/開幕戦|開幕[0-9０-９]|スタメン発表|試合前|\d{1,2}[./月]\d{1,2}|前半戦|後半戦|CS|クライマックス/.test(title)) score -= 40;
-    if (/\+α|\+a|おまけ/i.test(title)) score -= 8;
-    return score;
-  };
-  const candidates = videos.map((v,index)=>({...v,searchRank:index+1,priority:rankVideo(v,index)}))
-    .filter(v=>yearMatches(v)&&isComplete(v))
-    .sort((a,b)=>b.priority-a.priority || a.searchRank-b.searchRank);
-  const best = candidates[0] || null;
+  const isComplete = lineup => lineup.length===9 &&
+    lineup.every((entry,index)=>entry.order===index+1) &&
+    new Set(lineup.map(entry=>normalizeLineupName(entry.name))).size===9;
+  const videos = ids.map((id,index) => {
+    const item = lookup.get(id) || {};
+    const snippet = item.snippet || {};
+    const title = snippet.title || "";
+    const eligible = titleAllowed(title) && yearMatches(title);
+    const lineup = eligible ? parseDescriptionLineup(snippet.description || "") : [];
+    return {
+      id,videoId:id,url:`https://www.youtube.com/watch?v=${id}`,
+      title,channel:snippet.channelTitle||"",publishedAt:snippet.publishedAt||"",
+      viewCount:Number(item.statistics?.viewCount||0),searchRank:index+1,
+      eligible,excludedReason:eligible?null:(!titleAllowed(title)?"開幕を含む、またはタイトルに1-9がない":"指定年度と不一致"),
+      lineup,players:lineup.map(x=>x.name),descriptionHasLineup:isComplete(lineup)
+    };
+  });
+  // 再生回数が多い順で候補を判定。9人が取れない動画は次の人気動画へ。
+  const eligible = videos.filter(v=>v.eligible).sort((a,b)=>b.viewCount-a.viewCount || a.searchRank-b.searchRank);
+  const best = eligible.find(v=>isComplete(v.lineup)) || null;
   const lineup = best?.lineup || [];
   return {
-    ok:true, source:"youtube_relevance_season", team, year, query,
-    found:!!best, lineup, players:lineup.map(x=>x.name),
-    video:best, selectedRank:best?.searchRank ?? null,
-    inspectedCount:videos.length, videos, seasonStatsVerified:false,
-    sort:"relevance", selection:"season_focused_complete_video",
+    ok:true,source:"youtube_popular_filtered",team,year,query,
+    found:!!best,lineup,players:lineup.map(x=>x.name),video:best,
+    selectedRank:best?.searchRank??null,inspectedCount:videos.length,
+    eligibleCount:eligible.length,videos,seasonStatsVerified:false,
+    sort:"viewCount",selection:"exclude_opening_require_1-9",
     message:best
-      ? `関連度検索${best.searchRank}位の動画から9人の打順を取得しました（年度代表候補を優先・複数動画の合成なし）。`
-      : "検索した動画の説明欄から9人の打順を取得できませんでした。映像・音声は解析していません。",
-    extraction:"season_preferred_complete_description"
+      ? `「開幕」を含まず「1-9」を含む動画を再生回数順に確認し、${best.searchRank}位の動画説明欄から9人の打順を取得しました。`
+      : "条件に合う動画は検索しましたが、概要欄から9人の打順を取得できませんでした。映像は解析していません。",
+    extraction:"first_complete_description_in_viewcount_order"
   };
 }
 async function youtubeJson(url) {
