@@ -1037,6 +1037,74 @@ function buildPreview(){
  filled.forEach((r,i)=>{const li=document.createElement("li");li.className="preview-item";li.innerHTML=`<span class="preview-num">${i+1}</span><span class="preview-pos">${r.position}</span><span class="preview-name">${r.name}</span>`;list.appendChild(li)});
  document.getElementById("previewCard").style.display="block";saveDraft();setStatus("1-9の並びを作成しました。","ok");
 }
+// YouTubeの説明欄にある「左 水谷」などを選手名と守備位置に分離する。
+function parseYouTubeLineupEntry(entry){
+ const raw=String(entry?.name||"").trim().replace(/^[0-9０-９]+[.．、\s　-]*/,"");
+ const positionMap={"投":"投手","捕":"捕手","一":"一塁手","二":"二塁手","三":"三塁手","遊":"遊撃手","左":"左翼手","中":"中堅手","右":"右翼手","指":"指名打者","DH":"指名打者","代":"代打"};
+ let name=raw;
+ let position=String(entry?.position||"").trim();
+ const match=raw.match(/^(DH|[投捕一二三遊左中右指代])[\s　]+(.+)$/i);
+ if(match){position=positionMap[match[1].toUpperCase()]||position;name=match[2].trim()}
+ position=positionMap[position]||position;
+ if(!positions.includes(position))position="";
+ return {name,position};
+}
+function youtubeTeamQueryName(team){
+ const names={
+  "北海道日本ハムファイターズ":"日本ハム",
+  "福岡ソフトバンクホークス":"ソフトバンク",
+  "オリックス・バファローズ":"オリックス",
+  "東北楽天ゴールデンイーグルス":"楽天",
+  "埼玉西武ライオンズ":"西武",
+  "千葉ロッテマリーンズ":"ロッテ",
+  "読売ジャイアンツ":"巨人",
+  "横浜DeNAベイスターズ":"DeNA",
+  "広島東洋カープ":"広島",
+  "東京ヤクルトスワローズ":"ヤクルト",
+  "中日ドラゴンズ":"中日",
+  "阪神タイガース":"阪神"
+ };
+ return names[team]||team;
+}
+
+// YouTubeの表記を登録済み選手に照合し、フルネーム・制作番号・音源パスを確定する。
+function normalizedPlayerName(value){
+ return String(value||"").normalize("NFKC").replace(/[\s　・･]/g,"").toLowerCase();
+}
+// 略称は登録済みD1データと照合。チーム名の表記揺れにも対応する。
+function sameRegisteredTeam(a,b){
+ const normalizeTeam=t=>String(t||"").normalize("NFKC").replace(/[\s　・･]/g,"").replace(/^(北海道|福岡|東北|埼玉|千葉|東京|横浜)/,"").replace(/(ファイターズ|ホークス|バファローズ|ゴールデンイーグルス|ライオンズ|マリーンズ|ジャイアンツ|ベイスターズ|カープ|スワローズ|ドラゴンズ|タイガース)$/ ,"");
+ const aliases={"日本ハム":"日本ハム","日ハム":"日本ハム","DeNA":"DeNA","横浜DeNA":"DeNA","ソフトバンク":"ソフトバンク","楽天":"楽天","オリックス":"オリックス"};
+ const canon=t=>aliases[normalizeTeam(t)]||normalizeTeam(t);
+ return !a||!b||canon(a)===canon(b);
+}
+async function resolveYouTubePlayer(player,team){
+ const short=String(player.name||"").trim();
+ if(!short)return {...player};
+ const wanted=normalizedPlayerName(short);
+ // 検索候補の10件制限で取りこぼさないよう、一覧から照合する。
+ const response=await fetch(DATA_API+"/songs",{cache:"no-store",signal:AbortSignal.timeout(15000)});
+ if(!response.ok)return {...player};
+ const data=await response.json();
+ const candidates=(Array.isArray(data.songs)?data.songs:[]).filter(song=>{
+  const registered=normalizedPlayerName(getName(song));
+  return registered===wanted||registered.startsWith(wanted)||registered.endsWith(wanted);
+ });
+ const teamCandidates=candidates.filter(song=>sameRegisteredTeam(getTeam(song),team));
+ const pool=teamCandidates.length?teamCandidates:[];
+ const names=[...new Set(pool.map(song=>normalizedPlayerName(getName(song))))];
+ if(names.length!==1)return {...player}; // 同姓など曖昧なら勝手に決定しない
+ const named=pool.filter(song=>normalizedPlayerName(getName(song))===names[0]);
+ const selected=named.find(song=>song.player_type==="現在使用")||named.find(song=>Number(song.production_number)===1)||named[0];
+ if(!selected)return {...player};
+ const name=getName(selected),prod=String(selected.production_number||"");
+ if(!prod)return {...player,name};
+ const basePath="データ/"+encodeURIComponent(name)+"/"+encodeURIComponent(prod)+"/";
+ return {...player,name,team:getTeam(selected),songId:selected.id||"",productionNumber:prod,
+  audioUrl:basePath+encodeURIComponent(selected.audio_filename||"audio.m4a"),
+  medleyUrl:basePath+encodeURIComponent(selected.medley_filename||"medley.m4a")};
+}
+
 async function chatGPTSearch(){
  const year=document.getElementById("yearSelect").value,team=document.getElementById("teamSelect").value;
  if(!year||!team){setStatus("ChatGPTで検索する前に「年度」と「球団」を選択してください。","error");return}
@@ -1044,22 +1112,57 @@ async function chatGPTSearch(){
  const oldText=button.textContent;button.textContent="✦ 検索中…";
  try{
   setStatus(`${year}年度・${team}の1-9をYouTube優先で調べています…`);
-  const response=await fetch(DATA_API+"/lineup/suggest?year="+encodeURIComponent(year)+"&team="+encodeURIComponent(team),{cache:"no-store",signal:AbortSignal.timeout(55000)});
+  const params=new URLSearchParams({year,team:youtubeTeamQueryName(team)});
+  const response=await fetch(DATA_API+"/lineup/suggest?"+params.toString(),{cache:"no-store",signal:AbortSignal.timeout(55000)});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||`検索サーバーの応答エラー（${response.status}）`);
-  if(!Array.isArray(data.lineup)||!data.lineup.length)throw new Error("打順候補を取得できませんでした");
-  const proposed=data.lineup.slice(0,9).map(x=>({name:String(x.name||"").trim(),position:String(x.position||"").trim()}));
+  if(!Array.isArray(data.lineup)||!data.lineup.length){
+   const title=data.video?.title ? `「${data.video.title}」` : "人気順1位の動画";
+   throw new Error(data.message||`${title}の説明欄から9人の打順を取得できませんでした。人気順1位のみを採用する設定のため、別動画には切り替えません。`);
+  }
+  const parsed=data.lineup.slice(0,9).map(parseYouTubeLineupEntry);
+  const proposed=await Promise.all(parsed.map(player=>resolveYouTubePlayer(player,team).catch(()=>player)));
   if(!proposed.some(x=>x.name))throw new Error("選手候補が空でした");
   if(currentRows().some(x=>x.name)&&!confirm("現在の1-9入力を検索結果で置き換えますか？"))return;
-  // 選手名だけでは制作番号を確定できないため、候補検索での選び直しが必要。
-  renderRows(proposed);autoTitle();saveDraft();updateAllInputFieldColors();
-  const source=data.source==="youtube"?"YouTubeの1-9動画を参考":"AIによる起用実績ベースの候補";
-  const link=data.sourceUrl?` 参照元: ${data.sourceUrl}`:"";
-  setStatus(`${source}から${proposed.filter(x=>x.name).length}名を入力しました。各選手を検索候補から選択し、制作番号を確定してください。${link}`,"ok");
- }catch(err){setStatus("検索できませんでした: "+(err?.message||String(err))+"。Cloudflare Workersの検索API設定を確認してください。","error")}
+  // 既存の再生処理は変更しない。確定した登録データを行にセットする。
+  renderRows(proposed);
+  // 検索した年度・球団に合わせてタイトルも更新する（過去の下書きを残さない）。
+  document.getElementById("lineupTitle").value=`${year} ${team} 1-9`;
+  saveDraft();updateAllInputFieldColors();
+  const source=data.source==="verified_lineup"?"確認済みの保存された1-9":"YouTubeの動画に記載された打順候補";
+  const sourceUrl=data.video?.url||data.sourceUrl||"";
+  const unresolved=proposed.filter(x=>x.name&&!x.productionNumber);
+  const missingPositions=proposed.filter(x=>x.name&&!x.position);
+  const warning=data.seasonStatsVerified?"":" ※年間のスタメン起用数は未検証です。";
+  setStatus(unresolved.length
+   ?`${source}から入力しました。音源未確定${unresolved.length}名、守備位置未確定${missingPositions.length}名。${warning}${sourceUrl?" 参照元: "+sourceUrl:""}`
+   :`${source}から入力しました。${missingPositions.length?"守備位置が未確定の選手が"+missingPositions.length+"名います。":"登録済み音源を自動設定しました。"}${warning}${sourceUrl?" 参照元: "+sourceUrl:""}`,"ok");
+ }catch(err){setStatus("検索できませんでした: "+(err?.message||String(err)),"error")}
  finally{button.disabled=false;button.textContent=oldText}
 }
 
+async function saveVerifiedLineup(){
+ const year=Number(document.getElementById("yearSelect").value);
+ const team= youtubeTeamQueryName(document.getElementById("teamSelect").value);
+ const lineup=currentRows().filter(x=>x.name).slice(0,9);
+ if(!year||!team||lineup.length!==9||lineup.some(x=>!x.position)){
+  setStatus("年度・球団・9人の選手名と守備位置を入力してください。","error");return;
+ }
+ const sourceUrl=prompt("この打順の出典URL（YouTube動画など）を入力してください。");
+ if(sourceUrl===null)return;
+ if(!/^https:\/\//.test(sourceUrl.trim())){setStatus("https:// から始まる出典URLが必要です。","error");return;}
+ if(!confirm(`${year}年 ${team} の9人を確認済みデータとして保存しますか？\n※正確性を確認した管理者だけ実行してください。`))return;
+ const key=prompt("Cloudflare Secretに登録した LINEUP_ADMIN_KEY を入力してください（保存しません）");
+ if(!key)return;
+ const button=document.getElementById("saveVerified");button.disabled=true;
+ try{
+  const response=await fetch(DATA_API+"/lineup/verified",{method:"POST",headers:{"Content-Type":"application/json","X-Lineup-Admin-Key":key},body:JSON.stringify({year,team,sourceUrl, lineup:lineup.map(x=>({name:x.name,position:x.position}))})});
+  const result=await response.json();
+  if(!response.ok||!result.ok)throw new Error(result.error||"保存に失敗しました");
+  setStatus("確認済み1-9をD1に保存しました。次回からこの打順を優先表示します。","ok");
+ }catch(e){setStatus("保存できませんでした: "+e.message,"error")}
+ finally{button.disabled=false}
+}
 function renderTeamSelect(){
  const select=document.getElementById("teamSelect");if(!select)return;
  const current=select.value;
@@ -1086,6 +1189,7 @@ document.getElementById("reuseRegisterButton").addEventListener("click",()=>{sav
 document.getElementById("resetButton").addEventListener("click",resetAll);
 document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("chatSearch").addEventListener("click",chatGPTSearch);
+
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
 document.getElementById("teamSelect").addEventListener("change",()=>{autoTitle();saveDraft()});

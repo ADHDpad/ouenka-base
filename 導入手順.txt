@@ -1,0 +1,15 @@
+応援歌BASE Cloudflare Worker 更新版
+
+1. Cloudflare > Workers & Pages > ouenka-base-data > コードを編集。
+2. 同梱 worker.js の全文をコピーし、Cloudflareのコード全文と置き換えて「展開」。
+3. https://ouenka-base-data.ninzin5600.workers.dev/lineup/version を開く。
+   build が lineup-ranked-20261014-r2 なら新コードが公開中です。
+4. https://ouenka-base-data.ninzin5600.workers.dev/lineup/suggest?team=日本ハム&year=2025 を開く。
+   source=youtube_ranked_complete / found=true / selectedRank=5等を確認。
+   ※検索順位は変動します。
+
+変更点：検索上位10件から、年度が合い、9人全員の打順が取得できた最上位動画を採用。
+動画同士の合成はしません。動画説明欄以外の映像や音声は解析しません。
+公開中バージョン確認用 /lineup/version を追加。
+既存の songs API・D1テーブル・音源再生には変更なし。
+APIキーをコードに埋め込まないでください。
