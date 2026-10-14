@@ -1,15 +1,19 @@
-応援歌BASE Cloudflare Worker 更新版
+【サイトの更新】
+GitHubのouenka-base直下へ、1-9.html、illustration.html、ouenka-studio-audio.js、service-worker.jsの4ファイルを追加・上書きしてください。index.htmlは変更しません。
 
-1. Cloudflare > Workers & Pages > ouenka-base-data > コードを編集。
-2. 同梱 worker.js の全文をコピーし、Cloudflareのコード全文と置き換えて「展開」。
-3. https://ouenka-base-data.ninzin5600.workers.dev/lineup/version を開く。
-   build が lineup-ranked-20261014-r2 なら新コードが公開中です。
-4. https://ouenka-base-data.ninzin5600.workers.dev/lineup/suggest?team=日本ハム&year=2025 を開く。
-   source=youtube_ranked_complete / found=true / selectedRank=5等を確認。
-   ※検索順位は変動します。
+【NPB一括取得の初回設定】
+既存の応援歌・YouTube検索Workerは変更しません。
+1. CloudflareのWorkers & Pagesで新しいWorkerを作成してください。名前の例：ouenka-base-npb。
+2. npb-stats-worker.jsの全文を、新しいWorkerのコードに貼り付けてDeployしてください。DBやSecretの追加は不要です。
+3. 公開されたWorkerのhttps URLをコピーします。
+4. 応援歌BASEの挿絵画面→①成績登録→年度と球団を選ぶ→NPB公式から成績を一括取得。初回の入力欄にWorker URLを貼り付けます。
+URLは端末内に保存されます。変更したいときは「成績取得の接続設定」を開いて変更してください。
 
-変更点：検索上位10件から、年度が合い、9人全員の打順が取得できた最上位動画を採用。
-動画同士の合成はしません。動画説明欄以外の映像や音声は解析しません。
-公開中バージョン確認用 /lineup/version を追加。
-既存の songs API・D1テーブル・音源再生には変更なし。
-APIキーをコードに埋め込まないでください。
+【取得内容】
+選択年度・球団の公式戦打撃成績表から、AVG・HR・RBI・SBを取得。OPSはNPBの公表済み出塁率と長打率（各3桁）の合計です。選手名の空白を除いて照合し、見つからない選手は変更しません。「NPB表記」欄で公式表記を指定できます。1時間のキャッシュを使用。1950年以降の選択肢がありますが、NPBに該当ページがない年度・球団は取得できません。別球団の選手は対象球団を変えて取得してください。
+
+【デザイン】
+写真に黒枠。②デザイン登録に「⑧ 成績を黄色で区切る」を追加、写真あり／なしの両方があります。年度・球団は①成績登録でプルダウンになっています。
+
+【確認】
+取得したNPB公式の2025日本ハムHTMLで郡司・奈良間・レイエスの各数値の解析と未一致処理を確認。UI構文・タブ・BGMと曲切替の処理テスト済。Workerの実公開、iPhoneでの表示・再生・保存は未確認です。
