@@ -1217,9 +1217,24 @@ document.getElementById("resetButton").addEventListener("click",resetAll);
 document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("saveLineupButton").addEventListener("click",saveNamedLineup);
 document.getElementById("loadLineupButton").addEventListener("click",showSavedLineups);
-document.getElementById("illustrationButton").addEventListener("click",()=>{
- const data=lineupSnapshot();if(!data.rows.some(r=>r.name)){setStatus("選手を入力してから挿絵を作成してください。","error");return}
- try{saveDraft();localStorage.setItem("ouenkaBaseIllustrationV1",JSON.stringify({...data,transferId:Date.now().toString(36)+Math.random().toString(36).slice(2)}));location.href="./illustration.html?from=lineup"}catch(e){setStatus("挿絵データを保存できませんでした。","error")}
+async function illustrationLineupData(){
+ const data=lineupSnapshot();
+ const results=await Promise.allSettled(data.rows.map(async r=>{
+  if(!r.name||r.lyrics&&!r.reuseName)return;
+  const name=r.reuseName||r.name,number=r.reuseProductionNumber||r.productionNumber;
+  if(!number)return;
+  const response=await fetch(DATA_API+"/songs/search?q="+encodeURIComponent(name),{cache:"no-store",signal:AbortSignal.timeout(7000)});
+  if(!response.ok)throw new Error("歌詞を取得できませんでした");
+  const result=await response.json();
+  const song=(result.songs||[]).find(song=>norm(getName(song))===norm(name)&&String(song.production_number||"")===String(number));
+  if(song)r.lyrics=String(song.lyrics||song.lyric||"").replace(/<br\s*\/?\s*>/gi,"\n");
+ }));
+ data.lyricsFetchFailed=results.some(r=>r.status==='rejected');return data;
+}
+document.getElementById("illustrationButton").addEventListener("click",async()=>{
+ const button=document.getElementById("illustrationButton");if(!currentRows().some(r=>r.name)){setStatus("選手を入力してから挿絵を作成してください。","error");return}
+ button.disabled=true;button.textContent="歌詞を取得中…";
+ try{const data=await illustrationLineupData();saveDraft();localStorage.setItem("ouenkaBaseIllustrationV1",JSON.stringify({...data,transferId:Date.now().toString(36)+Math.random().toString(36).slice(2)}));location.href="./illustration.html?from=lineup"}catch(e){setStatus("挿絵データを保存できませんでした。","error")}finally{button.disabled=false;button.textContent="挿絵作成"}
 });
 document.getElementById("closeSavedLineups").addEventListener("click",()=>document.getElementById("savedLineupsDialog").close());
 
