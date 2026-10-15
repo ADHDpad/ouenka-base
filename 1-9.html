@@ -84,7 +84,7 @@ body.row-dragging *{cursor:grabbing!important}
 #savedLineupsDialog{width:min(92vw,560px);max-height:80vh;border:0;border-radius:16px;padding:20px;color:#0b2b4a}#savedLineupsDialog::backdrop{background:#071d3399}#savedLineupsDialog h2{font-size:20px}#savedLineupsDialog button{border:0;border-radius:8px;padding:12px;background:#0B2F55;color:white} .saved-entry{display:flex;gap:8px;margin-bottom:10px;align-items:center}.saved-entry .saved-load{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}.saved-entry small{display:block;margin-top:5px;font-size:11px;color:#d9e6f2}.saved-entry .saved-delete{background:#e9eef3!important;color:#0b2b4a!important}
 @media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
 </style>
-<script src="audio-recovery.js?v=67"></script>
+<script src="audio-recovery.js?v=20261015-r100"></script>
 <script src="pwa-diagnostic.js?v=68"></script>
 <script src="team-order.js"></script>
 <style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
@@ -127,6 +127,7 @@ body.row-dragging *{cursor:grabbing!important}
  </section>
 </main>
 
+<script src="./ouenka-audio-transfer.js?v=20261015-r101"></script>
 <script>
 "use strict";
 
@@ -888,6 +889,63 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
  return output;
 }
 
+let preparedOneNineAudio=null;
+function oneNineAudioKey(){return JSON.stringify(currentRows().map(r=>({name:r.name,productionNumber:r.productionNumber,songId:r.songId,reuseName:r.reuseName,reuseProductionNumber:r.reuseProductionNumber,audioUrl:r.audioUrl,melodyUrl:r.melodyUrl,accompanimentUrl:r.accompanimentUrl,introAccompanimentUrl:r.introAccompanimentUrl})))}
+async function makeOneNineAudio(ctx,selected){
+  /* 全選手の分離音源を並列取得。
+     1番だけは本編メロディーとして audio.m4a を使用する。 */
+  const separated=await Promise.all(selected.map(async(item,i)=>{
+   try{
+    const melodyFile=i===0?"audio.m4a":"melody.m4a";
+    const [melody,normalAccompaniment,openingAccompaniment]=await Promise.all([
+     (i===0?fetchFirstExistingAudio(ctx,item,melodyFile,true).then(v=>v||fetchFirstExistingAudio(ctx,item,"melody.m4a")):fetchFirstExistingAudio(ctx,item,melodyFile)),
+     fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
+     i===0?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
+    ]);
+    return {melody,accompaniment:(i===0&&openingAccompaniment)||normalAccompaniment,
+            hasOpeningAccompaniment:i===0&&!!openingAccompaniment};
+   }catch(e){throw new Error(`${item.name} の音源を読み込めませんでした。`)}
+  }));
+  // 前奏は再生用音源に収録済み。別の前奏トラックを加えない。
+  const intro=null;
+
+  // 1曲目の前奏分だけ2曲目以降を後ろへ送る。
+  // 本編の melody.m4a と再生用 audio.m4a の長さの差を小節単位で判定する。
+  // 前奏付きコード進行がない場合は従来どおりの9小節接続を維持。
+  let openingExtraSec=0;
+  if(separated[0].hasOpeningAccompaniment){
+   // 再生用音源・前奏付き伴奏の双方から前奏の長さを確認する。
+   // 片方が本編と同じ長さで書き出されていても、もう片方の差を採用する。
+   const [normalMelody,normalAccompaniment]=await Promise.all([
+    fetchFirstExistingAudio(ctx,selected[0],"melody.m4a",true),
+    fetchFirstExistingAudio(ctx,selected[0],"accompaniment.m4a",true)
+   ]);
+   const melodyExtra=normalMelody?Math.max(0,separated[0].melody.duration-normalMelody.duration):0;
+   const chordExtra=normalAccompaniment?Math.max(0,separated[0].accompaniment.duration-normalAccompaniment.duration):0;
+   openingExtraSec=Math.round(Math.max(melodyExtra,chordExtra)/MEDLEY_BAR_SEC)*MEDLEY_BAR_SEC;
+  }
+  const starts=buildDynamicSongStarts(separated,openingExtraSec);
+
+  /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
+     メロディーとコード進行は別々に重複判定する。 */
+  const mixed=mixSmoothIndependent(ctx,separated,intro,starts);
+  return {buffer:mixed,starts,duration:mixed.duration,barSeconds:MEDLEY_BAR_SEC,rowIndices:currentRows().map((r,i)=>r.name?i:-1).filter(i=>i>=0)};
+}
+async function prepareIllustrationAudio(){
+ if(medleyBuilding)throw Error('1-9の音声を作成中です。完了してから挿絵作成を押してください。');
+ const key=oneNineAudioKey();
+ if(preparedOneNineAudio?.key===key)return preparedOneNineAudio.timeline;
+ let ctx;
+ try{
+  ctx=window.ouenkaAudioRecovery.create();
+  const selected=await getSelectedMedleyPlayers();
+  if(!selected.length)throw Error('選手を選択してください。');
+  const timeline=await makeOneNineAudio(ctx,selected);
+  if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度「挿絵作成」を押してください。');
+  preparedOneNineAudio={key,timeline};return timeline;
+ }finally{if(ctx)ctx.close().catch(()=>{})}
+}
+
 async function buildAndPlayOneNineMedley(){
  if(medleyBuilding)return;
  if(liveMedleyContext){stopOneNineMedley();hideStatus();return}
@@ -913,45 +971,12 @@ async function buildAndPlayOneNineMedley(){
  if(btn){btn.disabled=true;btn.textContent="読み込み中…"}
 
  try{
-  /* 全選手の分離音源を並列取得。
-     1番だけは本編メロディーとして audio.m4a を使用する。 */
-  const separated=await Promise.all(selected.map(async(item,i)=>{
-   try{
-    const melodyFile=i===0?"audio.m4a":"melody.m4a";
-    const [melody,normalAccompaniment,openingAccompaniment]=await Promise.all([
-     (i===0?fetchFirstExistingAudio(ctx,item,melodyFile,true).then(v=>v||fetchFirstExistingAudio(ctx,item,"melody.m4a")):fetchFirstExistingAudio(ctx,item,melodyFile)),
-     fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
-     i===0?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
-    ]);
-    return {melody,accompaniment:(i===0&&openingAccompaniment)||normalAccompaniment,
-            hasOpeningAccompaniment:i===0&&!!openingAccompaniment};
-   }catch(e){throw new Error(`${item.name} の音源を読み込めませんでした。`)}
-  }));
-  // 前奏は再生用音源に収録済み。別の前奏トラックを加えない。
-  const intro=null;
+  const key=oneNineAudioKey();
+  const timeline=preparedOneNineAudio?.key===key?preparedOneNineAudio.timeline:await makeOneNineAudio(ctx,selected);
+  if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度再生してください。');
+  preparedOneNineAudio={key,timeline};
   liveMedleyContext=ctx;
-  const base=ctx.currentTime+0.06;
-
-  // 1曲目の前奏分だけ2曲目以降を後ろへ送る。
-  // 本編の melody.m4a と再生用 audio.m4a の長さの差を小節単位で判定する。
-  // 前奏付きコード進行がない場合は従来どおりの9小節接続を維持。
-  let openingExtraSec=0;
-  if(separated[0].hasOpeningAccompaniment){
-   // 再生用音源・前奏付き伴奏の双方から前奏の長さを確認する。
-   // 片方が本編と同じ長さで書き出されていても、もう片方の差を採用する。
-   const [normalMelody,normalAccompaniment]=await Promise.all([
-    fetchFirstExistingAudio(ctx,selected[0],"melody.m4a",true),
-    fetchFirstExistingAudio(ctx,selected[0],"accompaniment.m4a",true)
-   ]);
-   const melodyExtra=normalMelody?Math.max(0,separated[0].melody.duration-normalMelody.duration):0;
-   const chordExtra=normalAccompaniment?Math.max(0,separated[0].accompaniment.duration-normalAccompaniment.duration):0;
-   openingExtraSec=Math.round(Math.max(melodyExtra,chordExtra)/MEDLEY_BAR_SEC)*MEDLEY_BAR_SEC;
-  }
-  const starts=buildDynamicSongStarts(separated,openingExtraSec);
-
-  /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
-     メロディーとコード進行は別々に重複判定する。 */
-  const mixed=mixSmoothIndependent(ctx,separated,intro,starts);
+  const base=ctx.currentTime+0.06,mixed=timeline.buffer;
   const masterSource=scheduleBuffer(ctx,mixed,base);
 
   /* v49: 壁時計setTimeoutではなく、実際の音源終了を基準にする。
@@ -1243,8 +1268,19 @@ async function illustrationLineupData(){
 }
 document.getElementById("illustrationButton").addEventListener("click",async()=>{
  const button=document.getElementById("illustrationButton");if(!currentRows().some(r=>r.name)){setStatus("選手を入力してから挿絵を作成してください。","error");return}
- button.disabled=true;button.textContent="歌詞を取得中…";
- try{const data=await illustrationLineupData();saveDraft();localStorage.setItem("ouenkaBaseIllustrationV1",JSON.stringify({...data,transferId:Date.now().toString(36)+Math.random().toString(36).slice(2)}));location.href="./illustration.html?from=lineup"}catch(e){setStatus("挿絵データを保存できませんでした。","error")}finally{button.disabled=false;button.textContent="挿絵作成"}
+ button.disabled=true;button.textContent="1-9の音声を引き継ぎ中…";
+ try{
+  if(!window.OuenkaAudioTransfer)throw Error('ouenka-audio-transfer.jsも同時に更新してください。');
+  const timeline=await prepareIllustrationAudio(),key=oneNineAudioKey();
+  const data=await illustrationLineupData();
+  if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度お試しください。');
+  const transferId=Date.now().toString(36)+Math.random().toString(36).slice(2);
+  await window.OuenkaAudioTransfer.save(transferId,timeline);
+  if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度お試しください。');
+  saveDraft();localStorage.setItem('ouenkaBaseIllustrationV1',JSON.stringify({...data,transferId}));
+  stopOneNineMedley();location.href='./illustration.html?from=lineup';
+ }catch(e){setStatus('挿絵への音声引き継ぎができませんでした：'+(e.message||e),'error')}
+ finally{button.disabled=false;button.textContent='挿絵作成'}
 });
 document.getElementById("closeSavedLineups").addEventListener("click",()=>document.getElementById("savedLineupsDialog").close());
 
