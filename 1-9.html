@@ -197,6 +197,27 @@ function updateAllInputFieldColors(){
  document.querySelectorAll("#lineupTitle,.position,.player-search").forEach(updateInputFieldColor);
 }
 
+// Both search suggestions and the current-use roster use this single registration path.
+function selectRegisteredPlayerForLineup(row,song){
+ const name=getName(song),prod=String(song.production_number??song.productionNumber??'').trim();
+ if(!name||!prod)throw new Error('選手名または制作番号がありません。');
+ const urls=registeredSongUrls(song,name,prod),input=row.querySelector('.player-search');
+ if(!urls)throw new Error('登録音源の場所を確認できませんでした。');
+ rowSearchRequests[row.dataset.row]=(rowSearchRequests[row.dataset.row]||0)+1;
+ input.value=name;
+ Object.assign(row.dataset,{lyrics:String(song.lyrics||song.lyric||'').replace(/<br\s*\/?\s*>/gi,'\n'),songId:String(song.id??''),productionNumber:prod,team:getTeam(song),reuseMode:'',reuseName:'',reuseProductionNumber:''});
+ for(const key of ['audioUrl','medleyUrl','melodyUrl','accompanimentUrl','introMelodyUrl','introAccompanimentUrl'])row.dataset[key]=urls[key]||'';
+ const item={name,productionNumber:prod,...urls};
+ // Clear failed lookups so a renewed selection can retry newly published files.
+ for(const file of ['melody.m4a','accompaniment.m4a','intro_accompaniment.m4a']){
+  const paths=separatedAudioCandidates(item,file);paths.forEach(path=>oneNineMissingPaths.delete(path));
+  if(paths[0])fetchAudioDataCached(paths[0]).catch(()=>{});
+ }
+ const box=row.querySelector('.suggestions');box.innerHTML='';box.style.display='none';
+ checkDuplicates();saveDraft();updateInputFieldColor(input);
+ return item;
+}
+
 function createRow(n,data={}){
  const row=document.createElement("div");
  row.className="player-row";row.dataset.row=n;
@@ -206,6 +227,7 @@ function createRow(n,data={}){
  row.dataset.team=data.team||"";
  row.dataset.audioUrl=data.audioUrl||"";
  row.dataset.medleyUrl=data.medleyUrl||"";
+ for(const key of ["melodyUrl","accompanimentUrl","introMelodyUrl","introAccompanimentUrl"])row.dataset[key]=data[key]||"";
  row.dataset.reuseMode=data.reuseMode||"";row.dataset.reuseName=data.reuseName||"";row.dataset.reuseProductionNumber=data.reuseProductionNumber||"";
 
  const options=positions.map((p,i)=>{
@@ -238,7 +260,7 @@ function createRow(n,data={}){
 
  input.addEventListener("input",()=>{
   row.dataset.lyrics="";row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
-  row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";for(const key of ["melodyUrl","accompanimentUrl","introMelodyUrl","introAccompanimentUrl"])row.dataset[key]="";row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
   showSuggestions(row,input,sug);checkDuplicates();saveDraft();updateInputFieldColor(input);
  });
  input.addEventListener("focus",()=>showSuggestions(row,input,sug));
@@ -246,7 +268,7 @@ function createRow(n,data={}){
  row.querySelector(".clear").addEventListener("click",()=>{
   input.value="";pos.value="";
   row.dataset.lyrics="";row.dataset.songId="";row.dataset.productionNumber="";row.dataset.team="";
-  row.dataset.audioUrl="";row.dataset.medleyUrl="";row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
+  row.dataset.audioUrl="";row.dataset.medleyUrl="";for(const key of ["melodyUrl","accompanimentUrl","introMelodyUrl","introAccompanimentUrl"])row.dataset[key]="";row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
   sug.style.display="none";row.classList.remove("row-warning");
   if(currentPlayingRow===row)stopRowAudio();
   saveDraft();updateInputFieldColor(input);updateInputFieldColor(pos);
@@ -391,28 +413,7 @@ async function showSuggestions(row,input,box){
    const lyricFirst=String(song.lyrics||song.lyric||"").replace(/<br\s*\/?\s*>/gi,"\n").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"";
    b.innerHTML=`<strong>${clean(name)}</strong><small>${clean(getTeam(song)||"球団未設定")}${prod?" / 制作番号 "+clean(prod):""}</small><small>${clean(lyricFirst||"歌詞未登録")}</small>`;
    b.addEventListener("click",()=>{
-    input.value=name;
-    row.dataset.lyrics=String(song.lyrics||song.lyric||"").replace(/<br\s*\/?\s*>/gi,"\n");
-    row.dataset.songId=song.id||"";
-    row.dataset.productionNumber=prod;
-    row.dataset.team=getTeam(song);
-    const basePath="データ/"+encodeURIComponent(song.player_name||"")+"/"+encodeURIComponent(song.production_number||"")+"/";
-    row.dataset.reuseMode="";row.dataset.reuseName="";row.dataset.reuseProductionNumber="";
-    row.dataset.audioUrl=basePath+encodeURIComponent(song.audio_filename||"audio.m4a");
-    row.dataset.medleyUrl=basePath+encodeURIComponent(song.medley_filename||"medley.m4a");
-
-    // 選手を選んだ瞬間から裏で1-9用音源を先読み。
-    // 再生ボタンを押す頃には通信待ちをほぼ終わらせる。
-    const preloadItem={name,productionNumber:prod,audioUrl:row.dataset.audioUrl};
-    ["melody.m4a","accompaniment.m4a","intro_accompaniment.m4a"]
-      .forEach(fileName=>{
-       const candidates=separatedAudioCandidates(preloadItem,fileName);
-       // 最有力パスを先に取得。失敗は再生時の通常探索へ任せる。
-       if(candidates[0])fetchAudioDataCached(candidates[0]).catch(()=>{});
-      });
-
-    box.innerHTML="";box.style.display="none";
-    checkDuplicates();saveDraft();updateInputFieldColor(input);
+    selectRegisteredPlayerForLineup(row,song);
    });
    box.appendChild(b);
   });
@@ -1001,6 +1002,7 @@ function currentRows(){
   position:row.querySelector(".position").value,
   name:row.querySelector(".player-search").value.trim(),
   lyrics:row.dataset.lyrics||"",songId:row.dataset.songId||"",productionNumber:row.dataset.productionNumber||"",team:row.dataset.team||"",
+  melodyUrl:row.dataset.melodyUrl||"",accompanimentUrl:row.dataset.accompanimentUrl||"",introMelodyUrl:row.dataset.introMelodyUrl||"",introAccompanimentUrl:row.dataset.introAccompanimentUrl||"",
   audioUrl:row.dataset.audioUrl||"",medleyUrl:row.dataset.medleyUrl||"",reuseMode:row.dataset.reuseMode||"",reuseName:row.dataset.reuseName||"",reuseProductionNumber:row.dataset.reuseProductionNumber||""
  }));
 }
@@ -1255,6 +1257,6 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
-<script src="./active-roster.js?v=20261015-r97"></script>
+<script src="./active-roster.js?v=20261015-r99"></script>
 </body>
 </html>
