@@ -15,6 +15,21 @@
  let retryButton=null;
  let recoveryNeeded=false;
  let retryCallback=null;
+ // iPhone Home Screen WebKit can leave the media route inactive after another app.
+ // Prime that route with a short silent WAV within the same user gesture; song PCM is untouched.
+ const mediaWakes=new Map();
+ function isIPhoneHomeApp(){return /iPhone/i.test(navigator.userAgent||'')&&(navigator.standalone===true||window.matchMedia?.('(display-mode: standalone)').matches===true)}
+ function wakeMediaRoute(ctx){
+   if(!isIPhoneHomeApp()||navigator.userActivation?.isActive===false||mediaWakes.has(ctx)||!window.URL?.createObjectURL)return;
+   const rate=8000,length=640,bytes=new ArrayBuffer(44+length*2),v=new DataView(bytes),tag=(offset,text)=>{for(let i=0;i<text.length;i++)v.setUint8(offset+i,text.charCodeAt(i))};
+   tag(0,'RIFF');v.setUint32(4,bytes.byteLength-8,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,length*2,true);
+   const audio=document.createElement('audio'),url=window.URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}));
+   audio.src=url;audio.preload='auto';audio.playsInline=true;audio.muted=false;audio.volume=1;audio.setAttribute('aria-hidden','true');audio.style.cssText='position:fixed;width:1px;height:1px;left:-10px;bottom:0;pointer-events:none';
+   let timer;const cleanup=()=>{clearTimeout(timer);if(mediaWakes.get(ctx)!==cleanup)return;mediaWakes.delete(ctx);try{audio.pause();audio.removeAttribute('src');audio.load();audio.remove()}catch(_){}window.URL.revokeObjectURL(url)};
+   const retryResume=()=>{if(ctx.state!=='closed'&&ctx.state!=='running'&&!deliberatelyPaused.has(ctx)){try{ctx.resume().catch(e=>{lastError=String(e)})}catch(e){lastError=String(e)}}};
+   mediaWakes.set(ctx,cleanup);audio.addEventListener('ended',()=>{retryResume();cleanup()},{once:true});audio.addEventListener('error',cleanup,{once:true});document.body?.appendChild(audio);timer=setTimeout(cleanup,2000);
+   try{const started=audio.play();started?.then(retryResume).catch(e=>{lastError=String(e);cleanup()})}catch(e){lastError=String(e);cleanup()}
+ }
  function state(){return [...contexts].map(c=>c.state).join(', ')||'なし'}
  function makeContext(){
    configureSession();
@@ -25,7 +40,7 @@
    if(suspend)ctx.suspend=function(){deliberatelyPaused.add(ctx);try{return suspend().catch(e=>{deliberatelyPaused.delete(ctx);throw e})}catch(e){deliberatelyPaused.delete(ctx);throw e}};
    ctx.resume=function(){deliberatelyPaused.delete(ctx);return resume()};
    const close=ctx.close.bind(ctx);
-   ctx.close=function(){contexts.delete(ctx);return close()};
+   ctx.close=function(){mediaWakes.get(ctx)?.();contexts.delete(ctx);return close()};
    return ctx;
  }
  // iPhone standalone can leave resume() pending for ~60 seconds even after a tap.
@@ -56,7 +71,7 @@
    return ctx;
  }
  // Deliberately not async: calling create() must not yield before initiating resume().
- function create(){const ctx=makeContext();try{return unlock(ctx)}catch(e){try{ctx.close()}catch(_){}throw e}}
+ function create(){const ctx=makeContext();try{wakeMediaRoute(ctx);return unlock(ctx)}catch(e){try{ctx.close()}catch(_){}throw e}}
  // Explicit second user gesture if standalone WebKit defers resume() indefinitely.
  function showRetry(ctx, retryPlayback){
    if(!ctx || ctx.state==='running' || ctx.state==='closed')return;
@@ -106,7 +121,7 @@
    const ctx=await create();await ctx.close();lastError='';
    return '音声エンジンを再初期化しました。曲の再生ボタンを押してください。';
  }
- window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,diagnostics:()=>({contexts:state(),lastError,visibility:document.visibilityState})};
+ window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,diagnostics:()=>({build:'20261015-r103',contexts:state(),lastError,visibility:document.visibilityState})};
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendingGestureContext){const stale=pendingGestureContext;pendingGestureContext=null;try{stale.close().catch(()=>{})}catch(_){}}else if(!document.hidden)resumeExisting()});
  window.addEventListener('pageshow',()=>{resumeExisting()});
  // A fresh user tap is required by iOS after some audio interruptions.
