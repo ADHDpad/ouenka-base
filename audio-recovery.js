@@ -10,14 +10,20 @@
  }
  configureSession();
  const contexts=new Set();
+ const deliberatelyPaused=new WeakSet();
  let pendingGestureContext=null;
  let retryButton=null;
+ let recoveryNeeded=false;
+ let retryCallback=null;
  function state(){return [...contexts].map(c=>c.state).join(', ')||'なし'}
  function makeContext(){
    configureSession();
    const AC=window.AudioContext||window.webkitAudioContext;
    if(!AC)throw new Error('このブラウザはWeb Audioに対応していません');
    const ctx=new AC();contexts.add(ctx);
+   const suspend=ctx.suspend?.bind(ctx),resume=ctx.resume.bind(ctx);
+   if(suspend)ctx.suspend=function(){deliberatelyPaused.add(ctx);try{return suspend().catch(e=>{deliberatelyPaused.delete(ctx);throw e})}catch(e){deliberatelyPaused.delete(ctx);throw e}};
+   ctx.resume=function(){deliberatelyPaused.delete(ctx);return resume()};
    const close=ctx.close.bind(ctx);
    ctx.close=function(){contexts.delete(ctx);return close()};
    return ctx;
@@ -54,6 +60,7 @@
  // Explicit second user gesture if standalone WebKit defers resume() indefinitely.
  function showRetry(ctx, retryPlayback){
    if(!ctx || ctx.state==='running' || ctx.state==='closed')return;
+   recoveryNeeded=true;retryCallback=typeof retryPlayback==='function'?retryPlayback:null;
    if(!retryButton){
      retryButton=document.createElement('button');
      retryButton.type='button';retryButton.textContent='▶ 音声を再起動';
@@ -66,7 +73,7 @@
      // Retry with a NEW context inside this exact user gesture (not after await).
      if(typeof retryPlayback==='function'){
        const fresh=create();
-       retryButton.hidden=true;
+       retryButton.hidden=true;recoveryNeeded=false;
        retryPlayback(fresh);
      }else{
        try{unlock(ctx)}catch(e){console.warn('再起動',e)}
@@ -77,12 +84,18 @@
    const onstate=()=>{if(ctx.state==='running'){retryButton.hidden=true;ctx.removeEventListener('statechange',onstate)}};
    ctx.addEventListener('statechange',onstate);
  }
- function hideRetry(){if(retryButton)retryButton.hidden=true}
+ function hideRetry(){recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
 
+ // Include WebKit's interrupted state after another app takes the audio session.
  async function resumeExisting(){
-   const list=[...contexts].filter(c=>c.state==='suspended');
-   return Promise.allSettled(list.map(c=>Promise.race([c.resume(),new Promise(resolve=>setTimeout(resolve,1500))])));
+   configureSession();
+   const list=[...contexts].filter(c=>c.state!=='running'&&c.state!=='closed'&&!deliberatelyPaused.has(c));
+   return Promise.allSettled(list.map(c=>{
+     try{unlock(c);return Promise.race([c.resume(),new Promise(resolve=>setTimeout(resolve,1200))])}
+     catch(e){lastError=String(e);return Promise.reject(e)}
+   }));
  }
+
  async function reset(){
    // Do not close contexts of currently playing songs: reset is explicitly user-invoked.
    try{if(typeof window.stopCurrentSong==='function')window.stopCurrentSong()}catch(_){}
@@ -94,6 +107,9 @@
    return '音声エンジンを再初期化しました。曲の再生ボタンを押してください。';
  }
  window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,diagnostics:()=>({contexts:state(),lastError,visibility:document.visibilityState})};
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)resumeExisting()});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendingGestureContext){const stale=pendingGestureContext;pendingGestureContext=null;try{stale.close().catch(()=>{})}catch(_){}}else if(!document.hidden)resumeExisting()});
  window.addEventListener('pageshow',()=>{resumeExisting()});
+ // A fresh user tap is required by iOS after some audio interruptions.
+ // Do not silently start playback; retain the existing retry control.
+ window.addEventListener('focus',()=>{resumeExisting()});
 })();

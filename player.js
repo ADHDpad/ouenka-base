@@ -19,6 +19,7 @@ let playAttemptId = 0;
 
 // v46: ホームの実再生エンジン状態
 let homeAudioContext = null;
+let homeRecoverySong = null;
 let homeAudioSources = [];
 let homePlaybackActive = false;
 let homePaused = false;
@@ -136,6 +137,7 @@ async function playSongData(player, gestureCtx=null) {
 
     stopCurrentSong();
     const attemptId=++playAttemptId;
+    homeRecoverySong=player;
     const label=player.name||"";
     let ctx=null;
 
@@ -272,21 +274,14 @@ async function playSongData(player, gestureCtx=null) {
         schedule(accompaniment,base);
         if(ctx.state==="running") setNowPlaying("♪ 再生中："+label);
         else {setNowPlaying("音声エンジンの起動待ち…");ctx.addEventListener("statechange",()=>{if(ctx.state==="running"&&attemptId===playAttemptId)setNowPlaying("♪ 再生中："+label)})}
-        const total=Math.max(audio.duration,accompaniment.duration);
-        if(homeEndTimer) clearTimeout(homeEndTimer);
-        const armEndTimer=()=>{
-            if(attemptId!==playAttemptId || ctx.state!=="running")return;
-            if(homeEndTimer)clearTimeout(homeEndTimer);
-            homeEndTimer=setTimeout(async()=>{
-                if(attemptId===playAttemptId){
-                    setNowPlaying("");homePlaybackActive=false;homePaused=false;homeAudioSources=[];
-                    if(homeAudioContext===ctx)homeAudioContext=null;
-                    try{await ctx.close()}catch(e){}
-                }
-            },Math.ceil((total+.15)*1000));
-        };
-        if(ctx.state==="running")armEndTimer();
-        else ctx.addEventListener("statechange",armEndTimer,{once:true});
+        let unfinished=sources.length;
+        for(const source of sources)source.addEventListener('ended',()=>{
+            if(attemptId!==playAttemptId||--unfinished>0)return;
+            setNowPlaying('');homePlaybackActive=false;homePaused=false;homeAudioSources=[];
+            if(homeAudioContext===ctx)homeAudioContext=null;
+            ctx.close().catch(()=>{});
+        },{once:true});
+
 
     }catch(error){
         console.error("トップ個人再生エラー:",error);
@@ -324,14 +319,15 @@ async function pauseHomePlayback(){
     }catch(e){ console.warn("一時停止失敗",e); }
 }
 async function resumeHomePlayback(){
-    if(!homeAudioContext || !homePlaybackActive) return;
-    try{
-        await homeAudioContext.resume();
-        homePaused=false;
-        setNowPlaying("♪ 再生中");
-        if(navigator.mediaSession) navigator.mediaSession.playbackState="playing";
-    }catch(e){ console.warn("再開失敗",e); }
+    if(!homeAudioContext || !homePlaybackActive)return;
+    homePaused=false;
+    await recoverHomeAudio();
+    if(homeAudioContext?.state==='running'){
+        setNowPlaying('♪ 再生中');
+        if(navigator.mediaSession)navigator.mediaSession.playbackState='playing';
+    }
 }
+
 function stopHomePlayback(){
     stopCurrentSong();
     setNowPlaying("");
@@ -348,7 +344,23 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 
 // 他アプリから戻った後のAudioContext復帰。ユーザー操作が必要な場合は再生ボタンで再試行。
-async function recoverHomeAudio(){if(homeAudioContext&&homePlaybackActive&&!homePaused&&homeAudioContext.state==="suspended"){try{await homeAudioContext.resume();}catch(e){console.warn("音声復帰待ち",e);}}}
+async function recoverHomeAudio(){
+    const ctx=homeAudioContext,attempt=playAttemptId,song=homeRecoverySong;
+    if(!ctx||!homePlaybackActive||homePaused||ctx.state==='closed')return;
+    try{
+        window.ouenkaAudioRecovery.unlock(ctx);
+        if(ctx.state!=='running')await Promise.race([ctx.resume(),new Promise(resolve=>setTimeout(resolve,1200))]);
+    }catch(e){console.warn('音声復帰待ち',e)}
+    if(ctx!==homeAudioContext||attempt!==playAttemptId||homePaused||!homePlaybackActive)return;
+    if(ctx.state==='running'){
+        window.ouenkaAudioRecovery.hideRetry();setNowPlaying('♪ 再生中');
+        if(navigator.mediaSession)navigator.mediaSession.playbackState='playing';
+    }else{
+        setNowPlaying('音声エンジンの起動待ち…「音声を再起動」を押してください');
+        window.ouenkaAudioRecovery.showRetry(ctx,fresh=>playSongData(song,fresh));
+    }
+}
+
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)recoverHomeAudio();});
 window.addEventListener("pageshow",recoverHomeAudio);
 window.addEventListener("focus",recoverHomeAudio);
