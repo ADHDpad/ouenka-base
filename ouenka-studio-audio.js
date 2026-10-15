@@ -43,6 +43,7 @@ const oneNineResolvedPaths=new Map();
 const oneNineMissingPaths=new Set();
 
 async function fetchAudioDataCached(url){
+ url=toPublicAudioUrl(url);
  if(oneNineAudioDataCache.has(url))return oneNineAudioDataCache.get(url).slice(0);
  if(oneNineAudioFetchPromises.has(url)){
   const data=await oneNineAudioFetchPromises.get(url);
@@ -64,10 +65,11 @@ async function fetchAudioDataCached(url){
  }
 }
 async function fetchDecodeAudioCached(ctx,url){
+ url=toPublicAudioUrl(url);
  let cache=oneNineDecodedCache.get(ctx);
  if(!cache){cache=new Map();oneNineDecodedCache.set(ctx,cache)}
  if(!cache.has(url))cache.set(url,(async()=>ctx.decodeAudioData(await fetchAudioDataCached(url)))());
- return cache.get(url);
+ try{return await cache.get(url)}catch(error){cache.delete(url);oneNineAudioDataCache.delete(url);throw error}
 }
 async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  let lastError=null;
@@ -195,9 +197,24 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
 }
 
 
+const DATA_API='https://ouenka-base-data.ninzin5600.workers.dev';
+function normalizeSongName(value){return String(value||'').normalize('NFKC').replace(/[\s　・･]/g,'').toLowerCase()}
+function songNumber(song){return String(song.production_number??song.productionNumber??'').trim()}
+function songName(song){return String(song.player_name||song.playerName||song.name||'').trim()}
+function songUrls(song,item){const name=songName(song)||item.name,productionNumber=songNumber(song)||String(item.productionNumber||'');if(!name||!productionNumber)return item;const root=OUENKA_PUBLIC_BASE+'%E3%83%87%E3%83%BC%E3%82%BF/'+encodeURIComponent(name)+'/'+encodeURIComponent(productionNumber)+'/';const file=(url,filename,fallback,existing)=>url?toPublicAudioUrl(url):filename?root+encodeURIComponent(filename):existing?toPublicAudioUrl(existing):root+encodeURIComponent(fallback);return {...item,name,productionNumber,songId:song.id||item.songId,audioUrl:file(song.audio_url,song.audio_filename||song.audioFilename,'audio.m4a',item.audioUrl),medleyUrl:file(song.medley_url,song.medley_filename||song.medleyFilename,'medley.m4a',item.medleyUrl),melodyUrl:file(song.melody_url,song.melody_filename,'melody.m4a',item.melodyUrl),accompanimentUrl:file(song.accompaniment_url,song.accompaniment_filename,'accompaniment.m4a',item.accompanimentUrl),introMelodyUrl:file(song.intro_melody_url,song.intro_melody_filename,'intro_melody.m4a',item.introMelodyUrl),introAccompanimentUrl:file(song.intro_accompaniment_url,song.intro_accompaniment_filename,'intro_accompaniment.m4a',item.introAccompanimentUrl)}}
+async function resolveStudioRows(rows){
+ let allSongsPromise=null;const searches=new Map();
+ const load=async url=>{const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(9000)});if(!response.ok)throw Error('登録情報 HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.songs))throw Error('登録情報の形式を確認できませんでした。');return data.songs};
+ const exactMatch=(songs,item)=>{if(item.songId&&!item.reused){const byId=songs.filter(song=>String(song.id)===String(item.songId));if(byId.length===1&&(!item.productionNumber||songNumber(byId[0])===String(item.productionNumber)))return byId[0]}const matches=songs.filter(song=>normalizeSongName(songName(song))===normalizeSongName(item.name)&&(!item.productionNumber||songNumber(song)===String(item.productionNumber)));return matches.length===1?matches[0]:null};
+ return Promise.all(rows.map(async(r,rowIndex)=>{const reused=!!r.reuseName,item={name:r.reuseName||r.name,productionNumber:r.reuseProductionNumber||r.productionNumber,songId:reused?'':r.songId,audioUrl:reused?'':r.audioUrl,medleyUrl:reused?'':r.medleyUrl,melodyUrl:reused?'':r.melodyUrl,accompanimentUrl:reused?'':r.accompanimentUrl,introMelodyUrl:reused?'':r.introMelodyUrl,introAccompanimentUrl:reused?'':r.introAccompanimentUrl,rowIndex,reused};if(!item.name)return null;
+  try{const key=String(item.name);if(!searches.has(key))searches.set(key,load(DATA_API+'/songs/search?q='+encodeURIComponent(key)));const candidates=await searches.get(key);let match=exactMatch(candidates,item);if(!match){if(!allSongsPromise)allSongsPromise=load(DATA_API+'/songs');match=exactMatch(await allSongsPromise,item)}if(match)return songUrls(match,item)}catch(e){/* 登録API一時障害時は、1-9から渡された保存先を使って続行。 */}
+  return item;
+ })).then(items=>items.filter(Boolean));
+}
+
 async function build(ctx,rows){
- const selected=rows.map((r,rowIndex)=>({name:r.reuseName||r.name,productionNumber:r.reuseProductionNumber||r.productionNumber,
- audioUrl:r.reuseName?'':r.audioUrl,melodyUrl:r.reuseName?'':r.melodyUrl,accompanimentUrl:r.reuseName?'':r.accompanimentUrl,introAccompanimentUrl:r.reuseName?'':r.introAccompanimentUrl,rowIndex})).filter(r=>r.name);
+ oneNineMissingPaths.clear();
+ const selected=await resolveStudioRows(rows);
  if(!selected.length)throw new Error('1-9で選手を登録してください。');
  for(const item of selected){if(!item.productionNumber)throw new Error(item.name+' の応援歌が未選択です。1-9の検索候補から選び直してください。');}
   const separated=await Promise.all(selected.map(async(item,i)=>{
@@ -205,12 +222,13 @@ async function build(ctx,rows){
     const melodyFile=i===0?"audio.m4a":"melody.m4a";
     const [melody,normalAccompaniment,openingAccompaniment]=await Promise.all([
      (i===0?fetchFirstExistingAudio(ctx,item,melodyFile,true).then(v=>v||fetchFirstExistingAudio(ctx,item,"melody.m4a")):fetchFirstExistingAudio(ctx,item,melodyFile)),
-     fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
+     fetchFirstExistingAudio(ctx,item,"accompaniment.m4a",i===0),
      i===0?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
     ]);
+    if(!normalAccompaniment&&!openingAccompaniment)throw new Error("accompaniment.m4a が見つかりません。");
     return {melody,accompaniment:(i===0&&openingAccompaniment)||normalAccompaniment,
             hasOpeningAccompaniment:i===0&&!!openingAccompaniment};
-   }catch(e){throw new Error(`${item.name} の音源を読み込めませんでした。`)}
+   }catch(e){throw new Error(`${item.name}（制作番号 ${item.productionNumber}）の音源を読み込めませんでした：${e.message||e}`)}
   }));
   // 前奏は再生用音源に収録済み。別の前奏トラックを加えない。
   const intro=null;
