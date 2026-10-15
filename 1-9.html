@@ -83,6 +83,7 @@ body.row-dragging *{cursor:grabbing!important}
 .filters .chat{min-width:0;white-space:nowrap;font-size:14px;font-weight:500;background:#0B2F55;color:white;border:0;min-height:44px}
 #savedLineupsDialog{width:min(92vw,560px);max-height:80vh;border:0;border-radius:16px;padding:20px;color:#0b2b4a}#savedLineupsDialog::backdrop{background:#071d3399}#savedLineupsDialog h2{font-size:20px}#savedLineupsDialog button{border:0;border-radius:8px;padding:12px;background:#0B2F55;color:white} .saved-entry{display:flex;gap:8px;margin-bottom:10px;align-items:center}.saved-entry .saved-load{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}.saved-entry small{display:block;margin-top:5px;font-size:11px;color:#d9e6f2}.saved-entry .saved-delete{background:#e9eef3!important;color:#0b2b4a!important}
 @media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
+@media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
 <script src="audio-recovery.js?v=20261015-r100"></script>
 <script src="pwa-diagnostic.js?v=68"></script>
@@ -1293,6 +1294,6 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
-<script src="./active-roster.js?v=20261015-r99"></script>
+<script src="./active-roster.js?v=20261015-r102"></script>
 </body>
 </html>
