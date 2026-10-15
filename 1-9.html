@@ -88,20 +88,28 @@ body.row-dragging *{cursor:grabbing!important}
 <script src="pwa-diagnostic.js?v=68"></script>
 <script src="team-order.js"></script>
 <style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
+<style>
+.topbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 18px}
+.top-actions{display:flex;flex-wrap:nowrap;align-items:center;gap:7px;min-width:0;max-width:100%;margin-left:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.top-actions::-webkit-scrollbar{display:none}
+.top-actions>.chat{flex:0 0 auto;width:auto;min-height:40px;white-space:nowrap;border:1px solid #496580;border-radius:7px;padding:0 13px;background:#123b63;color:white;font-size:13px;font-weight:500}
+.top-actions>.chat:disabled{opacity:.6}.top-actions>.chat:focus-visible{outline:2px solid #68baff;outline-offset:-3px}
+@media(max-width:760px){.topbar{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:9px 10px}.top-brand{grid-column:1;grid-row:1}.topbar>.back{grid-column:2;grid-row:1}.top-actions{grid-column:1/-1;grid-row:2;justify-self:stretch;margin-left:0;max-width:100%}.top-actions>.chat{min-height:38px;font-size:12px;padding:0 12px}input,textarea,select{scroll-margin-top:145px}}
+</style>
 </head>
 <body>
 <header class="topbar">
  <div class="top-brand"><div class="top-brand-title">OUENKA BASE</div><div class="top-brand-sub">DATA REGISTER SYSTEM</div></div>
+ <nav id="lineupTopActions" class="top-actions" aria-label="1-9の操作">
+  <button id="saveLineupButton" class="chat top-menu-button" type="button">保存</button>
+  <button id="loadLineupButton" class="chat top-menu-button" type="button">保存済を読込</button>
+  <button id="illustrationButton" class="chat top-menu-button" type="button">挿絵作成</button>
+ </nav>
  <button class="back" type="button" onclick="location.href='./index.html'">← BASEに戻る</button>
 </header>
 <main class="page">
  <section class="hero"><h1>1-9作成</h1><p>選手を検索して1-9を作成できます。</p></section>
  <section class="panel">
-  <div class="filters">
-   <button id="saveLineupButton" class="chat" type="button">保存</button>
-   <button id="loadLineupButton" class="chat" type="button">保存済を読込</button>
-   <button id="illustrationButton" class="chat" type="button">挿絵作成</button>
-  </div>
   <div hidden><select id="yearSelect"><option value=""></option></select><select id="teamSelect"><option value=""></option></select></div>
   <dialog id="savedLineupsDialog"><h2>保存済の1-9</h2><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
   <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
@@ -1247,6 +1255,6 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
-<script src="./active-roster.js?v=20261015-r93"></script>
+<script src="./active-roster.js?v=20261015-r97"></script>
 </body>
 </html>
