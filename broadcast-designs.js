@@ -21,7 +21,7 @@
   const actual=measured>width?Math.max(.1,size*width/measured):size;
   ctx.font=`${italic}${weight} ${actual}px ${family}`;ctx.fillStyle=color;
   if(opts.shadow){ctx.shadowColor='#000000';ctx.shadowOffsetX=1;ctx.shadowOffsetY=2;ctx.shadowBlur=2}
-  ctx.fillText(value,x,y);ctx.restore();return actual;
+  if(opts.adjustable){ctx.strokeStyle=color;ctx.lineJoin='round';ctx.lineWidth=Math.max(0,(weight-100)/800)*actual*.045;if(ctx.lineWidth>0)ctx.strokeText(value,x,y)}ctx.fillText(value,x,y);ctx.restore();return actual;
  }
  function identity(p){return p.jerseyNumber??p.number??p.uniformNumber??p.backNumber??''}
  function brand(team){return /日本ハム|ファイターズ/.test(team||'')?'FIGHTERS':team||'OUENKA BASE'}
@@ -32,7 +32,7 @@
   else{text(ctx,'写真を選択',x+w/2,y+h/2,25,'#dbe8f5',w-30,{align:'center',weight:500})}
   if(credit)credit(ctx,p.photoCredit,rect);ctx.restore();ctx.strokeStyle=t.frame;ctx.lineWidth=3;ctx.strokeRect(x+1.5,y+1.5,w-3,h-3);
  }
- function fontStyle(options,group){const font=options.fonts?.[group]||{};return {family:font.family||FAMILY,weight:group==='name'?(options.nameWeight||900):(font.weight||800),italic:!!font.italic,shadow:!!options.shadows?.[group]}}
+ function fontStyle(options,group){const font=options.fonts?.[group]||{};return {family:font.family||FAMILY,weight:group==='name'?(options.nameWeight||900):(font.weight||800),adjustable:true,italic:!!font.italic,shadow:!!options.shadows?.[group]}}
  function statsRows(ctx,p,x,y,w,color,t,options){
   const fields=options.fields||[['avg','打率'],['hr','本塁打'],['rbi','打点'],['sb','盗塁'],['ops','OPS']];
   const fs=Math.min(38,Number(options.fontSizes?.stats)||32),style=fontStyle(options,'stats');

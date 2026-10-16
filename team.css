@@ -9,3 +9,6 @@ main{max-width:1050px;margin:auto;padding:10px 12px calc(84px + env(safe-area-in
 @media(max-width:650px){.team-fixed{padding-left:8px;padding-right:8px}.team-topline{grid-template-columns:34px 1fr 55px}.team-topline h1{font-size:16px}.brand{font-size:7px}.song-row{grid-template-columns:34px minmax(90px,125px) 40px minmax(80px,1fr) 34px 14px;min-height:45px}.number{font-size:14px}.name{font-size:13px;padding:0 4px}.tag{font-size:9px;padding:3px 5px}.lyrics{font-size:11px;padding:0 5px}.play{width:27px;height:27px}.arrow{font-size:17px}main{padding-left:7px;padding-right:7px}}
 
 .lyrics-link-wrap{display:flex;justify-content:flex-end;padding:5px 12px;background:#071d33}.lyrics-link{display:inline-block;color:#fff;background:#1268a6;border:1px solid #71b5e9;border-radius:8px;padding:7px 17px;text-decoration:none;font-size:13px;font-weight:800}
+
+/* r108: 共通の戻るラベルを収める */
+.team-topline{grid-template-columns:90px 1fr 90px}.team-topline .back{font-size:15px;font-weight:700;white-space:nowrap;padding:8px 4px}
