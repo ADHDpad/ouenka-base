@@ -53,7 +53,8 @@
  }
  function drawCard(ctx,p,design,options={}){
   const t=theme(options),light=design.endsWith('6'),noPhoto=design.startsWith('none-')||p.photoEnabled===false;
-  const ink=light?t.dark:'#ffffff',accentInk=light?t.color:mix(t.accent,'#ffffff',.35);
+  const ink=light?'#000000':'#ffffff',accentInk=light?'#000000':mix(t.accent,'#ffffff',.35);
+  if(light)options={...options,shadows:{}};
   ctx.save();ctx.globalAlpha=1;ctx.shadowColor='transparent';fillBackground(ctx,t,0,0,W,H,light);
   if(light){
    poly(ctx,[[1040,0],[1110,0],[890,H],[820,H]],t.color);
@@ -85,7 +86,7 @@
   }
   text(ctx,brand(options.team),left,86,28,accentInk,width-150,{weight:900});
   text(ctx,position(p),right,132,Math.min(40,Number(options.fontSizes?.order)||40),ink,width*.65,{...fontStyle(options,'order'),align:'right',shadow:false});
-  const jersey=identity(p);if(jersey!=='')text(ctx,jersey,left,148,64,light?t.color:accentInk,width*.3,{weight:900});
+  const jersey=identity(p);if(jersey!=='')text(ctx,jersey,left,148,64,light?'#000000':accentInk,width*.3,{weight:900});
   text(ctx,p.name,left,242,Math.min(100,Number(options.fontSizes?.name)||84),ink,width,{...fontStyle(options,'name'),shadow:light?false:options.shadows?.name});
   if(p.romanName)text(ctx,p.romanName,left,280,19,accentInk,width,{weight:600});
   rule(ctx,left,302,width,t.line,3);
