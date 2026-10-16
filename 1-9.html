@@ -110,10 +110,11 @@ body.row-dragging *{cursor:grabbing!important}
 #illustrationButton::before{content:'▧'}#illustrationButton::after{content:'ILLUSTRATION'}
 #activeRosterButton::before{content:'＋'}#activeRosterButton::after{content:'ACTIVE PLAYERS'}
 .top-actions>.back{order:10}
-.top-actions>.back::before{content:'←'}.top-actions>.back::after{content:'HOME'}
+.top-actions>.back{display:flex;align-items:center}.top-actions>.back::before,.top-actions>.back::after{content:none}
 .top-actions>button:hover{background:#ffffff18}.top-actions>button:focus-visible{outline:2px solid #68baff;outline-offset:-3px}
 @media(max-width:600px){.top-actions>.chat,.top-actions>.back{min-height:50px;padding:7px 14px;font-size:13px}.top-actions>button::before{font-size:22px}input,textarea,select{scroll-margin-top:90px}}
 </style>
+<link rel="stylesheet" href="./broadcast-ui.css?v=20261016-broadcast-v1">
 </head>
 <body>
 <header class="topbar">
@@ -122,11 +123,22 @@ body.row-dragging *{cursor:grabbing!important}
   <button id="saveLineupButton" class="chat top-menu-button" type="button">保存</button>
   <button id="loadLineupButton" class="chat top-menu-button" type="button">保存済を読込</button>
   <button id="illustrationButton" class="chat top-menu-button" type="button">挿絵作成</button>
- <button class="back" type="button" onclick="location.href='./index.html'">BASEに戻る</button>
+ <button class="back" type="button" onclick="location.href='./index.html'">◀戻る</button>
  </nav>
 </header>
 <main class="page">
  <section class="hero"><h1>1-9作成</h1><p>選手を検索して1-9を作成できます。</p></section>
+
+ <details id="broadcastLineup" class="broadcast-lineup" open>
+  <summary>1-9画面｜写真なし・中継デザイン</summary>
+  <div class="broadcast-tools"><label>デザイン<select id="lineupVariant"><option value="6">⑥ ホワイト・スポーツ</option><option value="7">⑦ ネイビー・中継</option></select></label><button id="saveLineupImage" type="button">画像を保存</button></div>
+  <canvas id="lineupBroadcastCanvas" width="1920" height="1080" aria-label="入力中の1-9一覧"></canvas>
+  <details class="broadcast-colors"><summary>背景色・グラデーション</summary><div class="broadcast-color-grid">
+   <label>メインカラー<input id="lineupMain" type="color"></label><label>濃い背景色<input id="lineupDark" type="color"></label><label>アクセント<input id="lineupAccent" type="color"></label>
+   <label>グラデーション<select id="lineupGradient"><option value="card">球団色の3色</option><option value="brighten">2色グラデーション（明）</option><option value="darken">2色グラデーション（暗）</option><option value="none">単色</option></select></label><label>終了色<input id="lineupEnd" type="color"></label><label>方向<input id="lineupAngle" type="range" min="0" max="360" step="5"><output id="lineupAngleValue"></output></label>
+  </div></details><p id="lineupBroadcastStatus" class="broadcast-status" aria-live="polite"></p>
+ </details>
+
  <section class="panel">
   <div hidden><select id="yearSelect"><option value=""></option></select><select id="teamSelect"><option value=""></option></select></div>
   <dialog id="savedLineupsDialog"><h2>保存済の1-9</h2><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
@@ -1312,5 +1324,7 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
 <script src="./active-roster.js?v=20261015-r103"></script>
+<script src="./broadcast-designs.js?v=20261016-broadcast-v1"></script>
+<script src="./lineup-broadcast.js?v=20261016-broadcast-v1"></script>
 </body>
 </html>

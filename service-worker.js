@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-design-settings-r106";
+const CACHE_NAME = "ouenka-base-broadcast-20261016-v1";
 
 // 2026-10-06
 // 1-9分離音源方式：メロディー重複時のみ前曲メロディーを抑止。
