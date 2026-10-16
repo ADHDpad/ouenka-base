@@ -20,8 +20,9 @@
   ctx.font=`${italic}${weight} ${size}px ${family}`;const measured=ctx.measureText(value).width;
   const actual=measured>width?Math.max(.1,size*width/measured):size;
   ctx.font=`${italic}${weight} ${actual}px ${family}`;ctx.fillStyle=color;
-  if(opts.shadow){ctx.shadowColor='#000000';ctx.shadowOffsetX=1;ctx.shadowOffsetY=2;ctx.shadowBlur=2}
-  if(opts.adjustable){ctx.strokeStyle=color;ctx.lineJoin='round';ctx.lineWidth=Math.max(0,(weight-100)/800)*actual*.045;if(ctx.lineWidth>0)ctx.strokeText(value,x,y)}ctx.fillText(value,x,y);ctx.restore();return actual;
+  ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.lineJoin='round';ctx.lineWidth=opts.adjustable?Math.max(0,(weight-100)/800)*actual*.025:0;
+  function paint(tx,ty,ink){ctx.fillStyle=ink;ctx.strokeStyle=ink;if(ctx.lineWidth>0)ctx.strokeText(value,tx,ty);ctx.fillText(value,tx,ty)}
+  if(opts.shadow)paint(x+2,y+3,'#000000');paint(x,y,color);ctx.restore();return actual;
  }
  function identity(p){return p.jerseyNumber??p.number??p.uniformNumber??p.backNumber??''}
  function brand(team){return /日本ハム|ファイターズ/.test(team||'')?'FIGHTERS':team||'OUENKA BASE'}
@@ -54,7 +55,7 @@
  function drawCard(ctx,p,design,options={}){
   const t=theme(options),light=design.endsWith('6'),noPhoto=design.startsWith('none-')||p.photoEnabled===false;
   const ink=light?'#000000':'#ffffff',accentInk=light?'#000000':mix(t.accent,'#ffffff',.35);
-  if(light)options={...options,shadows:{}};
+  
   ctx.save();ctx.globalAlpha=1;ctx.shadowColor='transparent';fillBackground(ctx,t,0,0,W,H,light);
   if(light){
    poly(ctx,[[1040,0],[1110,0],[890,H],[820,H]],t.color);
@@ -87,7 +88,7 @@
   text(ctx,brand(options.team),left,86,28,accentInk,width-150,{weight:900});
   text(ctx,position(p),right,132,Math.min(40,Number(options.fontSizes?.order)||40),ink,width*.65,{...fontStyle(options,'order'),align:'right',shadow:false});
   const jersey=identity(p);if(jersey!=='')text(ctx,jersey,left,148,64,light?'#000000':accentInk,width*.3,{weight:900});
-  text(ctx,p.name,left,242,Math.min(100,Number(options.fontSizes?.name)||84),ink,width,{...fontStyle(options,'name'),shadow:light?false:options.shadows?.name});
+  text(ctx,p.name,left,242,Math.min(100,Number(options.fontSizes?.name)||84),ink,width,{...fontStyle(options,'name'),shadow:options.shadows?.name});
   if(p.romanName)text(ctx,p.romanName,left,280,19,accentInk,width,{weight:600});
   rule(ctx,left,302,width,t.line,3);
   statsRows(ctx,p,left,345,width,ink,t,options);
