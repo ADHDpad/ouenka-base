@@ -7,10 +7,12 @@
  let prefs={variant:'7',color:'#07549a',teamDark:'#071d33',accent:'#1392c6',fadeMode:'card',fadeEndColor:'#1392c6',gradientAngle:110,broadcastLine:'#ffd43b',...Object.fromEntries(['color','teamDark','accent','fadeMode','fadeEndColor','gradientAngle','broadcastLine'].filter(k=>studio[k]!==undefined).map(k=>[k,studio[k]])),...read(KEY)};
  const fields={lineupVariant:'variant',lineupMain:'color',lineupDark:'teamDark',lineupAccent:'accent',lineupGradient:'fadeMode',lineupEnd:'fadeEndColor',lineupAngle:'gradientAngle'};
  for(const [id,key] of Object.entries(fields))if($(id))$(id).value=prefs[key];
- let frame=0;
+ let frame=0,settleTimer=0,persistTimer=0,editingColor=false;
+ function persist(){clearTimeout(persistTimer);try{localStorage.setItem(KEY,JSON.stringify(prefs))}catch{}}
+ window.addEventListener('pagehide',persist);
  function rows(){return typeof currentRows==='function'?currentRows():[]}
  function draw(){
-  frame=0;const canvas=$('lineupBroadcastCanvas'),ctx=canvas.getContext('2d'),list=rows();
+  frame=0;const canvas=$('lineupBroadcastCanvas'),width=editingColor?960:1920;if(canvas.width!==width){canvas.width=width;canvas.height=width*9/16}const ctx=canvas.getContext('2d'),list=rows();
   const active=[...document.querySelectorAll('#lineup .player-row')].findIndex(row=>row.querySelector('.order.playing'));
   ctx.save();ctx.scale(canvas.width/1280,canvas.height/720);
   window.OuenkaBroadcast.drawLineup(ctx,list,{...prefs,title:$('lineupTitle')?.value||'1-9 応援歌',activeIndex:active});ctx.restore();
@@ -21,11 +23,11 @@
  function schedule(){if(!frame)frame=requestAnimationFrame(draw)}
  for(const [id,key] of Object.entries(fields))$(id)?.addEventListener('input',e=>{
   prefs[key]=key==='gradientAngle'?Number(e.target.value):e.target.value;
-  try{localStorage.setItem(KEY,JSON.stringify(prefs))}catch{$('lineupBroadcastStatus').textContent='設定を保存できませんでした。'}schedule();
+  editingColor=true;clearTimeout(persistTimer);persistTimer=setTimeout(persist,180);clearTimeout(settleTimer);settleTimer=setTimeout(()=>{editingColor=false;schedule()},180);schedule();
  });
  $('saveLineupImage').addEventListener('click',async()=>{
   if(!rows().some(p=>p.name)){$('lineupBroadcastStatus').textContent='先に選手を入力してください。';return}
-  try{draw();await window.OuenkaBroadcast.savePng($('lineupBroadcastCanvas'),'1-9一覧.png')}catch(e){$('lineupBroadcastStatus').textContent=e.message}
+  try{editingColor=false;persist();draw();await window.OuenkaBroadcast.savePng($('lineupBroadcastCanvas'),'1-9一覧.png')}catch(e){$('lineupBroadcastStatus').textContent=e.message}
  });
  document.addEventListener('input',e=>{if(e.target.closest('#lineup')||e.target.id==='lineupTitle')schedule()});
  document.addEventListener('change',e=>{if(e.target.closest('#lineup'))schedule()});

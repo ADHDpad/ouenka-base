@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-audio-loading-r112";
+const CACHE_NAME = "ouenka-base-ui-smooth-r114";
 
 // 2026-10-06
 // 1-9分離音源方式：メロディー重複時のみ前曲メロディーを抑止。

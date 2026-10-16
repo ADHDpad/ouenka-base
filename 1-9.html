@@ -109,20 +109,20 @@ body.row-dragging *{cursor:grabbing!important}
 #loadLineupButton::before{content:'▤'}#loadLineupButton::after{content:'LOAD'}
 #illustrationButton::before{content:'▧'}#illustrationButton::after{content:'ILLUSTRATION'}
 #activeRosterButton::before{content:'＋'}#activeRosterButton::after{content:'ACTIVE PLAYERS'}
-.top-actions>.back{order:10}
+.top-actions>.back{order:-1}
 .top-actions>.back{display:flex;align-items:center}.top-actions>.back::before,.top-actions>.back::after{content:none}
 .top-actions>button:hover{background:#ffffff18}.top-actions>button:focus-visible{outline:2px solid #68baff;outline-offset:-3px}
 @media(max-width:600px){.top-actions>.chat,.top-actions>.back{min-height:50px;padding:7px 14px;font-size:13px}.top-actions>button::before{font-size:22px}input,textarea,select{scroll-margin-top:90px}}
 </style>
-</head>
+<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style></head>
 <body>
 <header class="topbar">
  <div class="top-brand"><div class="top-brand-title">OUENKA BASE</div><div class="top-brand-sub">DATA REGISTER SYSTEM</div></div>
  <nav id="lineupTopActions" class="top-actions" aria-label="1-9の操作">
+ <button class="back" type="button" onclick="location.href='./index.html'">◀戻る</button>
   <button id="saveLineupButton" class="chat top-menu-button" type="button">保存</button>
   <button id="loadLineupButton" class="chat top-menu-button" type="button">保存済を読込</button>
   <button id="illustrationButton" class="chat top-menu-button" type="button">挿絵作成</button>
- <button class="back" type="button" onclick="location.href='./index.html'">◀戻る</button>
  </nav>
 </header>
 <main class="page">
