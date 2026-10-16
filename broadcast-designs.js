@@ -82,7 +82,6 @@
    const fields=options.fields||[['avg','打率'],['hr','本塁打'],['rbi','打点'],['sb','盗塁'],['ops','OPS']];
    fields.forEach(([key,label],i)=>{const y=380+i*57;text(ctx,label,left+15,y,20,'#d6e7f7',147,fontStyle(options,'stats'));text(ctx,String(p[key]??'').trim()||'—',left+160,y+1,Math.min(31,Number(options.fontSizes?.stats)||31),'#ffffff',95,{...fontStyle(options,'stats'),align:'right'})});
    lyrics(ctx,p,[left+208,352,width-214,280],ink,options);
-   text(ctx,'OUENKA BASE  /  PLAYER INTRODUCTION',left,687,12,accentInk,width,{weight:600});
    ctx.restore();return;
   }
   text(ctx,brand(options.team),left,86,28,accentInk,width-150,{weight:900});
@@ -95,7 +94,6 @@
   rule(ctx,left,412,width,light?mix(t.color,'#ffffff',.65):t.line,1);
   if(!light)rule(ctx,left,448,4,t.line,198);
   lyrics(ctx,p,[left+(light?0:22),440,width-(light?4:26),210],ink,options);
-  text(ctx,'OUENKA BASE  /  PLAYER INTRODUCTION',left,687,12,accentInk,width,{weight:600});
   ctx.restore();
  }
  function drawLineup(ctx,rows,options={}){
@@ -117,7 +115,7 @@
    rule(ctx,76,yy+44,1120,light?mix(t.color,'#ffffff',.83):mix(t.dark,t.accent,.3),1);
   }
   const extras=rows.slice(9).filter(p=>p.name);
-  text(ctx,extras.length?'控え・追加 '+extras.map(p=>[p.position,p.name].filter(Boolean).join(' ')).join(' / '):'OUENKA BASE  /  FIGHT SONG',60,690,17,light?t.color:'#c7dced',1160,{weight:600});ctx.restore();
+  text(ctx,extras.length?'控え・追加 '+extras.map(p=>[p.position,p.name].filter(Boolean).join(' ')).join(' / '):'',60,690,17,light?t.color:'#c7dced',1160,{weight:600});ctx.restore();
  }
  function savePng(canvas,filename){return new Promise((resolve,reject)=>canvas.toBlob(async blob=>{
   if(!blob){reject(new Error('画像を作成できませんでした'));return}
