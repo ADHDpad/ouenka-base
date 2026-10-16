@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<script src="team-colors.js?v=106"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#071d33">
@@ -32,7 +33,10 @@ h1{margin:0 0 7px;font-size:28px}.desc{margin:0 0 20px;color:#647789}
 <div class="card"><div class="cardhead">球団表示順序</div><div id="teamList"></div></div>
 <div class="actions"><button class="reset" id="reset">初期順に戻す</button><button class="save" id="save">この順番を保存</button></div>
 <div id="notice" class="notice">球団表示順を保存しました。</div>
-</main>
+<section class="card" style="margin-top:24px;padding:16px"><h2>球団の初期カラー（歌詞カード・挿絵）</h2><p>この端末に保存します。挿絵では球団を選び直すか「球団の初期カラーに戻す」で反映します。</p><label>球団 <select id="paletteTeam" style="max-width:100%;padding:10px"></select></label><div style="display:flex;gap:16px;flex-wrap:wrap;margin:16px 0"><label>メインカラー <input type="color" id="paletteMain"></label><label>明るい色 <input type="color" id="paletteLight"></label><label>濃い背景色 <input type="color" id="paletteDark"></label></div><div id="palettePreview" style="height:72px;border-radius:8px"></div><div class="actions"><button class="reset" id="paletteReset">この球団の色を元に戻す</button><button class="save" id="paletteSave">カラーを保存</button></div><p id="paletteStatus" role="status"></p></section>
+<script>
+(()=>{const api=window.OuenkaTeamColors,team=document.getElementById('paletteTeam'),inputs=['paletteMain','paletteLight','paletteDark'].map(id=>document.getElementById(id)),status=document.getElementById('paletteStatus');for(const name of Object.keys(api.defaults)){team.add(new Option(name,name))}function preview(){document.getElementById('palettePreview').style.background=`linear-gradient(110deg,${inputs[2].value},${inputs[1].value} 70%,${inputs[0].value})`}function load(){api.get(team.value).forEach((c,i)=>inputs[i].value=c);status.textContent='';preview()}team.onchange=load;inputs.forEach(i=>i.oninput=preview);document.getElementById('paletteSave').onclick=()=>{try{api.set(team.value,inputs.map(i=>i.value));status.textContent='カラーを保存しました。'}catch(e){status.textContent='保存できませんでした：'+e.message}};document.getElementById('paletteReset').onclick=()=>{try{api.reset(team.value);load();status.textContent='この球団の色を元に戻しました。'}catch(e){status.textContent='保存できませんでした：'+e.message}};load()})();
+</script></main>
 <script>
 const TEAM_COLORS={"福岡ソフトバンクホークス": ["#FFF3C8", "#5D4A00", "#E0B800"], "北海道日本ハムファイターズ": ["#DFF1FF", "#174C78", "#6AA7D4"], "オリックス・バファローズ": ["#EAE2F5", "#4D3570", "#9276B5"], "東北楽天ゴールデンイーグルス": ["#F9DFE4", "#85283A", "#C86A7B"], "埼玉西武ライオンズ": ["#DDEFFF", "#15588C", "#68A9D8"], "千葉ロッテマリーンズ": ["#ECEFF2", "#263746", "#8A98A5"], "読売ジャイアンツ": ["#FFE6D0", "#844000", "#E49450"], "阪神タイガース": ["#FFF4B8", "#635700", "#D4BC2D"], "横浜DeNAベイスターズ": ["#DDF2FF", "#12628F", "#64B4DD"], "広島東洋カープ": ["#FADDDD", "#962323", "#D96666"], "東京ヤクルトスワローズ": ["#DFF3E5", "#28633A", "#71B283"], "中日ドラゴンズ": ["#E1E9FF", "#294E9B", "#748FD2"], "日本代表": ["#E8EEF8", "#173B67", "#6F8FB4"], "近鉄": ["#F2E7D9", "#6B4322", "#B58B62"], "ブルーウェーブ": ["#DCEEFF", "#164D82", "#6EA6D5"]};
 const PACIFIC=new Set(["福岡ソフトバンクホークス","北海道日本ハムファイターズ","オリックス・バファローズ","東北楽天ゴールデンイーグルス","埼玉西武ライオンズ","千葉ロッテマリーンズ"]);
