@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouenka-base-studio-editor-r111";
+const CACHE_NAME = "ouenka-base-audio-loading-r112";
 
 // 2026-10-06
 // 1-9分離音源方式：メロディー重複時のみ前曲メロディーを抑止。
@@ -43,12 +43,12 @@ self.addEventListener("fetch", (event) => {
         lower.endsWith(".zip")
     ) {
         // Explicitly bypass HTTP and service-worker caches for published audio assets.
-        event.respondWith(fetch(event.request, { cache: "no-store" }));
+        event.respondWith(fetch(event.request, { cache: "no-cache" }));
         return;
     }
 
     event.respondWith(
-        fetch(event.request, { cache: "no-store" })
+        fetch(event.request, { cache: "no-cache" })
             .catch(() => fetch(event.request))
     );
 });

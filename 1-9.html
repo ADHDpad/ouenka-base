@@ -205,8 +205,13 @@ function setStatus(message,type="info"){
  const st=document.getElementById("status");
  st.textContent=message;st.style.display="block";
  st.style.background=type==="error"?"#fff0f0":type==="ok"?"#eefaf2":"#eef6ff";
+ if(type==='error')showOneNineDiagnostic(message);
  st.style.color=type==="error"?"#a52b2b":type==="ok"?"#1f6b3b":"#174f7e";
 }
+
+const oneNineAudioLog=[];
+function logOneNineAudio(message){oneNineAudioLog.push(new Date().toISOString()+' '+message);if(oneNineAudioLog.length>100)oneNineAudioLog.shift()}
+function showOneNineDiagnostic(message){let box=document.getElementById('oneNineDiagnostic');if(!box){box=document.createElement('details');box.id='oneNineDiagnostic';box.style.cssText='margin:12px 0;padding:12px;background:#edf3f8;border:1px solid #abc;border-radius:8px';const summary=document.createElement('summary');summary.textContent='再生・音源読み込みの診断';const pre=document.createElement('textarea');pre.id='oneNineDiagnosticText';pre.readOnly=true;pre.style.cssText='width:100%;height:220px;font-size:12px;margin-top:10px';const copy=document.createElement('button');copy.type='button';copy.textContent='診断結果をコピー';copy.onclick=async()=>{pre.select();try{await navigator.clipboard.writeText(pre.value);copy.textContent='コピーしました'}catch{copy.textContent='選択した診断結果をコピーしてください'}};box.append(summary,pre,copy);document.getElementById('status').after(box)}box.open=true;document.getElementById('oneNineDiagnosticText').value='OUENKA 1-9 AUDIO r112\n'+location.href+'\n'+navigator.userAgent+'\n'+message+'\n'+oneNineAudioLog.join('\n')}
 
 function updateInputFieldColor(el){
  if(!el)return;
@@ -593,32 +598,28 @@ const oneNineDecodedCache=new WeakMap();
 const oneNineResolvedPaths=new Map();
 const oneNineMissingPaths=new Set();
 
-async function fetchAudioDataCached(url){
+// Limit transfers so large lineups do not flood the network.
+let oneNineActiveTransfers=0;const oneNineTransferQueue=[];
+async function withAudioTransferSlot(job){if(oneNineActiveTransfers>=4)await new Promise(resolve=>oneNineTransferQueue.push(resolve));else oneNineActiveTransfers++;try{return await job()}finally{const next=oneNineTransferQueue.shift();if(next)next();else oneNineActiveTransfers--}}
+async function fetchAudioDataCached(path){
+ const url=toPublicAudioUrl(path);
  if(oneNineAudioDataCache.has(url))return oneNineAudioDataCache.get(url).slice(0);
- if(oneNineAudioFetchPromises.has(url)){
-  const data=await oneNineAudioFetchPromises.get(url);
-  return data.slice(0);
+ if(!oneNineAudioFetchPromises.has(url)){
+  const promise=withAudioTransferSlot(async()=>{
+   for(let attempt=0;attempt<2;attempt++){
+    try{logOneNineAudio('FETCH '+url);const r=await fetch(url,{cache:'no-cache',credentials:'omit',signal:AbortSignal.timeout(25000)});if(!r.ok){const error=new Error('HTTP '+r.status+'：'+url);error.status=r.status;throw error}const data=await r.arrayBuffer();if(!data.byteLength)throw Error('音源が空です：'+url);oneNineAudioDataCache.set(url,data);logOneNineAudio('OK '+data.byteLength+' bytes '+url);return data}
+    catch(e){logOneNineAudio('ERROR '+(e.message||e));if(e.status===404||e.status===403||attempt===1)throw e}
+   }
+  });oneNineAudioFetchPromises.set(url,promise);
  }
- const promise=(async()=>{
-  const r=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(6500)});
-  if(!r.ok)throw new Error(`HTTP ${r.status}`);
-  const data=await r.arrayBuffer();
-  oneNineAudioDataCache.set(url,data);
-  return data;
- })();
- oneNineAudioFetchPromises.set(url,promise);
- try{
-  const data=await promise;
-  return data.slice(0);
- }finally{
-  oneNineAudioFetchPromises.delete(url);
- }
+ const promise=oneNineAudioFetchPromises.get(url);
+ try{return (await promise).slice(0)}finally{if(oneNineAudioFetchPromises.get(url)===promise)oneNineAudioFetchPromises.delete(url)}
 }
-async function fetchDecodeAudioCached(ctx,url){
- let cache=oneNineDecodedCache.get(ctx);
+async function fetchDecodeAudioCached(ctx,path){
+ const url=toPublicAudioUrl(path);let cache=oneNineDecodedCache.get(ctx);
  if(!cache){cache=new Map();oneNineDecodedCache.set(ctx,cache)}
- if(!cache.has(url))cache.set(url,(async()=>ctx.decodeAudioData(await fetchAudioDataCached(url)))());
- return cache.get(url);
+ if(!cache.has(url)){const pending=(async()=>{const bytes=await fetchAudioDataCached(url);try{return await ctx.decodeAudioData(bytes)}catch(e){throw Error('音源のデコードに失敗：'+url+' / '+(e.message||e))}})();cache.set(url,pending)}
+ const pending=cache.get(url);try{return await pending}catch(e){if(cache.get(url)===pending)cache.delete(url);throw e}
 }
 async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  let lastError=null;
@@ -628,20 +629,10 @@ async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  for(const path of candidates){
   if(oneNineMissingPaths.has(path))continue;
   try{
-   // 個人再生と同様、1曲目の再生用音源は常に最新ファイルを直接取得。
-   // 先読み時の古い音源キャッシュ（force-cache）を使わない。
-   if(fileName==="audio.m4a"){
-    const url=toPublicAudioUrl(path);
-    const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:AbortSignal.timeout(6500)});
-    if(!response.ok){if(response.status===404)oneNineMissingPaths.add(path);throw new Error(`HTTP ${response.status}`)}
-    const decoded=await ctx.decodeAudioData(await response.arrayBuffer());
-    oneNineResolvedPaths.set(key,path);
-    return decoded;
-   }
    const decoded=await fetchDecodeAudioCached(ctx,path);
    oneNineResolvedPaths.set(key,path);
    return decoded;
-  }catch(e){lastError=e;if(/HTTP 404/.test(String(e)))oneNineMissingPaths.add(path)}
+  }catch(e){lastError=e;if(/HTTP 404/.test(String(e)))oneNineMissingPaths.add(path);else break}
  }
  if(optional)return null;
  throw lastError||new Error(`${fileName} が見つかりません。`);
@@ -912,6 +903,7 @@ function oneNineAudioKey(){return JSON.stringify(currentRows().map(r=>({name:r.n
 async function makeOneNineAudio(ctx,selected){
   /* 全選手の分離音源を並列取得。
      1番だけは本編メロディーとして audio.m4a を使用する。 */
+  let loaded=0;setStatus('音源を読み込み中… 0 / '+selected.length,'ok');
   const separated=await Promise.all(selected.map(async(item,i)=>{
    try{
     const melodyFile=i===0?"audio.m4a":"melody.m4a";
@@ -920,9 +912,10 @@ async function makeOneNineAudio(ctx,selected){
      fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
      i===0?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
     ]);
+    loaded++;setStatus('音源を読み込み中… '+loaded+' / '+selected.length,'ok');
     return {melody,accompaniment:(i===0&&openingAccompaniment)||normalAccompaniment,
             hasOpeningAccompaniment:i===0&&!!openingAccompaniment};
-   }catch(e){throw new Error(`${item.name} の音源を読み込めませんでした。`)}
+   }catch(e){throw new Error(`${item.name} の音源を読み込めませんでした。\n${e.message||e}`)}
   }));
   // 前奏は再生用音源に収録済み。別の前奏トラックを加えない。
   const intro=null;
