@@ -529,7 +529,7 @@ function showPlayerActions(
 
 
     garageButton.textContent =
-        "GarageBandファイル出力（iPhoneのみ）";
+        "GarageBandで開く";
 
 
     garageButton.onclick =
@@ -545,6 +545,12 @@ function showPlayerActions(
     menu.appendChild(
         garageButton
     );
+    const garageSettingsButton = document.createElement("button");
+    garageSettingsButton.textContent = "GarageBand連携設定";
+    garageSettingsButton.style.fontSize = "12px";
+    garageSettingsButton.onclick = () => window.OuenkaGarageBand?.settings(player);
+    menu.appendChild(garageSettingsButton);
+
 
 
     resultArea.appendChild(
@@ -555,88 +561,15 @@ function showPlayerActions(
 
 
 // ========================================
-// GarageBand ZIP出力
-// iPhone：共有シートを開き「ファイルに保存」へ進みやすくする
-// その他：通常ダウンロード
+// GarageBandで開く（ショートカット連携）
 // ========================================
-
-function isIPhoneLike() {
-    return /iPhone|iPod/i.test(navigator.userAgent);
-}
-
-async function downloadGarageBand(player) {
-
-    if (!player || !player.garageBand) {
-        alert("GarageBandファイルが見つかりません");
+function downloadGarageBand(player) {
+    if (!window.OuenkaGarageBand) {
+        alert("GarageBand連携を読み込めませんでした。ページを更新してください。");
         return;
     }
-
-    const fileName =
-        player.name +
-        "_" +
-        player.productionNumber +
-        "_GarageBand.zip";
-
-    // iPhoneではWeb Share APIでファイル共有を試す。
-    // 共有シートから「ファイルに保存」を選べる。
-    if (
-        isIPhoneLike() &&
-        navigator.share &&
-        navigator.canShare
-    ) {
-        try {
-            const response = await fetch(
-                player.garageBand,
-                { cache: "no-store" }
-            );
-
-            if (!response.ok) {
-                throw new Error(
-                    "GarageBandファイルを取得できませんでした：" +
-                    response.status
-                );
-            }
-
-            const blob = await response.blob();
-
-            const file = new File(
-                [blob],
-                fileName,
-                { type: "application/zip" }
-            );
-
-            if (navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file]
-                });
-                return;
-            }
-        } catch (error) {
-            // ユーザーが共有画面を閉じただけならエラー表示しない
-            if (error && error.name === "AbortError") {
-                return;
-            }
-
-            console.warn(
-                "iPhone共有シートを開けなかったため通常保存へ切替:",
-                error
-            );
-        }
-    }
-
-    // Web Share APIが使えない場合のフォールバック。
-    // 実ファイルURLをユーザー操作から直接ダウンロードする。
-    const link = document.createElement("a");
-
-    link.href = player.garageBand;
-    link.download = fileName;
-    link.rel = "noopener";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.OuenkaGarageBand.open(player);
 }
-
 
 // ========================================
 // 曲を再生
