@@ -20,8 +20,9 @@
   ctx.font=`${italic}${weight} ${size}px ${family}`;const measured=ctx.measureText(value).width;
   const actual=measured>width?Math.max(.1,size*width/measured):size;
   ctx.font=`${italic}${weight} ${actual}px ${family}`;ctx.fillStyle=color;
-  ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.lineJoin='round';ctx.lineWidth=opts.adjustable?Math.max(0,(weight-100)/800)*actual*.025:0;
-  function paint(tx,ty,ink){ctx.fillStyle=ink;ctx.strokeStyle=ink;if(ctx.lineWidth>0)ctx.strokeText(value,tx,ty);ctx.fillText(value,tx,ty)}
+  ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.lineJoin='round';const strokeWidth=opts.adjustable?Math.max(0,(weight-100)/800)*actual*.025:0;
+  if(strokeWidth>0)ctx.lineWidth=strokeWidth;
+  function paint(tx,ty,ink){ctx.fillStyle=ink;ctx.strokeStyle=ink;if(strokeWidth>0)ctx.strokeText(value,tx,ty);ctx.fillText(value,tx,ty)}
   if(opts.shadow)paint(x+2,y+3,'#000000');paint(x,y,color);ctx.restore();return actual;
  }
  function identity(p){return p.jerseyNumber??p.number??p.uniformNumber??p.backNumber??''}
