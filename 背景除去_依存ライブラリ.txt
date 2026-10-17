@@ -1,0 +1,5 @@
+背景除去機能は @imgly/background-removal 1.7.0 を必要時に読み込みます。
+公式プロジェクト：https://github.com/imgly/background-removal-js
+実行モジュール：https://esm.sh/@imgly/background-removal@1.7.0?bundle
+モデル・WASMはライブラリ既定のIMG.LY配信元から取得します。
+ライセンス等は公式プロジェクトと該当バージョンのパッケージを参照してください。

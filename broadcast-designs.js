@@ -27,9 +27,16 @@
  function identity(p){return p.jerseyNumber??p.number??p.uniformNumber??p.backNumber??''}
  function brand(team){return /日本ハム|ファイターズ/.test(team||'')?'FIGHTERS':team||'OUENKA BASE'}
  function position(p){const n=Number(p.order);return [(n>=1&&n<=9)?n+'番':'',p.position||''].filter(Boolean).join('  ')}
+ function drawPhotoImage(ctx,image,rect,p={}){
+  if(!image?.complete||!image.naturalWidth)return;
+  const [x,y,w,h]=rect,finite=(v,f)=>Number.isFinite(Number(v))?Number(v):f;
+  const zoom=Math.max(.5,Math.min(3,finite(p.photoZoom,1))),px=Math.max(-100,Math.min(100,finite(p.photoX,0))),py=Math.max(-100,Math.min(100,finite(p.photoY,0)));
+  const scale=Math.max(w/image.naturalWidth,h/image.naturalHeight)*zoom,dw=image.naturalWidth*scale,dh=image.naturalHeight*scale;
+  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.drawImage(image,x+(w-dw)/2+px*w/100,y+(h-dh)/2+py*h/100,dw,dh);ctx.restore();
+ }
  function photo(ctx,p,rect,t,image,credit){
   const [x,y,w,h]=rect;ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.fillStyle=t.dark;ctx.fillRect(x,y,w,h);
-  if(image?.complete&&image.naturalWidth){const scale=Math.max(w/image.naturalWidth,h/image.naturalHeight),sw=w/scale,sh=h/scale;ctx.drawImage(image,(image.naturalWidth-sw)/2,(image.naturalHeight-sh)/2,sw,sh,x,y,w,h)}
+  if(image?.complete&&image.naturalWidth){drawPhotoImage(ctx,image,rect,p)}
   else{text(ctx,'写真を選択',x+w/2,y+h/2,25,'#dbe8f5',w-30,{align:'center',weight:500})}
   if(credit)credit(ctx,p.photoCredit,rect);ctx.restore();ctx.strokeStyle=t.frame;ctx.lineWidth=3;ctx.strokeRect(x+1.5,y+1.5,w-3,h-3);
  }
@@ -130,21 +137,22 @@
   poly(ctx,[[1110,0],[1280,0],[1180,98],[1010,98]],mix(t.color,'#06090d',.82));
   text(ctx,options.title||'1-9 応援歌',30,66,48,'#ffffff',1220,{weight:900});
   rule(ctx,0,97,W,'#bdc9d1',1);
-  const required=rows.reduce((last,p,i)=>p?.name?i+1:last,0);
+  const entries=rows.map((p,index)=>({p,index})).filter(({p})=>String(p?.name||'').trim()),required=entries.length;
   if(required>10){text(ctx,'11枠以上ではこのフォーマットは使用できません。',W/2,H/2,32,'#ffffff',1180,{align:'center'});ctx.restore();return}
-  const slots=Math.min(10,Math.max(1,rows.length)),x0=24,y0=112,cw=1232/slots,bottom=680;
+  if(!required){ctx.restore();return}
+  const slots=entries.length,x0=24,y0=112,cw=1232/slots,bottom=680;
   const positions={'投手':'P','捕手':'C','一塁手':'1B','二塁手':'2B','三塁手':'3B','遊撃手':'SS','左翼手':'LF','中堅手':'CF','右翼手':'RF','指名打者':'DH','代打':'PH'};
   for(let i=0;i<slots;i++){
-   const p=rows[i]||{},x=x0+i*cw,visible=shown.has(i)&&!!p.name,isActive=active===i;
+   const entry=entries[i],index=entry?.index??-1,p=entry?.p||{},x=x0+i*cw,visible=shown.has(index)&&!!p.name,isActive=active===index;
    ctx.fillStyle='#090d12';ctx.fillRect(x,y0,cw,bottom-y0);
    // 空欄は打順と仕切りのみ。写真・背番号・名前は各曲の開始後に追加。
-   text(ctx,i+1,x+12,y0+47,43,'#ffffff',49,{weight:900});
+   text(ctx,i===9?'P':i+1,x+12,y0+47,43,'#ffffff',49,{weight:900});
    if(visible){
     ctx.save();ctx.beginPath();ctx.rect(x+1,y0+1,cw-2,bottom-y0-2);ctx.clip();
     const progress=isActive&&options.elapsed!==undefined?Math.min(1,Math.max(0,options.elapsed)/.42):1;
     ctx.translate(0,Math.pow(1-progress,3)*24);
     text(ctx,positions[p.position]||p.position||'',x+cw-12,y0+42,19,'#ffffff',cw-72,{align:'right'});
-    const im=options.images?.[i];
+    const im=options.images?.[index];
     if(p.photoEnabled!==false&&im?.complete&&im.naturalWidth)photo(ctx,p,[x+5,y0+65,cw-10,300],t,im,options.credit);
     else{ctx.fillStyle=mix(t.color,'#080d13',.78);ctx.fillRect(x+5,y0+65,cw-10,300);text(ctx,identity(p)||String(i+1),x+cw/2,y0+250,80,mix(t.color,'#ffffff',.4),cw-20,{align:'center',weight:900})}
     text(ctx,identity(p),x+12,y0+429,60,'#f3d993',cw-24,{weight:900});
@@ -167,5 +175,5 @@
   try{if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file]});resolve();return}}catch(e){if(e.name==='AbortError'){resolve();return}}
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);resolve();
  },'image/png'))}
- window.OuenkaBroadcast={drawCard,drawLineup,drawBoard,boardAt,savePng,theme};
+ window.OuenkaBroadcast={drawCard,drawLineup,drawBoard,boardAt,drawPhotoImage,savePng,theme};
 })();
