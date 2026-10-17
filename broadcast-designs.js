@@ -117,11 +117,55 @@
   const extras=rows.slice(9).filter(p=>p.name);
   text(ctx,extras.length?'控え・追加 '+extras.map(p=>[p.position,p.name].filter(Boolean).join(' ')).join(' / '):'',60,690,17,light?t.color:'#c7dced',1160,{weight:600});ctx.restore();
  }
+
+ // 16:9のスタメンボード。表示対象は音源の実際の開始時刻から決定する。
+ function boardAt(starts,rowIndices,seconds){
+  let song=-1;for(let i=0;i<starts.length;i++){if(seconds>=starts[i])song=i;else break}
+  return {activeIndex:song<0?-1:rowIndices[song],revealedIndices:rowIndices.slice(0,song+1),elapsed:song<0?0:Math.max(0,seconds-starts[song])};
+ }
+ function drawBoard(ctx,rows,options={}){
+  const t=theme(options),active=options.activeIndex??-1,shown=new Set(options.revealedIndices??rows.map((_,i)=>i));
+  ctx.save();ctx.globalAlpha=1;ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.fillStyle='#06090d';ctx.fillRect(0,0,W,H);
+  poly(ctx,[[950,0],[1090,0],[990,98],[850,98]],mix(t.color,'#06090d',.65));
+  poly(ctx,[[1110,0],[1280,0],[1180,98],[1010,98]],mix(t.color,'#06090d',.82));
+  text(ctx,options.title||'1-9 応援歌',30,66,48,'#ffffff',1220,{weight:900});
+  rule(ctx,0,97,W,'#bdc9d1',1);
+  const required=rows.reduce((last,p,i)=>p?.name?i+1:last,0);
+  if(required>10){text(ctx,'11枠以上ではこのフォーマットは使用できません。',W/2,H/2,32,'#ffffff',1180,{align:'center'});ctx.restore();return}
+  const slots=Math.min(10,Math.max(1,rows.length)),x0=24,y0=112,cw=1232/slots,bottom=680;
+  const positions={'投手':'P','捕手':'C','一塁手':'1B','二塁手':'2B','三塁手':'3B','遊撃手':'SS','左翼手':'LF','中堅手':'CF','右翼手':'RF','指名打者':'DH','代打':'PH'};
+  for(let i=0;i<slots;i++){
+   const p=rows[i]||{},x=x0+i*cw,visible=shown.has(i)&&!!p.name,isActive=active===i;
+   ctx.fillStyle='#090d12';ctx.fillRect(x,y0,cw,bottom-y0);
+   // 空欄は打順と仕切りのみ。写真・背番号・名前は各曲の開始後に追加。
+   text(ctx,i+1,x+12,y0+47,43,'#ffffff',49,{weight:900});
+   if(visible){
+    ctx.save();ctx.beginPath();ctx.rect(x+1,y0+1,cw-2,bottom-y0-2);ctx.clip();
+    const progress=isActive&&options.elapsed!==undefined?Math.min(1,Math.max(0,options.elapsed)/.42):1;
+    ctx.translate(0,Math.pow(1-progress,3)*24);
+    text(ctx,positions[p.position]||p.position||'',x+cw-12,y0+42,19,'#ffffff',cw-72,{align:'right'});
+    const im=options.images?.[i];
+    if(p.photoEnabled!==false&&im?.complete&&im.naturalWidth)photo(ctx,p,[x+5,y0+65,cw-10,300],t,im,options.credit);
+    else{ctx.fillStyle=mix(t.color,'#080d13',.78);ctx.fillRect(x+5,y0+65,cw-10,300);text(ctx,identity(p)||String(i+1),x+cw/2,y0+250,80,mix(t.color,'#ffffff',.4),cw-20,{align:'center',weight:900})}
+    text(ctx,identity(p),x+12,y0+429,60,'#f3d993',cw-24,{weight:900});
+    const parts=String(p.name).trim().split(/[\s　]+/);
+    if(parts.length>1){text(ctx,parts[0],x+12,y0+468,24,'#ffffff',cw-24);text(ctx,parts.slice(1).join(' '),x+12,y0+501,24,'#ffffff',cw-24)}
+    else text(ctx,p.name,x+12,y0+482,27,'#ffffff',cw-24);
+    text(ctx,p.romanName||'',x+12,bottom-14,12,'#d1dce6',cw-24,{weight:600});
+    ctx.restore();
+   }
+   rule(ctx,x,y0,1,'#aebbc7',bottom-y0);
+   if(isActive&&visible){ctx.strokeStyle=t.color;ctx.lineWidth=5;ctx.strokeRect(x+3,y0+3,cw-6,bottom-y0-6);rule(ctx,x+3,bottom-8,cw-6,t.color,5)}
+  }
+  rule(ctx,x0+1232,y0,1,'#aebbc7',bottom-y0);rule(ctx,x0,bottom,1232,'#aebbc7',1);
+  ctx.restore();
+ }
+
  function savePng(canvas,filename){return new Promise((resolve,reject)=>canvas.toBlob(async blob=>{
   if(!blob){reject(new Error('画像を作成できませんでした'));return}
   const file=new File([blob],filename,{type:'image/png'});
   try{if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file]});resolve();return}}catch(e){if(e.name==='AbortError'){resolve();return}}
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);resolve();
  },'image/png'))}
- window.OuenkaBroadcast={drawCard,drawLineup,savePng,theme};
+ window.OuenkaBroadcast={drawCard,drawLineup,drawBoard,boardAt,savePng,theme};
 })();
