@@ -219,9 +219,9 @@
 </style>
 <style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
 <style>
-.top-menu{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;padding:12px 20px}
-.top-menu .top-brand{white-space:nowrap;display:block;grid-column:1;grid-row:1;min-width:0;margin:0}
-.top-menu .top-actions{grid-column:2;grid-row:1;width:100%;padding-bottom:2px;align-items:center}
+.top-menu{display:block;padding:12px 20px}
+.top-menu .top-brand{white-space:nowrap;display:block;flex:0 0 auto;position:static;min-width:0;margin:0 8px 0 0}
+.top-menu .top-actions{width:100%;padding-bottom:2px;align-items:center}
 .top-menu .system-version{display:flex!important;flex:0 0 auto;position:static;align-self:flex-start;flex-direction:row;white-space:nowrap;margin:0 0 0 auto;font-size:11px;letter-spacing:.06em;line-height:1.5}
 .top-menu .mobile-version{display:none!important}
 .top-menu .top-menu-button{box-sizing:border-box;height:55px;min-height:55px;max-height:55px;line-height:1.2}
@@ -238,7 +238,9 @@
 
     <header class="top-menu">
 
-        <div class="top-brand">
+        <div class="top-actions">
+
+<div class="top-brand">
 
             <div class="top-brand-main">
                 OUENKA BASE
@@ -250,9 +252,6 @@
             </div>
 
         </div>
-
-
-        <div class="top-actions">
 
             <!-- 更新 -->
 

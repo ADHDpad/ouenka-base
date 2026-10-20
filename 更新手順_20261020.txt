@@ -1,3 +1,13 @@
+OUENKA BASE 2026-10-20 r138
+
+【今回の変更】
+ホームの「OUENKA BASE」も固定せず、メニューボタン・バージョンと同じ横スクロール領域へ移しました。
+
+r137を反映済みの場合、更新対象はindex.htmlとservice-worker.jsの2ファイルです。
+GitHub DesktopでCommit → Push origin後、サイトの「更新」から再読み込みしてください。
+Workerはr136／r137と同じ内容です。共有機能の導入方法は「端末間共有_導入手順.txt」を参照してください。
+
+【過去の更新内容・参考】
 OUENKA BASE 2026-10-20 r137
 
 【今回の変更】
