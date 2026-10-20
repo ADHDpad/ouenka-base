@@ -24,12 +24,23 @@ h1{margin:0 0 7px;font-size:28px}.desc{margin:0 0 20px;color:#647789}
 .notice{display:none;margin-top:12px;padding:11px;border-radius:8px;background:#eaf7ee;color:#25613a;font-weight:700}
 </style>
 <style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
-</head>
+<style>.share-card{margin:0 0 24px}.share-body{padding:16px}.share-body p{line-height:1.6}.share-note{font-size:13px;color:#647789}.share-button{padding:10px 16px;min-height:48px;height:auto;cursor:pointer;margin:10px 0}.share-body label{display:block;font-size:14px;margin-top:12px}.share-body input{width:100%;min-width:0;padding:12px;border:1px solid #b9cadb;border-radius:7px;font:16px system-ui}.share-code-row{display:flex;gap:8px;align-items:center}.share-code-row input{flex:1;letter-spacing:.1em;font-weight:700}.share-code-row button{flex:0 0 auto;padding:0 16px;cursor:pointer}.share-body hr{border:0;border-top:1px solid #d8e0e7;margin:20px 0}.share-body button:disabled{opacity:.55;cursor:wait}#favoriteSharePreview{padding:12px;background:#edf5fc;border-radius:8px}#favoriteShareNames{padding-left:24px;font-size:14px}#favoriteShareStatus{overflow-wrap:anywhere}</style></head>
 <body>
 <header><div class="brand"><strong>OUENKA BASE</strong><small>SETTINGS</small></div><button class="back" onclick="location.href='./index.html'">◀戻る</button></header>
 <main>
 <h1>設定</h1>
 <p class="desc">応援歌BASEと1-9作成画面で使用する球団表示順を変更できます。</p>
+<section class="card share-card" aria-labelledby="shareTitle">
+<div class="cardhead" id="shareTitle">端末間でお気に入りを共有</div><div class="share-body">
+<p>この端末で共有コードを作り、別の端末の設定で読み込むと、お気に入りを追加できます。</p>
+<p class="share-note">共有時点のお気に入りをコピーします。自動同期はしません。コードの有効期限は7日間です。</p>
+<button type="button" class="save share-button" id="createFavoriteShare">共有コードを作成</button>
+<div id="favoriteShareOutput" hidden><label for="favoriteShareCode">別の端末に渡すコード</label><div class="share-code-row"><input id="favoriteShareCode" readonly aria-label="作成した共有コード"><button type="button" class="reset" id="copyFavoriteShare">コピー</button></div><p id="favoriteShareExpiry" class="share-note"></p></div>
+<hr><label for="receiveFavoriteCode">別の端末で作った共有コード</label><input id="receiveFavoriteCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" maxlength="40">
+<button type="button" class="save share-button" id="readFavoriteShare">共有コードを読み込む</button>
+<div id="favoriteSharePreview" hidden><p id="favoriteShareSummary"></p><ul id="favoriteShareNames"></ul><button type="button" class="save share-button" id="applyFavoriteShare">この端末のお気に入りに追加</button></div>
+<p id="favoriteShareStatus" role="status" aria-live="polite"></p>
+</div></section>
 <div class="card"><div class="cardhead">球団表示順序</div><div id="teamList"></div></div>
 <div class="actions"><button class="reset" id="reset">初期順に戻す</button><button class="save" id="save">この順番を保存</button></div>
 <div id="notice" class="notice">球団表示順を保存しました。</div>
@@ -94,4 +105,6 @@ render();
  const out=document.getElementById('audioResetResult');out.textContent='音声を確認中…';
  try{out.textContent=await window.ouenkaAudioRecovery.reset()}catch(e){out.textContent='復旧できませんでした: '+e.message+'。iOSの音声サービス側の問題の可能性があります。'}
 });</script>
+<script src="ouenka-favorites.js?v=20261020-r136"></script>
+<script src="favorite-sharing.js?v=20261020-r136"></script>
 </body></html>

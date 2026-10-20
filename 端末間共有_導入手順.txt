@@ -1,0 +1,65 @@
+OUENKA BASE 2026-10-20 r136
+端末間のお気に入り共有
+
+【重要：今回はサイトとCloudflare Workerの両方を更新します】
+ZIPの作成時点では公開サイト・Workerへの配備は行っていません。
+サイト側だけ更新すると設定にボタンは出ますが、共有コードは発行できません。
+
+【1. サイト側】
+ZIPはコード一式です。音源データは含みません。
+GitHubのouenka-base直下へ同名ファイルを上書き・追加してください。
+r135を反映済みなら、次の7ファイルがサイト側の更新対象です。
+
+settings.html
+favorite-sharing.js（新規）
+ouenka-favorites.js
+index.html
+team.html
+favorites.html
+service-worker.js
+
+別のPCで作業を再開するときは、先にGitHub DesktopでFetch origin → Pull origin。
+更新後はCommit → Push originを実行してください。
+
+【2. Cloudflare Worker側】
+1. Cloudflareの「Workers & Pages」を開きます。
+2. データAPIのWorker「ouenka-base-data」を開きます。
+3. 現在のコードを控えてから「コードを編集」を開きます。
+4. ZIP内のworker.jsの全文を貼り付け、デプロイします。
+5. 既存D1のバインディング名「DB」は、そのまま維持してください。
+   新しいデータベースや秘密鍵の追加は不要です。
+6. 共有の初回利用時に、既存DB内にfavorite_sharesテーブルを自動作成します。
+   songsや既存の打順テーブルは変更しません。
+
+worker.jsはこのZIP内で使っている既存の検索・登録・打順APIを残した全文版です。
+公開Workerに、このZIPに含まれない独自変更を加えている場合は、次の差分導入で反映できます。
+・favorites-share-handler.js内のhandleFavoriteShare関数を、既存Worker末尾へ追加。
+・既存fetch(request, env)内のOPTIONS処理後、ほかのルート分岐より前に次を追加。
+
+const favoriteShareResponse = await handleFavoriteShare(request, env);
+if (favoriteShareResponse) return favoriteShareResponse;
+
+全文版worker.jsには既に組み込んであるため、差分の追加は不要です。
+この差分用ファイルをGitHubへ置くだけではWorkerへ反映されません。
+
+【3. 更新後の使い方】
+サイトの「更新」で再読み込みします。
+送る端末：設定 → 端末間でお気に入りを共有 → 共有コードを作成 → コピー。
+受け取る端末：設定 → 共有コードを貼り付け → 共有コードを読み込む。
+曲数と選手名を確認し「この端末のお気に入りに追加」を押します。
+
+・共有時点のお気に入りのコピーです。以後の追加・削除は自動同期しません。
+・受け取り側の既存のお気に入りは残し、重複する曲は増やしません。
+・コードは英数字12文字、7日間有効です。期限後は作り直してください。
+・最大500曲、データ量128KiBまでです。
+・保存するのは選手名、制作番号、球団、ふりがなだけです。音源や写真は送りません。
+・球団の色や順序、1-9、メドレー、挿絵の設定は共有対象ではありません。
+・共有ボタンを押したときだけ共有データを作ります。通常の再生では共有通信しません。
+・コードで読み取れる内容は、共有元が作成した時点のままです。
+・コピーできない端末では、コード欄を選択してコピーできます。
+
+【検証】
+SQLiteでD1の処理を実行し、Workerの作成・読込、期限切れ、重複削除、形式不正、CORS、既存ルートの維持を確認しました。
+独立したブラウザ2環境でコード作成からプレビュー・追加まで通して確認しました。
+既存のお気に入りの保持、重複防止、再読み込み後の保存、コード変更時のプレビュー解除、ふりがな検索、390px幅も確認済みです。
+公開Worker・iPhone/iPad実機での確認は未実施です。音声処理は変更していません。
