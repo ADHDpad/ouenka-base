@@ -1,11 +1,12 @@
 <!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071d33"><title>流用・汎用登録 | OUENKA BASE</title><style>
 *{box-sizing:border-box}body{margin:0;background:#f2f6fa;color:#102d48;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{position:sticky;top:0;z-index:5;background:#071d33;color:white;padding:15px;display:flex;align-items:center;justify-content:space-between;gap:10px}header strong{font-size:18px}button{cursor:pointer;font:inherit}.back{background:transparent;border:1px solid #9aa9b7;color:white;border-radius:8px;padding:10px 13px}main{max-width:920px;margin:auto;padding:14px}.intro{background:#0b2f55;color:white;border-radius:13px;padding:18px}.intro h1{font-size:24px;margin:0 0 8px}.intro p{margin:0;line-height:1.6;font-size:14px}.card{background:white;border:1px solid #d8e1e9;border-radius:12px;padding:15px;margin-top:12px}.card-head{display:flex;gap:10px;align-items:center;margin-bottom:12px}.number{background:#0b2f55;color:white;border-radius:8px;font-weight:800;padding:10px 13px}.player{font-weight:800;font-size:18px}.hint{font-size:12px;color:#667b8c}.fields{display:grid;grid-template-columns:150px 1fr;gap:10px}.field{min-width:0}label{font-size:12px;font-weight:800;display:block;margin-bottom:6px}select,input{font-size:16px;min-height:46px;width:100%;padding:8px 10px;border:1px solid #b8c8d7;border-radius:9px;background:#fff;color:#15334f}.results{display:none;margin-top:7px;border:1px solid #c6d6e3;border-radius:9px;overflow:hidden;max-height:300px;overflow-y:auto}.result{display:block;width:100%;border:0;border-bottom:1px solid #dce6ef;background:#eff6fc;padding:12px;text-align:left;color:#15334f}.result:hover{background:#dceefe}.result strong{display:block;font-size:14px}.result small{display:block;font-size:12px;color:#567089;margin-top:3px;white-space:normal;overflow-wrap:anywhere}.chosen{font-size:13px;margin-top:9px;color:#0b6b47;font-weight:700}.save{width:100%;margin-top:16px;background:#0b77cf;color:white;border:0;border-radius:12px;padding:17px;font-weight:900}.empty{padding:24px;text-align:center;background:white;border-radius:12px;margin-top:12px}#message{font-size:13px;color:#335775;margin-top:10px}@media(max-width:560px){.fields{grid-template-columns:1fr}.card{padding:12px}.intro h1{font-size:21px}}
-</style></head><body><header><strong>流用・汎用登録</strong><button class="back" onclick="location.href='./1-9.html'">◀戻る</button></header><main><section class="intro"><h1>応援歌の流用・汎用設定</h1><p>1-9に入力した選手が表示されます。流用は既存選手の応援歌を割り当て、汎用は登録済みの汎用応援歌を割り当てます。設定はこの端末の1-9下書きに保存されます。</p></section><div id="cards"></div><button id="save" class="save">◀戻る</button><div id="message"></div></main><script>
+</style></head><body><header><strong>流用・汎用登録</strong><button class="back" id="back">◀戻る</button></header><main><section class="intro"><h1>応援歌の流用・汎用設定</h1><p>1-9に入力した選手が表示されます。流用は既存選手の応援歌を割り当て、汎用は登録済みの汎用応援歌を割り当てます。設定はこの端末の1-9下書きに保存されます。</p></section><div id="cards"></div><button id="save" class="save">◀戻る</button><div id="message"></div></main><script>
 "use strict";
-const KEY="ouenkaBaseOneNineDraftV1",API="https://ouenka-base-data.ninzin5600.workers.dev";
+const MEDLEY=new URLSearchParams(location.search).get("mode")==="medley",BACK=MEDLEY?"./medley.html":"./1-9.html",KEY=MEDLEY?"ouenkaBaseMedleyDraftV1":"ouenkaBaseOneNineDraftV1",API="https://ouenka-base-data.ninzin5600.workers.dev";
 let draft;try{draft=JSON.parse(localStorage.getItem(KEY)||"null")||{rows:[]}}catch(e){draft={rows:[]}}
 const rows=draft.rows||[];const box=document.getElementById("cards");const escapeHTML=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const genericTeam=String(draft.team||"").trim();
+document.getElementById("back").onclick=()=>location.href=BACK;
 let count=0;
 rows.forEach((row,index)=>{if(!row.name?.trim())return;count++;
  const card=document.createElement("section");card.className="card";
@@ -13,7 +14,7 @@ rows.forEach((row,index)=>{if(!row.name?.trim())return;count++;
  const mode=card.querySelector('.mode'),input=card.querySelector('.query'),results=card.querySelector('.results'),chosen=card.querySelector('.chosen');
  mode.value=row.reuseMode||"";input.value=row.reuseName||"";
  let serial=0;
- const genericQuery=()=>String(genericTeam||row.team||"").trim()+"汎用";
+ const genericQuery=()=>{const team=String(genericTeam||row.team||"").trim();return team?team+"汎用":""};
  function refresh(){
   const active=!!mode.value;input.disabled=!active;
   input.placeholder=mode.value==='generic'?"球団名＋汎用で検索":"流用元の選手名を入力";
@@ -53,17 +54,17 @@ rows.forEach((row,index)=>{if(!row.name?.trim())return;count++;
    const team=String(genericTeam||row.team||"").trim();
    input.value=team?team+"汎用":"";
    if(team)searchSongs(input.value);
-   else chosen.textContent='1-9画面で球団を選択してください';
+   else chosen.textContent='球団名＋汎用の登録名を入力してください';
   }else input.value="";
   refresh();
-  if(mode.value==='generic'&&!input.value)chosen.textContent='1-9画面で球団を選択してください';
+  if(mode.value==='generic'&&!input.value)chosen.textContent='球団名＋汎用の登録名を入力してください';
  });
  input.addEventListener('input',()=>{
   row.reuseName="";row.reuseProductionNumber="";refresh();
   const q=input.value.trim();
   if(mode.value==='generic'){
    const expected=genericQuery();
-   if(q!==expected){results.innerHTML='球団名＋汎用の名前で検索してください';results.style.display='block';return;}
+   if((expected&&q!==expected)||(!expected&&!q.endsWith('汎用'))){results.innerHTML='球団名＋汎用の名前で検索してください';results.style.display='block';return;}
   }
   searchSongs(q);
  });
@@ -74,5 +75,5 @@ rows.forEach((row,index)=>{if(!row.name?.trim())return;count++;
  refresh();box.appendChild(card);
 });
 if(!count){box.innerHTML='<div class="empty">1-9画面で選手を登録してから、この画面を開いてください。</div>';document.getElementById('save').style.display='none'}
-document.getElementById('save').addEventListener('click',()=>{for(const row of rows){if(row.name?.trim()&&row.reuseMode&&(!row.reuseName||!row.reuseProductionNumber)){document.getElementById('message').textContent='流用・汎用を選んだ選手は、登録元の応援歌も選択してください。';return}}draft.rows=rows;localStorage.setItem(KEY,JSON.stringify(draft));location.href='./1-9.html'});
+document.getElementById('save').addEventListener('click',()=>{for(const row of rows){if(row.name?.trim()&&row.reuseMode&&(!row.reuseName||!row.reuseProductionNumber)){document.getElementById('message').textContent='流用・汎用を選んだ選手は、登録元の応援歌も選択してください。';return}}draft.rows=rows;localStorage.setItem(KEY,JSON.stringify(draft));location.href=BACK});
 </script></body></html>

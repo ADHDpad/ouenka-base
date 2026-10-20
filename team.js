@@ -4,6 +4,7 @@ const params=new URLSearchParams(location.search);
 const team=params.get("team")||"北海道日本ハムファイターズ";
 let songs=[],filter="all",current=null,currentAudios=[],paused=false;
 let teamAudioContext=null,teamSources=[],teamPlayToken=0,teamStartedAt=0,teamPauseOffset=0,teamBuffers=null,teamTimeline=[],teamTotalDuration=0;
+let teamSavedDuration=0,teamStoppedPosition=0;
 let teamEndTimer=null,teamRemainingMs=0,teamTimerStartedAt=0;
 const $=id=>document.getElementById(id);
 $("teamTitle").textContent=team;
@@ -50,7 +51,7 @@ function render(){
    const num=s.uniformNumber!==""?s.uniformNumber:"—";
    row.innerHTML=`<div class="number"></div><div class="name"></div><span class="tag ${s.isActive?'active':'ob'}">${s.isActive?'現役':'OB'}</span><div class="lyrics"></div><button class="play" type="button" aria-label="${escapeHtml(s.name)}を再生">▶</button><span class="arrow">›</span>`;
    row.querySelector(".number").textContent=num;row.querySelector(".name").textContent=s.name;row.querySelector(".lyrics").textContent=String(s.lyrics).replace(/\n/g," ").replace(/\s+/g," ").trim();
-   row.querySelector(".play").addEventListener("click",e=>{e.stopPropagation();playSong(s)});row.addEventListener("click",()=>playSong(s));list.appendChild(row);
+   row.querySelector(".play").addEventListener("click",e=>{e.stopPropagation();playSong(s)});row.addEventListener("click",()=>playSong(s));if(window.OuenkaFavorites)row.appendChild(window.OuenkaFavorites.button(s));list.appendChild(row);
  });
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -99,7 +100,7 @@ function armTeamEndTimer(ms){
  const token=teamPlayToken;
  teamEndTimer=setTimeout(()=>{
   teamEndTimer=null;
-  if(token===teamPlayToken&&!paused)stopAudio();
+  if(token===teamPlayToken&&!paused){teamSavedDuration=teamTotalDuration;teamStoppedPosition=teamTotalDuration;stopAudio();}
  },teamRemainingMs);
 }
 function startSyncedBuffers(offset=0){
@@ -133,7 +134,7 @@ async function playSong(s){
   teamBuffers=[audio,accompaniment];
   teamTimeline=[{buffer:audio,start:0},{buffer:accompaniment,start:0}];
   teamTotalDuration=Math.max(...teamTimeline.map(x=>x.start+x.buffer.duration));
-  teamPauseOffset=0;paused=false;startSyncedBuffers(0);
+  teamPauseOffset=0;teamStoppedPosition=0;teamSavedDuration=teamTotalDuration;paused=false;startSyncedBuffers(0);attachTeamTransport(s);
   $("miniState").textContent="再生中";if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";
  }catch(e){console.warn("球団別同期再生エラー",e);if(token===teamPlayToken){$("miniState").textContent="再生できませんでした"}}
 }
@@ -175,3 +176,5 @@ $("miniPlay").addEventListener("click",async()=>{
 $("miniStop").addEventListener("click",()=>stopAudio());
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&current&&!paused)$("miniState").textContent="再生中"});
 loadSongs();
+
+function attachTeamTransport(song){const queue=()=>visibleSongs(),index=()=>queue().findIndex(s=>s.name===song.name&&s.productionNumber===song.productionNumber);window.OuenkaTransport?.mount({state:()=>({title:current?.name||song.name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamAudioContext.currentTime-teamStartedAt)):teamStoppedPosition,playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:index()>0,hasNext:index()>=0&&index()<queue().length-1}),pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playSong(song);if(at>0){teamPauseOffset=at;startSyncedBuffers(at)}return}if(paused)return togglePause()},stop:()=>{const duration=teamTotalDuration;stopAudio();teamTotalDuration=duration;teamStoppedPosition=0},previous:()=>{const i=index();if(i>0)return playSong(queue()[i-1])},next:()=>{const i=index();if(i>=0&&i+1<queue().length)return playSong(queue()[i+1])},seek:position=>{if(!teamAudioContext){teamStoppedPosition=Math.min(teamTotalDuration||teamSavedDuration,Math.max(0,position));return}const time=Math.min(teamTotalDuration,Math.max(0,position));teamPauseOffset=time;startSyncedBuffers(time);if(paused&&teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}}})}

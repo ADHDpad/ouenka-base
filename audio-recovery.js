@@ -74,7 +74,7 @@
  function create(){const ctx=makeContext();try{wakeMediaRoute(ctx);return unlock(ctx)}catch(e){try{ctx.close()}catch(_){}throw e}}
  // Explicit second user gesture if standalone WebKit defers resume() indefinitely.
  function showRetry(ctx, retryPlayback){
-   if(!ctx || ctx.state==='running' || ctx.state==='closed')return;
+   if(!ctx || ctx.state==='running' || ctx.state==='closed'||deliberatelyPaused.has(ctx)||window.OuenkaTransport?.healthy?.()){hideRetry();return;}
    recoveryNeeded=true;retryCallback=typeof retryPlayback==='function'?retryPlayback:null;
    if(!retryButton){
      retryButton=document.createElement('button');

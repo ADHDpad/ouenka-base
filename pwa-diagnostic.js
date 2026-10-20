@@ -1,7 +1,7 @@
 /* Diagnostics only: preserve native promises and playback values. */
 (()=>{'use strict';
  if(window.__ouenkaDiagnosticInstalled)return;window.__ouenkaDiagnosticInstalled=true;
- const BUILD='20261015-r104',started=performance.now(),logs=[],contexts=new Map(),pending=new Map();
+ const BUILD='20261020-r131',started=performance.now(),logs=[],contexts=new Map(),pending=new Map();
  let button,panel,output,ready=false,wanted=false,loadingTimer=null,lastStatus='';
  const short=e=>String(e?.message||e).slice(0,500),stamp=()=>((performance.now()-started)/1000).toFixed(2)+'s';
  function log(message){logs.push(stamp()+' '+message);if(logs.length>250)logs.shift();if(panel?.open&&document.activeElement!==output)output.value=report()}
@@ -13,7 +13,9 @@
   const scripts=[...document.scripts].map(s=>s.src).filter(s=>/audio-recovery|pwa-diagnostic|player\.js|active-roster|ouenka-audio-transfer/.test(s)).map(safeUrl);
   return ['OUENKA AUDIO DIAGNOSTIC '+BUILD,'URL='+safeUrl(location.href),'standalone='+standalone(),'UA='+navigator.userAgent,'visibility='+document.visibilityState,'secure='+Boolean(window.isSecureContext),'audioSession='+JSON.stringify({type:navigator.audioSession?.type,state:navigator.audioSession?.state}),'engine='+recovery,'status='+lastStatus,'scripts='+scripts.join(' | '),...Array.from(contexts,([ctx,id])=>'CONTEXT '+id+' state='+ctx.state+' currentTime='+ctx.currentTime+' sampleRate='+ctx.sampleRate),...Array.from(pending,([id,value])=>'PENDING '+id+' '+((performance.now()-value.at)/1000).toFixed(2)+'s '+value.url),'--- LOG ---',...logs].join('\n');
  }
- function reveal(reason){wanted=true;if(button)button.hidden=false;log('DIAGNOSTIC AVAILABLE '+reason)}
+ function playbackHealthy(){const current=window.OuenkaTransport?.state?.();return window.OuenkaTransport?.healthy?.()===true||!!(current?.playing&&current.currentTime>0)}
+ function hideAuto(){wanted=false;clearTimeout(loadingTimer);if(button)button.hidden=true}
+ function reveal(reason){if(reason!=='手動'&&(playbackHealthy()||window.OuenkaTransport?.paused?.())){hideAuto();return}wanted=true;if(button)button.hidden=false;log('DIAGNOSTIC AVAILABLE '+reason)}
  function track(ctx){if(!contexts.has(ctx)){if(contexts.size>=10)contexts.delete(contexts.keys().next().value);const id='c'+(contexts.size+1);contexts.set(ctx,id);ctx.addEventListener?.('statechange',()=>log('CONTEXT STATE '+id+' '+ctx.state+' time='+ctx.currentTime))}return contexts.get(ctx)}
  function observePromise(p,yes,no){if(p&&typeof p.then==='function')p.then(yes,no)}
  const originalFetch=window.fetch?.bind(window);
@@ -28,6 +30,7 @@
   for(const method of ['resume','decodeAudioData']){const original=proto[method];if(typeof original!=='function')continue;try{proto[method]=function(...args){const id=track(this);log((method==='resume'?'CONTEXT RESUME ':'DECODE START ')+id+' '+this.state+(method==='decodeAudioData'?' '+(args[0]?.byteLength||0)+' bytes':''));let p;try{p=original.apply(this,args)}catch(e){log(method+' THROW '+id+' '+short(e));throw e}let settled=false;observePromise(p,()=>{settled=true;log((method==='resume'?'CONTEXT RESUMED ':'DECODE DONE ')+id+' '+this.state)},e=>{settled=true;log(method+' ERROR '+id+' '+short(e))});if(method==='resume')setTimeout(()=>{if(!settled&&this.state!=='running'&&this.state!=='closed'&&!document.hidden)reveal('音声の起動待ち '+id)},1800);return p}}catch(e){log('HOOK ERROR '+method+' '+short(e))}}
  }
  function inspectStatus(){
+  if(playbackHealthy()||window.OuenkaTransport?.paused?.()){hideAuto();return}
   const text=['nowPlaying','status','movieStatus','miniState'].map(id=>document.getElementById(id)?.textContent?.trim()||'').filter(Boolean).join(' / ');if(text===lastStatus)return;lastStatus=text;log('STATUS '+text);clearTimeout(loadingTimer);
   if(/失敗|できません|見つから|起動待ち|エラー|中断/.test(text))reveal('再生状態');
   else if(/検索中|読み込|取得中|準備中|引き継ぎ中/.test(text))loadingTimer=setTimeout(()=>{if(lastStatus===text&&!document.hidden)reveal('読み込みが12秒以上継続')},12000);
@@ -43,6 +46,7 @@
   if(window.MutationObserver)new MutationObserver(inspectStatus).observe(document.body,{subtree:true,childList:true,characterData:true});inspectStatus();log('DIAG READY build='+BUILD+' standalone='+standalone());
  }
  window.addEventListener('error',e=>{log('WINDOW ERROR '+short(e.message));reveal('JavaScriptエラー')});window.addEventListener('unhandledrejection',e=>{log('PROMISE ERROR '+short(e.reason));reveal('処理エラー')});document.addEventListener('visibilitychange',()=>log('VISIBILITY '+document.visibilityState));
- window.OuenkaDiagnostics={report,show:()=>{reveal('手動');if(ready)button.click()},inspectStatus};
+ setInterval(()=>{if(playbackHealthy()||window.OuenkaTransport?.paused?.())hideAuto()},400);
+ window.OuenkaDiagnostics={report,hide:hideAuto,show:()=>{reveal('手動');if(ready)button.click()},inspectStatus};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

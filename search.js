@@ -333,6 +333,7 @@ async function searchPlayers() {
                         .split(/\r?\n/).map(line => line.trim()).find(Boolean) || "歌詞未登録";
 
                     candidate.append(candidateName, candidateTeam, candidateLyric);
+                    if(window.OuenkaFavorites)candidate.appendChild(window.OuenkaFavorites.button(player));
 
 
                     candidate.onclick =
@@ -529,7 +530,7 @@ function showPlayerActions(
 
 
     garageButton.textContent =
-        "GarageBandで開く";
+        "GarageBand出力";
 
 
     garageButton.onclick =
@@ -545,14 +546,11 @@ function showPlayerActions(
     menu.appendChild(
         garageButton
     );
-    const garageSettingsButton = document.createElement("button");
-    garageSettingsButton.textContent = "GarageBand連携設定";
-    garageSettingsButton.style.fontSize = "12px";
-    garageSettingsButton.onclick = () => window.OuenkaGarageBand?.settings(player);
-    menu.appendChild(garageSettingsButton);
 
 
 
+
+    if(window.OuenkaFavorites)menu.appendChild(window.OuenkaFavorites.button(player));
     resultArea.appendChild(
         menu
     );
@@ -561,14 +559,32 @@ function showPlayerActions(
 
 
 // ========================================
-// GarageBandで開く（ショートカット連携）
+// GarageBand ZIP出力
+// iPhone：共有シートを開き「ファイルに保存」へ進みやすくする
+// その他：通常ダウンロード
 // ========================================
-function downloadGarageBand(player) {
-    if (!window.OuenkaGarageBand) {
-        alert("GarageBand連携を読み込めませんでした。ページを更新してください。");
-        return;
+
+function isIPhoneLike() {
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent)||navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1;
+}
+
+async function downloadGarageBand(player) {
+    if (!player || !player.garageBand) {alert("GarageBandファイルが見つかりません");return;}
+    const fileName=player.name+"_"+player.productionNumber+"_GarageBand.zip";
+    let file;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+    try {
+        const response=await fetch(player.garageBand,{cache:"no-store",signal:controller.signal});
+        if(!response.ok)throw new Error("HTTP "+response.status);
+        const blob=await response.blob(),head=new Uint8Array(await blob.slice(0,4).arrayBuffer());
+        if(head[0]!==80||head[1]!==75)throw new Error("GarageBand ZIP以外のデータが返されました");
+        file=new File([blob],fileName,{type:"application/zip"});
+    } catch(error) {alert("GarageBandファイルを取得できませんでした。"+(error.name==='AbortError'?'通信がタイムアウトしました。':error.message));return;}
+    finally {clearTimeout(timer);}
+    if(isIPhoneLike()&&navigator.share&&navigator.canShare?.({files:[file]})) {
+        try {await navigator.share({files:[file]});return;}
+        catch(error){if(error?.name==='AbortError')return;}
     }
-    window.OuenkaGarageBand.open(player);
+    const url=URL.createObjectURL(file),link=document.createElement("a");link.href=url;link.download=fileName;link.rel="noopener";document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
 // ========================================
