@@ -85,10 +85,10 @@ body.row-dragging *{cursor:grabbing!important}
 @media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
-<script src="./ouenka-transport.js?v=20261020-r131"></script>
-<script src="./lineup-settings.js?v=20261020-r131"></script>
-<script src="audio-recovery.js?v=20261020-r131"></script>
-<script src="pwa-diagnostic.js?v=20261020-r131"></script>
+<script src="./ouenka-transport.js?v=20261020-r133"></script>
+<script src="./lineup-settings.js?v=20261020-r133"></script>
+<script src="audio-recovery.js?v=20261020-r133"></script>
+<script src="pwa-diagnostic.js?v=20261020-r133"></script>
 <script src="team-order.js"></script>
 <style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
 <style>
@@ -116,15 +116,15 @@ body.row-dragging *{cursor:grabbing!important}
 .top-actions>button:hover{background:#ffffff18}.top-actions>button:focus-visible{outline:2px solid #68baff;outline-offset:-3px}
 @media(max-width:600px){.top-actions>.chat,.top-actions>.back{min-height:50px;padding:7px 14px;font-size:13px}.top-actions>button::before{font-size:22px}input,textarea,select{scroll-margin-top:90px}}
 </style>
-<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row{grid-template-columns:48px minmax(0,1fr) 42px!important}.player-row .position{display:none!important}@media(max-width:600px){.player-row{grid-template-columns:32px minmax(0,1fr) 32px!important}}#illustrationButton{display:none}</style></head>
+<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row{grid-template-columns:48px minmax(0,1fr) 42px!important}.player-row .position{display:none!important}@media(max-width:600px){.player-row{grid-template-columns:32px minmax(0,1fr) 32px!important}}</style><style>.row-tools{min-width:0;display:flex;flex-direction:column;align-items:stretch}.row-tools .move-handle{height:44px}.delete-slot{min-height:28px;padding:3px 0;border:1px solid #e0b9b9;border-radius:5px;background:#fff1f1;color:#9e3030;font-size:10px;cursor:pointer}.delete-slot[hidden],.undo-slot[hidden]{display:none}.undo-slot{padding:10px;margin:8px 0;background:#e6f2ff;border:1px solid #a9cae8;border-radius:7px;font-size:13px}.undo-slot button{padding:7px 12px;border:1px solid #8caecf;border-radius:5px;background:#fff;color:#123b60;cursor:pointer}</style></head>
 <body>
 <header class="topbar">
  <div class="top-brand"><div class="top-brand-title">OUENKA BASE</div><div class="top-brand-sub">DATA REGISTER SYSTEM</div></div>
- <nav id="lineupTopActions" class="top-actions" aria-label="1-9の操作">
+ <nav id="lineupTopActions" class="top-actions" aria-label="メドレーの操作">
  <button class="back" type="button" onclick="location.href='./index.html'">◀戻る</button>
   <button id="saveLineupButton" class="chat top-menu-button" type="button">保存</button>
   <button id="loadLineupButton" class="chat top-menu-button" type="button">保存済を読込</button>
-  <button id="lineupSettingsButton" class="chat top-menu-button" type="button">⚙ 設定</button>
+  <button id="randomSelectButton" class="chat top-menu-button" type="button">ランダム選択</button>
   <button id="illustrationButton" class="chat top-menu-button" type="button">挿絵作成</button>
  </nav>
 </header>
@@ -135,7 +135,7 @@ body.row-dragging *{cursor:grabbing!important}
   <dialog id="savedLineupsDialog"><h2>保存済のメドレー</h2><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
   <div class="title-row"><label for="lineupTitle">メドレータイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
   <div id="lineup" class="lineup"></div>
-  <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div>
+  <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div><div id="undoSlotWrap" class="undo-slot" hidden role="status"><span id="deletedSlotMessage"></span> <button type="button" onclick="undoDeleteSlot()">取り消す</button></div>
   <div class="reuse-action-wrap" hidden><button class="reuse-action" id="reuseRegisterButton" type="button">♫ 流用・汎用登録</button></div>
   <div class="bottom-actions">
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
@@ -278,7 +278,7 @@ function createRow(n,data={}){
    <button class="clear" type="button" aria-label="入力をクリア">×</button>
    <div class="suggestions"></div>
   </div>
-  <button class="move-handle" type="button" title="長押しして並べ替え" aria-label="${n}番を並べ替え">☰</button>`;
+  <div class="row-tools"><button class="move-handle" type="button" title="長押しして並べ替え" aria-label="${n}番を並べ替え">☰</button><button class="delete-slot" type="button" title="追加した枠を削除" aria-label="${n}番の枠を削除" ${n<=(IS_MEDLEY?3:9)?"hidden":""}>枠削除</button></div>`;
 
  const input=row.querySelector(".player-search");
  const sug=row.querySelector(".suggestions");
@@ -301,6 +301,7 @@ function createRow(n,data={}){
   if(currentPlayingRow===row)stopRowAudio();
   saveDraft();updateInputFieldColor(input);updateInputFieldColor(pos);
  });
+ row.querySelector(".delete-slot").addEventListener("click",()=>deleteExtraSlot(row));
  row.querySelector(".order").addEventListener("click",()=>playSelectedRow(row));
 
  setTimeout(()=>{updateInputFieldColor(input);updateInputFieldColor(pos)},0);
@@ -309,7 +310,7 @@ function createRow(n,data={}){
 
 function renumberRows(){
  [...document.querySelectorAll(".player-row")].forEach((row,i)=>{
-  const n=i+1;row.dataset.row=n;
+  const n=i+1;row.dataset.row=n;const del=row.querySelector(".delete-slot");if(del){del.hidden=n<=(IS_MEDLEY?3:9);del.setAttribute("aria-label",`${n}番の枠を削除`)};
   const order=row.querySelector(".order"),pos=row.querySelector(".position"),input=row.querySelector(".player-search"),handle=row.querySelector(".move-handle");
   if(order){order.textContent=n;order.setAttribute("aria-label",`${n}番の応援歌を再生`)}
   if(pos)pos.setAttribute("aria-label",`${n}番のポジション`);
@@ -404,6 +405,7 @@ function installLineupDrag(){
  });
 }
 function renderRows(rows=[]){
+ deletedExtraSlot=null;document.getElementById("undoSlotWrap").hidden=true;
  const box=document.getElementById("lineup");box.innerHTML="";
  rowCount=Math.max(IS_MEDLEY?3:9,rows.length||(IS_MEDLEY?3:9));
  for(let i=1;i<=rowCount;i++)box.appendChild(createRow(i,rows[i-1]||{}));
@@ -1112,6 +1114,22 @@ function resetAll(){
  document.getElementById("yearSelect").value="";document.getElementById("teamSelect").value="";document.getElementById("lineupTitle").value="";
  document.getElementById("previewCard").style.display="none";renderRows();setStatus("入力内容をリセットしました。");updateAllInputFieldColors();
 }
+let deletedExtraSlot=null;
+function deleteExtraSlot(row){
+ const rows=[...document.querySelectorAll('#lineup .player-row')],index=rows.indexOf(row);
+ if(index<(IS_MEDLEY?3:9))return;
+ if(medleyBuilding){setStatus('音源作成が終わってから枠を削除してください。','error');return}
+ stopOneNineMedley();stopRowAudio();deletedExtraSlot={row,index};row.remove();renumberRows();checkDuplicates();saveDraft();
+ document.getElementById('previewCard').style.display='none';document.getElementById('undoSlotWrap').hidden=false;
+ document.getElementById('deletedSlotMessage').textContent=`${index+1}番の枠を削除しました。`;
+}
+function undoDeleteSlot(){
+ if(!deletedExtraSlot)return;
+ if(medleyBuilding){setStatus('音源作成が終わってから取り消してください。','error');return}
+ stopOneNineMedley();stopRowAudio();const {row,index}=deletedExtraSlot,box=document.getElementById('lineup');box.insertBefore(row,box.children[index]||null);
+ deletedExtraSlot=null;document.getElementById('undoSlotWrap').hidden=true;renumberRows();checkDuplicates();saveDraft();document.getElementById('previewCard').style.display='none';
+ setStatus('枠の削除を取り消しました。');
+}
 function addPlayer(){
  rowCount++;document.getElementById("lineup").appendChild(createRow(rowCount));saveDraft();setStatus(`${rowCount}人目の選手枠を追加しました。`);
 }
@@ -1294,22 +1312,8 @@ async function illustrationLineupData(){
  }));
  data.lyricsFetchFailed=results.some(r=>r.status==='rejected');return data;
 }
-document.getElementById("illustrationButton").addEventListener("click",async()=>{
- const button=document.getElementById("illustrationButton");if(!currentRows().some(r=>r.name)){setStatus("選手を入力してから挿絵を作成してください。","error");return}
- button.disabled=true;button.textContent="1-9の音声を引き継ぎ中…";
- try{
-  if(!window.OuenkaAudioTransfer)throw Error('ouenka-audio-transfer.jsも同時に更新してください。');
-  const timeline=await prepareIllustrationAudio(),key=oneNineAudioKey();
-  const data=await illustrationLineupData();
-  if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度お試しください。');
-  const transferId=Date.now().toString(36)+Math.random().toString(36).slice(2);
-  await window.OuenkaAudioTransfer.save(transferId,timeline);
-  if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度お試しください。');
-  saveDraft();localStorage.setItem('ouenkaBaseIllustrationV1',JSON.stringify({...data,transferId}));
-  stopOneNineMedley();location.href='./illustration.html?from=lineup';
- }catch(e){setStatus('挿絵への音声引き継ぎができませんでした：'+(e.message||e),'error')}
- finally{button.disabled=false;button.textContent='挿絵作成'}
-});
+document.getElementById("illustrationButton").addEventListener("click",()=>setStatus("挿絵作成の画面は後日追加予定です。"));
+document.getElementById("randomSelectButton").addEventListener("click",()=>setStatus("ランダム選択の内容は後日追加予定です。"));
 document.getElementById("closeSavedLineups").addEventListener("click",()=>document.getElementById("savedLineupsDialog").close());
 
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
@@ -1321,7 +1325,7 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
-<script src="./active-roster.js?v=20261015-r103"></script>
-<script src="./lineup-controls.js?v=20261020-r131"></script>
+<script src="./active-roster.js?v=20261020-r133"></script>
+<script src="./lineup-controls.js?v=20261020-r133"></script>
 </body>
 </html>

@@ -16,11 +16,12 @@
     <h1 id="teamTitle">球団別応援歌</h1>
     <span class="brand">OUENKA BASE</span>
   </div>
-  <div class="lyrics-link-wrap"><a class="lyrics-link" href="./favorites.html">★ お気に入り</a> <a id="lyricsCardLink" class="lyrics-link" href="./lyrics-card.html">歌詞カード</a></div>
+  <div class="lyrics-link-wrap"><button id="teamFavoritesButton" type="button" class="lyrics-link" aria-pressed="false">★ お気に入り</button> <a id="lyricsCardLink" class="lyrics-link" href="./lyrics-card.html">歌詞カード</a></div>
+  <p class="tap-hint">タップすると再生します</p>
   <nav class="filter-tabs" aria-label="表示区分">
     <button type="button" class="filter active" data-filter="all">全曲</button>
     <button type="button" class="filter" data-filter="active">現役のみ</button>
-    <button type="button" class="filter" data-filter="ob">OBのみ</button>
+    <button type="button" class="filter" data-filter="ob">現在未使用のみ</button>
   </nav>
 </header>
 <main>
@@ -33,14 +34,14 @@
   <button id="miniStop" type="button" aria-label="停止">■</button>
   <strong id="miniTitle" hidden></strong><small id="miniState" hidden>停止中</small>
 </div>
-<script src="./ouenka-transport.js?v=20261020-r131"></script>
-<script src="./ouenka-favorites.js?v=20261020-r131"></script>
-<script src="audio-recovery.js?v=20261020-r131"></script>
-<script src="pwa-diagnostic.js?v=20261020-r131"></script>
-<script src="team.js?v=20261020-r131"></script>
+<script src="./ouenka-transport.js?v=20261020-r133"></script>
+<script src="./ouenka-favorites.js?v=20261020-r134"></script>
+<script src="audio-recovery.js?v=20261020-r133"></script>
+<script src="pwa-diagnostic.js?v=20261020-r133"></script>
+<script src="team.js?v=20261020-r133"></script>
 <script>document.getElementById("lyricsCardLink").href="./lyrics-card.html?team="+encodeURIComponent(new URLSearchParams(location.search).get("team")||"北海道日本ハムファイターズ");</script>
 <script>
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js?v=20261020-r131').catch(console.warn)}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js?v=20261020-r133').catch(console.warn)}
 </script>
 </body>
 </html>

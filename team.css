@@ -12,3 +12,13 @@ main{max-width:1050px;margin:auto;padding:10px 12px calc(84px + env(safe-area-in
 
 /* r108: 共通の戻るラベルを収める */
 .team-topline{grid-template-columns:90px 1fr 90px}.team-topline .back{font-size:15px;font-weight:700;white-space:nowrap;padding:8px 4px}
+
+/* 球団内のお気に入りと行タップ再生 */
+.tap-hint{margin:5px auto;color:#fff;text-align:center;font-size:13px}
+.lyrics-link-wrap{gap:8px;flex-wrap:wrap}.lyrics-link{cursor:pointer;font-family:inherit}
+#teamFavoritesButton[aria-pressed=true]{background:#ffe99b;color:#624000;border-color:#ffe99b}
+.song-row{grid-template-columns:48px minmax(110px,190px) 76px minmax(0,1fr) 48px;cursor:pointer}
+#songList .song-row .favorite-star{position:static;margin:4px;justify-self:center}
+#songList .song-row .name{padding-right:7px}
+.song-row:focus-visible{outline:2px solid #0799e6;outline-offset:-2px}
+@media(max-width:650px){.song-row{grid-template-columns:30px minmax(80px,1fr) 68px minmax(0,1fr) 48px}.tag{font-size:10px;padding:3px}.filter{font-size:12px}}

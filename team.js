@@ -2,6 +2,7 @@ const DATA_API="https://ouenka-base-data.ninzin5600.workers.dev";
 const PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
 const params=new URLSearchParams(location.search);
 const team=params.get("team")||"北海道日本ハムファイターズ";
+let favoritesOnly=false;
 let songs=[],filter="all",current=null,currentAudios=[],paused=false;
 let teamAudioContext=null,teamSources=[],teamPlayToken=0,teamStartedAt=0,teamPauseOffset=0,teamBuffers=null,teamTimeline=[],teamTotalDuration=0;
 let teamSavedDuration=0,teamStoppedPosition=0;
@@ -44,14 +45,14 @@ async function loadSongs(){
    render(); preloadVisible();
  }catch(e){console.error(e);$("teamStatus").textContent="この球団の登録データを読み込めませんでした";}
 }
-function visibleSongs(){return songs.filter(s=>filter==="all"||(filter==="active"?s.isActive:!s.isActive))}
+function visibleSongs(){return songs.filter(s=>(filter==="all"||(filter==="active"?s.isActive:!s.isActive))&&(!favoritesOnly||window.OuenkaFavorites?.has(s)))}
 function render(){
- const list=$("songList"), arr=visibleSongs(); list.innerHTML=""; $("teamStatus").style.display=arr.length?"none":"block"; if(!arr.length){$("teamStatus").textContent="該当する応援歌はありません";return}
+ const list=$("songList"), arr=visibleSongs();const favoriteCount=songs.filter(s=>window.OuenkaFavorites?.has(s)).length;$("teamFavoritesButton").textContent="★ お気に入り（"+favoriteCount+"）";$("teamFavoritesButton").setAttribute("aria-pressed",String(favoritesOnly)); list.innerHTML=""; $("teamStatus").style.display=arr.length?"none":"block"; if(!arr.length){$("teamStatus").textContent=favoritesOnly?"この条件のお気に入りはありません。各曲の☆から登録できます。":"該当する応援歌はありません";return}
  arr.forEach((s,i)=>{const row=document.createElement("article");row.className="song-row";row.dataset.key=s.name+"#"+s.productionNumber;
    const num=s.uniformNumber!==""?s.uniformNumber:"—";
-   row.innerHTML=`<div class="number"></div><div class="name"></div><span class="tag ${s.isActive?'active':'ob'}">${s.isActive?'現役':'OB'}</span><div class="lyrics"></div><button class="play" type="button" aria-label="${escapeHtml(s.name)}を再生">▶</button><span class="arrow">›</span>`;
+   row.innerHTML=`<div class="number"></div><div class="name"></div><span class="tag ${s.isActive?'active':'ob'}">${s.isActive?'現役':'現在未使用'}</span><div class="lyrics"></div>`;
    row.querySelector(".number").textContent=num;row.querySelector(".name").textContent=s.name;row.querySelector(".lyrics").textContent=String(s.lyrics).replace(/\n/g," ").replace(/\s+/g," ").trim();
-   row.querySelector(".play").addEventListener("click",e=>{e.stopPropagation();playSong(s)});row.addEventListener("click",()=>playSong(s));if(window.OuenkaFavorites)row.appendChild(window.OuenkaFavorites.button(s));list.appendChild(row);
+   row.tabIndex=0;row.setAttribute("role","group");row.setAttribute("aria-label",s.name+"の応援歌、タップすると再生します");row.addEventListener("keydown",e=>{if(e.target===row&&(e.key==="Enter"||e.key===" ")){e.preventDefault();playSong(s)}});row.classList.toggle("playing",current?.name===s.name&&current?.productionNumber===s.productionNumber);row.addEventListener("click",()=>playSong(s));if(window.OuenkaFavorites)row.appendChild(window.OuenkaFavorites.button(s));list.appendChild(row);
  });
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -175,6 +176,8 @@ $("miniPlay").addEventListener("click",async()=>{
 });
 $("miniStop").addEventListener("click",()=>stopAudio());
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&current&&!paused)$("miniState").textContent="再生中"});
+$("teamFavoritesButton").addEventListener("click",()=>{favoritesOnly=!favoritesOnly;render();preloadVisible()});
+window.addEventListener("ouenka-favorites-change",render);
 loadSongs();
 
 function attachTeamTransport(song){const queue=()=>visibleSongs(),index=()=>queue().findIndex(s=>s.name===song.name&&s.productionNumber===song.productionNumber);window.OuenkaTransport?.mount({state:()=>({title:current?.name||song.name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamAudioContext.currentTime-teamStartedAt)):teamStoppedPosition,playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:index()>0,hasNext:index()>=0&&index()<queue().length-1}),pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playSong(song);if(at>0){teamPauseOffset=at;startSyncedBuffers(at)}return}if(paused)return togglePause()},stop:()=>{const duration=teamTotalDuration;stopAudio();teamTotalDuration=duration;teamStoppedPosition=0},previous:()=>{const i=index();if(i>0)return playSong(queue()[i-1])},next:()=>{const i=index();if(i>=0&&i+1<queue().length)return playSong(queue()[i+1])},seek:position=>{if(!teamAudioContext){teamStoppedPosition=Math.min(teamTotalDuration||teamSavedDuration,Math.max(0,position));return}const time=Math.min(teamTotalDuration,Math.max(0,position));teamPauseOffset=time;startSyncedBuffers(time);if(paused&&teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}}})}
