@@ -18,7 +18,12 @@
   value=String(value??'');ctx.save();ctx.shadowColor='transparent';ctx.textAlign=opts.align||'left';ctx.textBaseline='alphabetic';
   const family=opts.family||FAMILY,weight=opts.weight||800,italic=opts.italic?'italic ':'';
   ctx.font=`${italic}${weight} ${size}px ${family}`;const measured=ctx.measureText(value).width;
-  const actual=measured>width?Math.max(.1,size*width/measured):size;
+  let actual=measured>width?Math.max(.1,size*width/measured):size;
+  if(opts.band){
+   ctx.font=`${italic}${weight} ${actual}px ${family}`;const metrics=ctx.measureText(value),ascent=metrics.actualBoundingBoxAscent||actual*.85,descent=metrics.actualBoundingBoxDescent||actual*.2;
+   const scale=Math.min(1,(opts.band[1]-opts.band[0]-8)/(ascent+descent));actual*=scale;
+   y=Math.max(opts.band[0]+ascent*scale+3,Math.min(y,opts.band[1]-descent*scale-5));
+  }
   ctx.font=`${italic}${weight} ${actual}px ${family}`;ctx.fillStyle=color;
   ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.lineJoin='round';const strokeWidth=opts.adjustable?Math.max(0,(weight-100)/800)*actual*.025:0;
   if(strokeWidth>0)ctx.lineWidth=strokeWidth;
@@ -26,7 +31,6 @@
   if(opts.shadow)paint(x+2,y+3,'#000000');paint(x,y,color);ctx.restore();return actual;
  }
  function identity(p){return p.jerseyNumber??p.number??p.uniformNumber??p.backNumber??''}
- function brand(team){return /日本ハム|ファイターズ/.test(team||'')?'FIGHTERS':team||'OUENKA BASE'}
  function position(p){const n=Number(p.order);return [(n>=1&&n<=9)?n+'番':'',p.position||''].filter(Boolean).join('  ')}
  function drawPhotoImage(ctx,image,rect,p={}){
   if(!image?.complete||!image.naturalWidth)return;
@@ -86,23 +90,21 @@
   else photo(ctx,p,light?[810,36,434,648]:[40,72,466,592],t,options.image,options.credit);
   const width=right-left;
   if(!light&&!noPhoto){
-   text(ctx,brand(options.team),left,116,28,accentInk,width,{weight:900});
    const jersey=identity(p);const nameLeft=jersey!==''?left+208:left;
    if(jersey!=='')text(ctx,jersey,left,267,144,accentInk,185,{weight:900,italic:true});
-   text(ctx,position(p),nameLeft,166,Math.min(36,Number(options.fontSizes?.order)||36),ink,right-nameLeft,{...fontStyle(options,'order'),shadow:false});
-   text(ctx,p.name,nameLeft,242,Number(options.fontSizes?.name)||150,ink,right-nameLeft,fontStyle(options,'name'));
-   if(p.romanName)text(ctx,p.romanName,nameLeft,279,16,accentInk,right-nameLeft,{weight:600});
+   text(ctx,position(p),nameLeft,138,Math.min(36,Number(options.fontSizes?.order)||36),ink,right-nameLeft,{...fontStyle(options,'order'),shadow:false});
+   text(ctx,p.name,nameLeft,256,Number(options.fontSizes?.name)||100,ink,right-nameLeft,{...fontStyle(options,'name'),band:[158,280]});
+   if(p.romanName)text(ctx,p.romanName,nameLeft,299,16,accentInk,right-nameLeft,{weight:600});
    rule(ctx,left,312,width,t.line,2);rule(ctx,left,347,3,t.line,286);rule(ctx,left+181,347,2,t.line,286);
    const fields=options.fields||[['avg','打率'],['hr','本塁打'],['rbi','打点'],['sb','盗塁'],['ops','OPS']];
    fields.forEach(([key,label],i)=>{const y=380+i*57;text(ctx,label,left+15,y,20,'#d6e7f7',147,fontStyle(options,'stats'));text(ctx,String(p[key]??'').trim()||'—',left+160,y+1,Math.min(31,Number(options.fontSizes?.stats)||31),'#ffffff',95,{...fontStyle(options,'stats'),align:'right'})});
    lyrics(ctx,p,[left+208,352,width-214,280],ink,options);
    ctx.restore();return;
   }
-  text(ctx,brand(options.team),left,86,28,accentInk,width-150,{weight:900});
-  text(ctx,position(p),right,132,Math.min(40,Number(options.fontSizes?.order)||40),ink,width*.65,{...fontStyle(options,'order'),align:'right',shadow:false});
+  text(ctx,position(p),right,124,Math.min(40,Number(options.fontSizes?.order)||40),ink,width*.65,{...fontStyle(options,'order'),align:'right',shadow:false});
   const jersey=identity(p);if(jersey!=='')text(ctx,jersey,left,148,64,light?'#000000':accentInk,width*.3,{weight:900});
-  text(ctx,p.name,left,242,Number(options.fontSizes?.name)||150,ink,width,{...fontStyle(options,'name'),shadow:options.shadows?.name});
-  if(p.romanName)text(ctx,p.romanName,left,280,19,accentInk,width,{weight:600});
+  text(ctx,p.name,left,252,Number(options.fontSizes?.name)||100,ink,width,{...fontStyle(options,'name'),shadow:options.shadows?.name,band:[158,280]});
+  if(p.romanName)text(ctx,p.romanName,left,298,19,accentInk,width,{weight:600});
   rule(ctx,left,302,width,t.line,3);
   statsRows(ctx,p,left,345,width,ink,t,options);
   rule(ctx,left,412,width,light?mix(t.color,'#ffffff',.65):t.line,1);
@@ -116,7 +118,7 @@
   else{poly(ctx,[[770,0],[1030,0],[790,H],[530,H]],mix(t.dark,t.color,.4));poly(ctx,[[1170,0],[1280,0],[1040,H],[930,H]],t.color)}
   text(ctx,'STARTING LINEUP',58,82,54,ink,900,{weight:900,italic:true});
   text(ctx,'1–9',1218,90,64,light?t.color:'#ffffff',250,{weight:900,align:'right'});
-  text(ctx,options.title||options.team||'1-9 応援歌',60,128,27,light?t.color:mix(t.accent,'#ffffff',.4),1140,{weight:700});rule(ctx,60,151,1160,t.line,3);
+  text(ctx,options.title||'1-9 応援歌',60,128,27,light?t.color:mix(t.accent,'#ffffff',.4),1140,{weight:700});rule(ctx,60,151,1160,t.line,3);
   // Nine fixed slots preserve batting-order numbers even when an input is blank.
   const start=174,rowH=51;
   for(let i=0;i<9;i++){

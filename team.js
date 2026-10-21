@@ -3,8 +3,8 @@ const PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
 const params=new URLSearchParams(location.search);
 const team=params.get("team")||"北海道日本ハムファイターズ";
 let favoritesOnly=false;
-let allQueue=[],allIndex=-1;
-function clearAllQueue(){allQueue=[];allIndex=-1;$("teamPlayAll").setAttribute("aria-pressed","false")}
+let teamMedley=null;
+function clearAllQueue(){teamMedley=null;$("teamPlayAll").setAttribute("aria-pressed","false")}
 let songs=[],filter="all",current=null,currentAudios=[],paused=false;
 let teamAudioContext=null,teamSources=[],teamPlayToken=0,teamStartedAt=0,teamPauseOffset=0,teamBuffers=null,teamTimeline=[],teamTotalDuration=0;
 let teamSavedDuration=0,teamStoppedPosition=0;
@@ -104,8 +104,10 @@ function armTeamEndTimer(ms){
  const token=teamPlayToken;
  teamEndTimer=setTimeout(()=>{
   teamEndTimer=null;
-  if(token===teamPlayToken&&!paused){teamSavedDuration=teamTotalDuration;teamStoppedPosition=teamTotalDuration;stopAudio(true,true);
-   if(allIndex>=0&&allIndex+1<allQueue.length){allIndex++;playSong(allQueue[allIndex],true)}else{clearAllQueue()}
+  if(token===teamPlayToken&&!paused){
+   if(teamAudioContext&&teamAudioContext.currentTime-teamStartedAt<teamTotalDuration-.01){armTeamEndTimer(Math.max(100,(teamTotalDuration-(teamAudioContext.currentTime-teamStartedAt))*1000));return}
+   teamSavedDuration=teamTotalDuration;teamStoppedPosition=teamTotalDuration;stopAudio(true,true);
+   clearAllQueue();
   }
  },teamRemainingMs);
 }
@@ -121,11 +123,16 @@ function startSyncedBuffers(offset=0){
   src.start(when+delay,Math.min(seek,Math.max(0,item.buffer.duration-.01)));teamSources.push(src);
  }
  teamStartedAt=when-offset;
- armTeamEndTimer(Math.max(0,(teamTotalDuration-offset+.2)*1000));
+ if(teamMedley){
+  if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
+  const source=teamSources[0],token=teamPlayToken;
+  if(source)source.addEventListener('ended',()=>{if(token!==teamPlayToken||!teamSources.includes(source))return;teamSavedDuration=teamTotalDuration;teamStoppedPosition=teamTotalDuration;stopAudio()},{once:true});
+ }else armTeamEndTimer(Math.max(0,(teamTotalDuration-offset+.2)*1000));
 }
 async function playSong(s,fromQueue=false){
+ const wasMedley=!!teamMedley;
  if(!fromQueue)clearAllQueue();
- if(current&&current.name===s.name&&current.productionNumber===s.productionNumber&&teamBuffers){togglePause();return}
+ if(!wasMedley&&current&&current.name===s.name&&current.productionNumber===s.productionNumber&&teamBuffers){togglePause();return}
  stopAudio(true,fromQueue);const token=++teamPlayToken;current=s;
  $("miniPlayer").hidden=false;$("miniTitle").textContent=s.name;$("miniState").textContent="読み込み中…";
  document.querySelectorAll(".song-row").forEach(x=>x.classList.toggle("playing",x.dataset.key===s.name+"#"+s.productionNumber));setMediaSession(s);
@@ -151,7 +158,7 @@ async function togglePause(){
   try{
    await teamAudioContext.resume();
    paused=false;
-   armTeamEndTimer(teamRemainingMs||Math.max(0,(teamTotalDuration-teamPauseOffset+.2)*1000));
+   if(!teamMedley)armTeamEndTimer(teamRemainingMs||Math.max(0,(teamTotalDuration-teamPauseOffset+.2)*1000));
    $("miniState").textContent="再生中";
    if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";
   }catch(e){console.warn(e)}
@@ -188,4 +195,67 @@ loadSongs();
 
 function attachTeamTransport(song){const queue=()=>visibleSongs(),index=()=>queue().findIndex(s=>s.name===song.name&&s.productionNumber===song.productionNumber);window.OuenkaTransport?.mount({state:()=>({title:current?.name||song.name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamAudioContext.currentTime-teamStartedAt)):teamStoppedPosition,playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:index()>0,hasNext:index()>=0&&index()<queue().length-1}),pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playSong(song);if(at>0){teamPauseOffset=at;startSyncedBuffers(at)}return}if(paused)return togglePause()},stop:()=>{const duration=teamTotalDuration;stopAudio();teamTotalDuration=duration;teamStoppedPosition=0},previous:()=>{const i=index();if(i>0)return playSong(queue()[i-1])},next:()=>{const i=index();if(i>=0&&i+1<queue().length)return playSong(queue()[i+1])},seek:position=>{if(!teamAudioContext){teamStoppedPosition=Math.min(teamTotalDuration||teamSavedDuration,Math.max(0,position));return}const time=Math.min(teamTotalDuration,Math.max(0,position));teamPauseOffset=time;startSyncedBuffers(time);if(paused&&teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}}})}
 
-$("teamPlayAll").addEventListener("click",()=>{const queue=visibleSongs();if(!queue.length)return;stopAudio();allQueue=[...queue];allIndex=0;$("teamPlayAll").setAttribute("aria-pressed","true");playSong(allQueue[0],true)});
+$("teamPlayAll").addEventListener("click",()=>playTeamMedley());
+
+async function playTeamMedley(queue=visibleSongs()){
+ queue=[...queue];if(!queue.length)return;
+ stopAudio();const token=++teamPlayToken;
+ teamMedley={queue,starts:[],index:-1};
+ $('teamPlayAll').setAttribute('aria-pressed','true');$('miniPlayer').hidden=false;$('miniState').textContent='メドレーを作成中…';
+ $('teamStatus').style.display='block';$('teamStatus').textContent='メドレー用音源を読み込み中… 0 / '+queue.length;
+ let ctx;
+ try{
+  ctx=await window.ouenkaAudioRecovery.create();
+  if(token!==teamPlayToken){ctx.close().catch(()=>{});return}teamAudioContext=ctx;
+  const separated=new Array(queue.length);let cursor=0,loaded=0;
+  const cancelled=()=>{if(token!==teamPlayToken)throw Error('cancelled')};
+  async function worker(){
+   while(cursor<queue.length){
+    const i=cursor++,song=queue[i];cancelled();
+    try{
+     const [melody,normalAccompaniment,opening]=await Promise.all([
+      i===0?fetchDecoded(ctx,song,'audio.m4a').catch(()=>fetchDecoded(ctx,song,'melody.m4a')):fetchDecoded(ctx,song,'melody.m4a'),
+      fetchDecoded(ctx,song,'accompaniment.m4a'),
+      i===0?fetchDecoded(ctx,song,'intro_accompaniment.m4a').catch(()=>null):Promise.resolve(null)
+     ]);
+     cancelled();separated[i]={melody,accompaniment:opening||normalAccompaniment,opening,normalAccompaniment};
+     loaded++;$('teamStatus').textContent='メドレー用音源を読み込み中… '+loaded+' / '+queue.length;
+    }catch(error){cancelled();throw Error(song.name+' の音源を読み込めませんでした。')}
+   }
+  }
+  await Promise.all(Array.from({length:Math.min(3,queue.length)},worker));cancelled();
+  const core=window.OuenkaMedleyCore;let openingExtra=0;
+  if(separated[0].opening){
+   const normal=await fetchDecoded(ctx,queue[0],'melody.m4a').catch(()=>null);cancelled();
+   const melodyExtra=normal?Math.max(0,separated[0].melody.duration-normal.duration):0;
+   const chordExtra=Math.max(0,separated[0].accompaniment.duration-separated[0].normalAccompaniment.duration);
+   openingExtra=Math.round(Math.max(melodyExtra,chordExtra)/core.barSeconds)*core.barSeconds;
+  }
+  const starts=core.buildDynamicSongStarts(separated,openingExtra);
+  const buffer=core.mix(ctx,separated,null,starts);cancelled();
+  teamMedley={queue,starts,index:-1};teamBuffers=[buffer];teamTimeline=[{buffer,start:0}];teamTotalDuration=buffer.duration;teamSavedDuration=buffer.duration;teamStoppedPosition=0;paused=false;
+  $('teamStatus').style.display='none';$('miniState').textContent='メドレー再生中';startSyncedBuffers();updateTeamMedley();attachTeamMedleyTransport(queue,starts);
+  if(navigator.mediaSession)navigator.mediaSession.playbackState='playing';
+ }catch(error){
+  if(token!==teamPlayToken){if(ctx&&ctx!==teamAudioContext)ctx.close().catch(()=>{});return}
+  stopAudio();$('teamStatus').style.display='block';$('teamStatus').textContent=error.message||'メドレーを再生できませんでした。';
+ }
+}
+function teamMedleyPosition(){return teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamAudioContext.currentTime-teamStartedAt)):teamStoppedPosition}
+function updateTeamMedley(){
+ if(!teamMedley?.starts.length)return;
+ const at=teamMedleyPosition();let index=0;while(index+1<teamMedley.starts.length&&at>=teamMedley.starts[index+1])index++;
+ if(index===teamMedley.index)return;teamMedley.index=index;current=teamMedley.queue[index];
+ $('miniTitle').textContent=current.name;setMediaSession(current);
+ document.querySelectorAll('.song-row').forEach(row=>row.classList.toggle('playing',row.dataset.key===current.name+'#'+current.productionNumber));
+}
+function attachTeamMedleyTransport(queue,starts){
+ const index=()=>{const at=teamMedleyPosition();let i=0;while(i+1<starts.length&&at>=starts[i+1])i++;return i};
+ async function seek(position){
+  if(!teamAudioContext){teamStoppedPosition=Math.max(0,Math.min(teamSavedDuration,position));return}
+  teamPauseOffset=Math.max(0,Math.min(teamTotalDuration,position));
+  if(teamPauseOffset>=teamTotalDuration){teamStoppedPosition=teamTotalDuration;stopAudio();return}
+  startSyncedBuffers(teamPauseOffset);updateTeamMedley();
+ }
+ window.OuenkaTransport?.mount({state:()=>{updateTeamMedley();const i=index();return {title:current?.name||queue[i].name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamMedleyPosition(),playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:i>0,hasNext:i<queue.length-1}},pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playTeamMedley(queue);if(at>0)seek(at);return}if(paused)return togglePause()},stop:()=>{stopAudio();teamStoppedPosition=0},previous:()=>seek(starts[Math.max(0,index()-1)]),next:()=>seek(starts[Math.min(starts.length-1,index()+1)]),seek});
+}

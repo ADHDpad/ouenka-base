@@ -9,7 +9,7 @@ const defaults={
  '読売ジャイアンツ':['#a84c05','#ed861c','#5e2803'],
  '阪神タイガース':['#c49a00','#e4c738','#3c3500'],
  '横浜DeNAベイスターズ':['#0752a0','#269ad5','#032b60'],
- '広島東洋カープ':['#a9132b','#e34150','#620818'],
+ '広島東洋カープ':['#fb2d4f','#ff0019','#8c0d24'],
  '中日ドラゴンズ':['#000bda','#0322ff','#000552'],
  '東京ヤクルトスワローズ':['#00c223','#02f11f','#007600'],
  '大阪近鉄バファローズ':['#b71e3e','#e94666','#520d24'],
@@ -18,7 +18,15 @@ const defaults={
  'その他':['#45566d','#90a9c9','#1e2b40']
 };
 const key='ouenka_team_palettes_v1';
-function read(){try{const value=JSON.parse(localStorage.getItem(key));return value&&typeof value==='object'?value:{}}catch{return {}}}
+function read(){try{
+ const value=JSON.parse(localStorage.getItem(key)),all=value&&typeof value==='object'?value:{};
+ // Restore the requested Fighters palette once, including older device overrides.
+ if(localStorage.getItem('ouenka_fighters_palette_r148')!=='1'){
+  all['北海道日本ハムファイターズ']=[...defaults['北海道日本ハムファイターズ']];
+  localStorage.setItem(key,JSON.stringify(all));localStorage.setItem('ouenka_fighters_palette_r148','1');
+ }
+ return all;
+}catch{return {}}}
 function valid(p){return Array.isArray(p)&&p.length===3&&p.every(c=>/^#[0-9a-f]{6}$/i.test(c))}
 window.OuenkaTeamColors={defaults,get(team){const p=read()[team];return [...(valid(p)?p:defaults[team]||defaults['その他'])]},all(){return Object.fromEntries(Object.keys(defaults).map(t=>[t,this.get(t)]))},set(team,p){if(!defaults[team]||!valid(p))throw Error('色の指定を確認してください');localStorage.setItem(key,JSON.stringify({...read(),[team]:p}))},reset(team){const all=read();delete all[team];localStorage.setItem(key,JSON.stringify(all))}};
 })();

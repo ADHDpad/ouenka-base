@@ -141,7 +141,7 @@ body.row-dragging *{cursor:grabbing!important}
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
    <button id="medleyPlayButton" class="action create" type="button">▶ メドレーを作成・再生</button>
   </div>
-  <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:700"><input id="medleyLoop" type="checkbox" style="width:22px;height:22px">ループ再生</label><p style="font-size:13px;color:#526d87">最後の曲が終わると、先頭曲もメドレー用音源で繰り返します。</p>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:700"><input id="medleyLoop" type="checkbox" style="width:22px;height:22px">ループ再生</label><p style="font-size:13px;color:#526d87">最後の曲と先頭曲もメドレー形式でつなげて繰り返します。</p>
   <div id="status" class="status"></div>
   <section id="previewCard" class="preview-card">
    <div class="preview-head">1-9 プレビュー</div><div id="previewMeta" class="preview-meta"></div><ol id="previewList" class="preview-list"></ol>
@@ -956,7 +956,7 @@ async function makeOneNineAudio(ctx,selected,medleyOnly=false){
   /* 今日最初の「サンプルを足さない」方式で1本のAudioBufferにする。
      メロディーとコード進行は別々に重複判定する。 */
   const mixed=window.OuenkaCalls.decorate(ctx,mixSmoothIndependent(ctx,separated,intro,starts),callPlan);
-  return {buffer:mixed,starts,duration:mixed.duration,barSeconds:MEDLEY_BAR_SEC,rowIndices:currentRows().map((r,i)=>r.name?i:-1).filter(i=>i>=0)};
+  return {buffer:mixed,starts,separated,openingExtraSec,callPlan,duration:mixed.duration,barSeconds:MEDLEY_BAR_SEC,rowIndices:currentRows().map((r,i)=>r.name?i:-1).filter(i=>i>=0)};
 }
 async function prepareIllustrationAudio(){
  if(medleyBuilding)throw Error('1-9の音声を作成中です。完了してから挿絵作成を押してください。');
@@ -974,22 +974,17 @@ async function prepareIllustrationAudio(){
 }
 
 const medleyLoopTimelines=new WeakMap();
-window.OuenkaMedleyLoop={repeat(ctx,timeline){
- if(!document.getElementById('medleyLoop').checked||liveMedleyContext!==ctx||ctx.state==='closed')return false;
- const next=medleyLoopTimelines.get(timeline);if(!next)return false;
- liveMedleySources=[];
- const base=ctx.currentTime+.005,source=scheduleBuffer(ctx,next.buffer,base);
- window.OuenkaLineupTransport?.attach(ctx,next,base);
- if(navigator.mediaSession)navigator.mediaSession.playbackState='playing';
- source.addEventListener('ended',()=>{
-  if(liveMedleyContext!==ctx||!liveMedleySources.includes(source))return;
-  if(!window.OuenkaMedleyLoop.repeat(ctx,next)){
-   window.OuenkaLineupTransport?.ended();liveMedleySources=[];liveMedleyContext=null;
-   ctx.close().catch(()=>{});document.getElementById('medleyPlayButton').textContent='▶ メドレーを作成・再生';
-   if(navigator.mediaSession)navigator.mediaSession.playbackState='none';
-  }
- },{once:true});
- return true;
+window.OuenkaMedleyLoop={repeat(){return false},configure(source,timeline){
+ if(!timeline.isSeamlessLoop)return;
+ source.loop=true;source.loopStart=timeline.loopStart;source.loopEnd=timeline.loopEnd;
+},view(timeline,time){
+ if(!timeline.isSeamlessLoop)return {time,duration:timeline.duration,starts:timeline.starts,rowIndices:timeline.rowIndices};
+ if(time<timeline.prefixDuration)return {time,duration:timeline.prefixDuration,starts:timeline.firstTimeline.starts,rowIndices:timeline.firstTimeline.rowIndices};
+ const at=(time-timeline.prefixDuration)%timeline.normalDuration;
+ return {time:at,duration:timeline.normalDuration,starts:timeline.normalStarts,rowIndices:timeline.normalRowIndices};
+},packedTime(timeline,time,elapsed){
+ if(!timeline.isSeamlessLoop||elapsed<timeline.prefixDuration)return time;
+ return timeline.loopStart+Math.max(0,Math.min(timeline.normalDuration-.0001,time));
 }};
 
 async function buildAndPlayOneNineMedley(){
@@ -1026,10 +1021,15 @@ async function buildAndPlayOneNineMedley(){
    if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度再生してください。');
    medleyLoopTimelines.set(timeline,repeatTimeline);medleyLoopTimelines.set(repeatTimeline,repeatTimeline);
   }
+  const normalTimeline=medleyLoopTimelines.get(timeline);
+  const playbackTimeline=document.getElementById('medleyLoop').checked
+   ?window.OuenkaMedleyCore.seamless(ctx,timeline,normalTimeline,(buffer,plan)=>window.OuenkaCalls.decorate(ctx,buffer,plan))
+   :timeline;
   liveMedleyContext=ctx;
-  const base=ctx.currentTime+0.06,mixed=timeline.buffer;
+  const base=ctx.currentTime+0.06,mixed=playbackTimeline.buffer;
   const masterSource=scheduleBuffer(ctx,mixed,base);
-  window.OuenkaLineupTransport?.attach(ctx,timeline,base);
+  window.OuenkaMedleyLoop.configure(masterSource,playbackTimeline);
+  window.OuenkaLineupTransport?.attach(ctx,playbackTimeline,base);
 
   /* v49: 壁時計setTimeoutではなく、実際の音源終了を基準にする。
      バックグラウンドでAudioContextが停止しても終了判定だけ先に進ませない。 */
@@ -1330,6 +1330,9 @@ document.getElementById("randomSelectButton").addEventListener("click",()=>setSt
 document.getElementById("closeSavedLineups").addEventListener("click",()=>document.getElementById("savedLineupsDialog").close());
 
 document.getElementById("medleyPlayButton").addEventListener("click",playOneNineMedley);
+document.getElementById('medleyLoop').addEventListener('change',()=>{
+ if(liveMedleyContext&&currentPlayingRow===null){stopOneNineMedley();buildAndPlayOneNineMedley()}
+});
 document.getElementById("yearSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
 document.getElementById("teamSelect").addEventListener("change",()=>{autoTitle();saveDraft()});
 document.getElementById("lineupTitle").addEventListener("input",e=>{saveDraft();updateInputFieldColor(e.target)});
@@ -1339,6 +1342,7 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
 <script src="./active-roster.js?v=20261020-r133"></script>
-<script src="./lineup-controls.js?v=20261021-r142"></script>
+<script src="./ouenka-medley-core.js?v=20261021-r145"></script>
+<script src="./lineup-controls.js?v=20261021-r145"></script>
 </body>
 </html>
