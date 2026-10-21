@@ -123,6 +123,7 @@ body.row-dragging *{cursor:grabbing!important}
  <nav id="lineupTopActions" class="top-actions" aria-label="メドレーの操作">
  <button class="back" type="button" onclick="location.href='./index.html'">◀戻る</button>
   <button id="saveLineupButton" class="chat top-menu-button" type="button">保存</button>
+  <button id="playlistShareButton" class="chat top-menu-button" type="button">共有コード</button>
   <button id="loadLineupButton" class="chat top-menu-button" type="button">保存済を読込</button>
   <button id="randomSelectButton" class="chat top-menu-button" type="button">ランダム選択</button>
   <button id="illustrationButton" class="chat top-menu-button" type="button">挿絵作成</button>
@@ -132,6 +133,7 @@ body.row-dragging *{cursor:grabbing!important}
  <section class="hero"><h1>メドレー作成</h1><p>曲を自由に追加・並べ替えしてメドレーを作成できます。守備位置の指定は不要です。</p></section>
  <section class="panel">
   <div hidden><select id="yearSelect"><option value=""></option></select><select id="teamSelect"><option value=""></option></select></div>
+<dialog id="playlistShareDialog" style="width:min(92vw,640px);max-height:85vh;overflow:auto;border:0;border-radius:16px;padding:22px;color:#143149"><h2>1-9・メドレーを共有</h2><p>コードをコピーして相手に渡すと、同じ打順・曲順を保存できます。コードは長めですが、有効期限はありません。</p><button id="playlistShareCreate" type="button" class="chat">今の曲順からコードを作成</button><label style="display:block;margin:18px 0 6px" for="playlistShareCode">共有コードをコピー／貼り付け</label><textarea id="playlistShareCode" rows="5" spellcheck="false" style="width:100%;box-sizing:border-box;font:16px monospace;padding:12px;border:1px solid #b9cede;border-radius:8px;overflow-wrap:anywhere" placeholder="OBZ1. または OB1. で始まるコード"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button id="playlistShareCopy" type="button" class="chat">コピー</button><button id="playlistShareRead" type="button" class="chat">コードを読み込む</button><button id="playlistShareApply" type="button" class="chat" hidden>保存済み一覧に追加</button></div><p id="playlistShareStatus" role="status" style="white-space:pre-line;overflow-wrap:anywhere;max-height:35vh;overflow:auto"></p><button id="playlistShareClose" type="button" class="back" style="background:#163c5a">閉じる</button></dialog>
   <dialog id="savedLineupsDialog"><h2>保存済のメドレー</h2><label for="savedTitleSearch">保存タイトルを検索</label><input id="savedTitleSearch" type="search" placeholder="タイトルの一部を入力" autocomplete="off" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 14px;padding:12px;font-size:16px;border:1px solid #a8bdcf;border-radius:8px"><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
   <div class="title-row"><label for="lineupTitle">メドレータイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
   <div id="lineup" class="lineup"></div>
@@ -1344,5 +1346,6 @@ fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 <script src="./active-roster.js?v=20261020-r133"></script>
 <script src="./ouenka-medley-core.js?v=20261021-r145"></script>
 <script src="./lineup-controls.js?v=20261021-r145"></script>
+<script src="playlist-share.js?v=20261021-r150"></script><script src="playlist-share-ui.js?v=20261021-r150"></script>
 </body>
 </html>
