@@ -16,7 +16,7 @@ function schedule(offset=0){
  const context=ctx,token=epoch;for(const s of sources){s.onended=null;try{s.stop()}catch{}}sources=[];const base=context.currentTime+.04;started=base-offset;position=offset;
  let pending=0;for(const item of timeline.entries){if(offset>=item.start+item.buffer.duration)continue;const source=context.createBufferSource();source.buffer=item.buffer;source.connect(context.destination);source.start(base+Math.max(0,item.start-offset),Math.max(0,offset-item.start),Math.max(0,Math.min(item.buffer.duration-Math.max(0,offset-item.start),timeline.duration-Math.max(offset,item.start))));sources.push(source);pending++;source.onended=()=>{if(token!==epoch||context!==ctx||!sources.includes(source)||--pending>0)return;position=timeline.duration;context.close().catch(()=>{});ctx=null;paused=false;onTick?.(position);const callback=endCallback;endCallback=null;callback?.();if(navigator.mediaSession)navigator.mediaSession.playbackState='none'}}
 }
-function mount(){window.OuenkaTransport?.mount({state,pause:async()=>{if(ctx){paused=true;await ctx.suspend()}},play:async()=>{if(ctx){paused=false;await ctx.resume()}else await replay?.()},stop,seek:value=>{if(!ctx)return;const at=Math.max(0,Math.min(timeline.duration-.001,Number(value)||0));schedule(at)}},{host:document.getElementById('playTransport')})}
+function mount(options={}){window.OuenkaTransport?.mount({state,pause:async()=>{if(ctx){paused=true;await ctx.suspend()}},play:async()=>{if(ctx){paused=false;await ctx.resume()}else await replay?.()},stop:options.onStop||stop,seek:value=>{if(!ctx)return;const at=Math.max(0,Math.min(timeline.duration-.001,Number(value)||0));schedule(at)}},{host:document.getElementById('playTransport')})}
 async function play(song,options={}){
  stop();const token=epoch;controller=new AbortController();const signal=controller.signal;label=options.mask?'応援歌クイズ':song.name;let context;
  try{
@@ -29,7 +29,7 @@ async function play(song,options={}){
   const duration=Math.max(melody.duration,accompaniment.duration),excerpt=window.OuenkaQuizRules.excerpt(duration,options,window.OuenkaMedleyCore.barSeconds),clip=excerpt.duration,start=excerpt.start;
   // Clip each source against the same audio clock; no wall-clock timeout reveals an answer.
   timeline={duration:clip,entries:[melody,accompaniment].filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}))};
-  label=options.mask?'応援歌クイズ':song.name;replay=()=>play(song,options);endCallback=options.onEnded||null;schedule(0);if(!options.mask)mount();
+  label=options.mask?'応援歌クイズ':song.name;replay=()=>play(song,options);endCallback=options.onEnded||null;schedule(0);if(!options.mask)mount(options);
   if(navigator.mediaSession){navigator.mediaSession.metadata=new MediaMetadata({title:label,artist:options.mask?'応援歌BASE':song.team||'応援歌BASE'});navigator.mediaSession.playbackState='playing'}
   return excerpt;
  }catch(error){if(token!==epoch||signal.aborted)return null;stop();throw error}

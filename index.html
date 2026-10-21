@@ -231,7 +231,7 @@
 
 <body>
 <button id="homeMenuButton" type="button" aria-label="メニューを開く" aria-haspopup="dialog" aria-controls="homeMenuDialog" aria-expanded="false"><span aria-hidden="true">☰</span><small>メニュー</small></button>
-<dialog id="homeMenuDialog" aria-labelledby="homeMenuTitle"><div class="home-menu-heading"><h2 id="homeMenuTitle">メニュー</h2><button id="homeMenuClose" type="button" aria-label="メニューを閉じる">✕</button></div><nav aria-label="サイトメニュー"><p>探す・聴く</p><a href="#homePlayerSearch">選手名から検索</a><a href="#homeTeams">球団一覧</a><a href="#homeLyricsSearch">歌詞から検索</a><a href="favorites.html">★ お気に入り</a><a href="play.html#compare">⇄ 聴き比べ</a><p>作る・遊ぶ</p><a href="1-9.html">1-9作成</a><a href="medley.html">メドレー作成</a><a href="play.html#quiz">♪ 応援歌クイズ</a><a href="play.html#lyricsquiz">▤ 歌詞クイズ</a><p>管理</p><a href="save.html">データ登録</a><a href="settings.html">設定・端末間共有</a><button id="homeMenuUpdate" type="button">↻ サイトを更新</button></nav></dialog>
+<dialog id="homeMenuDialog" aria-labelledby="homeMenuTitle"><div class="home-menu-heading"><h2 id="homeMenuTitle">メニュー</h2><button id="homeMenuClose" type="button" aria-label="メニューを閉じる">✕</button></div><nav aria-label="サイトメニュー"><p>探す・聴く</p><a href="#homePlayerSearch">選手名から検索</a><a href="#homeTeams">球団一覧</a><a href="#homeLyricsSearch">歌詞から検索</a><a href="favorites.html">★ お気に入り</a><a href="play.html#compare">⇄ 聴き比べ</a><p>作る・遊ぶ</p><a href="1-9.html">1-9作成</a><a href="medley.html">メドレー作成</a><a href="play.html#quiz">♪ 応援歌クイズ</a><a href="play.html#lyricsquiz">▤ 歌詞クイズ</a><a href="ranking.html">★ 応援歌 即興ランキング</a><p>管理</p><a href="save.html">データ登録</a><a href="settings.html">設定・端末間共有</a><button id="homeMenuUpdate" type="button">↻ サイトを更新</button></nav></dialog>
 
 
     <!-- =====================================
@@ -243,6 +243,7 @@
 <button type="button" class="top-menu-button" onclick="openOneNineCreator()"><span class="top-button-icon">1-9</span><span>1-9<small>LINEUP</small></span></button>
 <button type="button" class="top-menu-button" onclick="location.href='./medley.html'"><span class="top-button-icon">♫</span><span>メドレー<small>MEDLEY</small></span></button>
 <button type="button" class="top-menu-button" onclick="location.href='./play.html#quiz'"><span class="top-button-icon">♪</span><span>クイズ<small>QUIZ</small></span></button>
+<button type="button" class="top-menu-button" onclick="location.href='./ranking.html'"><span class="top-button-icon">★</span><span>即興ランキング<small>RANKING</small></span></button>
 <button type="button" class="top-menu-button" onclick="openDataRegister()"><span class="top-button-icon">＋</span><span>データ登録<small>REGISTER</small></span></button>
 <button type="button" class="top-menu-button" onclick="location.href='./settings.html'"><span class="top-button-icon">⚙</span><span>設定<small>SETTINGS</small></span></button></div></header>
 
@@ -270,7 +271,7 @@
 
 
         <p class="subtitle">
-            選手を検索して応援歌を再生
+            応援歌を探す、聴く、作る、遊ぶ。
         </p>
 
     </section>
@@ -963,7 +964,7 @@
                             await navigator
                                 .serviceWorker
                                 .register(
-                                    "./service-worker.js?v=20261021-r164"
+                                    "./service-worker.js?v=20261022-r169"
                                 );
 
 

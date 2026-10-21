@@ -26,7 +26,7 @@ button,input,select{font:inherit} button{cursor:pointer}
 .title-row label{font-weight:900;font-size:18px}
 .title-row input{width:100%;min-height:47px;border:1px solid #c5d0db;border-radius:9px;padding:0 14px;font-size:16px;color:var(--text);background:#fff}
 .lineup{padding:10px 14px 6px}
-.player-row{display:grid;grid-template-columns:52px 150px minmax(220px,1fr) 52px;gap:6px;align-items:start;margin-bottom:6px}
+.player-row{display:grid;grid-template-columns:52px 64px minmax(220px,1fr) 52px;gap:6px;align-items:start;margin-bottom:6px}
 .order{height:52px;display:flex;align-items:center;justify-content:center;border:0;border-radius:11px;background:linear-gradient(135deg,#0c3c68,#062743);color:#fff;font-size:28px;font-weight:900;cursor:pointer}.order.playing{background:#0b84f3}
 .position,.player-search,.move-handle{height:52px;border:1px solid #c8d2dc;border-radius:9px;background:#fff;color:var(--text)}
 .position{width:100%;padding:0 9px;font-size:13px;font-weight:500}
@@ -64,7 +64,7 @@ button,input,select{font:inherit} button{cursor:pointer}
  .topbar{min-height:66px;padding:0 10px}.top-brand-title{font-size:16px}.top-brand-sub{font-size:8px;margin-top:5px}.back{min-height:40px;padding:0 11px;font-size:12px}
  .page{padding:9px 7px 22px}.hero{padding:15px 7px}.filters{gap:5px;padding:7px}.control,.chat{min-height:47px;padding:0 4px;font-size:11px;font-weight:500}
  .title-row{grid-template-columns:98px 1fr;padding:8px 8px;gap:5px}.title-row label{font-size:13px}.title-row input{font-size:16px}
- .lineup{padding:7px 5px 4px}.player-row{grid-template-columns:28px 72px minmax(0,1fr) 34px;gap:3px;margin-bottom:4px}
+ .lineup{padding:7px 5px 4px}.player-row{grid-template-columns:28px 52px minmax(0,1fr) 34px;gap:3px;margin-bottom:4px}
  .order{height:42px;border-radius:7px;font-size:16px}.position,.player-search,.move-handle{height:42px;border-radius:7px}.position{font-size:9px;font-weight:400;padding:0 1px}
  .player-search{font-size:16px;padding:0 35px 0 23px}.search-icon{left:6px;top:21px;font-size:14px}.clear{right:3px;width:30px;height:30px;font-size:20px}.move-handle{font-size:21px}
  .suggestions{top:45px}.add-row-wrap{padding:2px 5px 8px}.add-row{min-height:42px;font-size:13px}.bottom-actions{grid-template-columns:.8fr 1.6fr;gap:5px;padding:2px 5px 11px}.action{min-height:50px;font-size:12px;padding:4px}
@@ -116,7 +116,7 @@ body.row-dragging *{cursor:grabbing!important}
 .top-actions>button:hover{background:#ffffff18}.top-actions>button:focus-visible{outline:2px solid #68baff;outline-offset:-3px}
 @media(max-width:600px){.top-actions>.chat,.top-actions>.back{min-height:50px;padding:7px 14px;font-size:13px}.top-actions>button::before{font-size:22px}input,textarea,select{scroll-margin-top:90px}}
 </style>
-<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row .position{font-size:16px;font-weight:750;text-align:center;text-align-last:center;padding:0 4px}</style></head>
+<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row .position{min-width:0;font-size:16px;font-weight:750;text-align:center;text-align-last:center;padding:0 4px}</style></head>
 <body>
 <header class="topbar">
 

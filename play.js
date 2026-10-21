@@ -76,7 +76,7 @@ async function hearQuestion(){
   const result=await audio.play(quiz.questions[quiz.at],{mask:true,seconds:quiz.seconds,unit:quiz.unit,bars:quiz.bars,excerpt:quiz.excerpt,startBar:quiz.startBar,random:quiz.random,start:quiz.start,onEnded:()=>{if(token===quizToken)setListening(false)}});
   if(token!==quizToken||!result)return;quiz.start=result.start;setListening(true);
   $('quizListenStatus').textContent=quiz.unit==='bars'?(result.bars+'小節（第'+result.startBar+'〜'+(result.startBar+result.bars-1)+'小節）。どの選手でしょう？'):(Math.round(result.duration*10)/10+'秒の応援歌。どの選手でしょう？');
- }catch(error){if(token===quizToken)$('quizListenStatus').textContent=/開始小節|1小節分|先頭・最終小節/.test(error.message)?error.message:'音源を読み込めませんでした。もう一度聴くか、この問題をスキップしてください。'}
+ }catch(error){if(token===quizToken)$('quizListenStatus').textContent=/開始小節|1小節分|最初の1小節/.test(error.message)?error.message:'音源を読み込めませんでした。もう一度聴くか、この問題をスキップしてください。'}
  finally{if(token===quizToken)$('quizReplay').disabled=false}
 }
 function nextQuestion(){

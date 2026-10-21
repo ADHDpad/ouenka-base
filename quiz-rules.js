@@ -6,12 +6,12 @@ function excerpt(duration,options={},barSeconds=(60/170)*4){
  const available=Math.floor((duration+.001)/barSeconds);
  if(options.unit==='bars'){
   if(available<1)throw Error('1小節分の長さがない音源です。');
-  const room=options.random?available-2:available;
-  if(room<1)throw Error('先頭・最終小節を除いて出題できる区間がありません。');
+  const room=options.random?available-3:available;
+  if(room<1)throw Error('最初の1小節・最後の2小節を除いて出題できる区間がありません。');
   const count=Math.min(Math.max(1,Math.floor(Number(options.bars)||1)),room);
   let startBar=0;
   if(options.random){
-   const last=available-count-1;
+   const last=available-count-2;
    startBar=Number.isFinite(options.start)?Math.max(1,Math.min(last,Math.round(options.start/barSeconds))):1+Math.floor((Number.isFinite(options.randomValue)?Math.max(0,Math.min(.999999999,options.randomValue)):Math.random())*(last));
   }else if(Number.isFinite(options.start))startBar=Math.max(0,Math.round(options.start/barSeconds));
   else if(options.excerpt==='custom')startBar=Math.max(0,Math.floor(Number(options.startBar)||1)-1);
@@ -21,8 +21,8 @@ function excerpt(duration,options={},barSeconds=(60/170)*4){
  }
  const requested=Math.max(.001,Number(options.seconds)||duration);
  if(options.random){
-  const from=barSeconds,to=(available-1)*barSeconds;
-  if(to<=from)throw Error('先頭・最終小節を除いて出題できる区間がありません。');
+  const from=barSeconds,to=(available-2)*barSeconds;
+  if(to<=from)throw Error('最初の1小節・最後の2小節を除いて出題できる区間がありません。');
   const clip=Math.min(requested,to-from),last=to-clip;
   const start=Number.isFinite(options.start)?Math.max(from,Math.min(last,options.start)):from+(Number.isFinite(options.randomValue)?Math.max(0,Math.min(.999999999,options.randomValue)):Math.random())*Math.max(0,last-from);
   return {start,duration:clip};
