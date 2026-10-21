@@ -12,7 +12,7 @@ function excerpt(duration,options={},barSeconds=(60/170)*4){
   let startBar=0;
   if(options.random){
    const last=available-count-1;
-   startBar=Number.isFinite(options.start)?Math.max(1,Math.min(last,Math.round(options.start/barSeconds))):1+Math.floor(Math.random()*(last));
+   startBar=Number.isFinite(options.start)?Math.max(1,Math.min(last,Math.round(options.start/barSeconds))):1+Math.floor((Number.isFinite(options.randomValue)?Math.max(0,Math.min(.999999999,options.randomValue)):Math.random())*(last));
   }else if(Number.isFinite(options.start))startBar=Math.max(0,Math.round(options.start/barSeconds));
   else if(options.excerpt==='custom')startBar=Math.max(0,Math.floor(Number(options.startBar)||1)-1);
   if(startBar>=available)throw Error('指定した開始小節が音源の長さを超えています。');
@@ -24,7 +24,7 @@ function excerpt(duration,options={},barSeconds=(60/170)*4){
   const from=barSeconds,to=(available-1)*barSeconds;
   if(to<=from)throw Error('先頭・最終小節を除いて出題できる区間がありません。');
   const clip=Math.min(requested,to-from),last=to-clip;
-  const start=Number.isFinite(options.start)?Math.max(from,Math.min(last,options.start)):from+Math.random()*Math.max(0,last-from);
+  const start=Number.isFinite(options.start)?Math.max(from,Math.min(last,options.start)):from+(Number.isFinite(options.randomValue)?Math.max(0,Math.min(.999999999,options.randomValue)):Math.random())*Math.max(0,last-from);
   return {start,duration:clip};
  }
  const clip=Math.min(requested,duration),start=Number.isFinite(options.start)?Math.min(Math.max(0,options.start),Math.max(0,duration-clip)):0;

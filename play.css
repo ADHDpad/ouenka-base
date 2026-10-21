@@ -8,3 +8,5 @@ body{background:linear-gradient(180deg,#eaf2f9,#f5f8fc 55%)}header{padding:10px 
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 #quizSetup,#quizGame,#quizResult{scroll-margin-top:86px}
+
+.room-entry{display:block;margin-bottom:24px;padding:18px;border-radius:14px;background:linear-gradient(120deg,#006fba,#08345b);color:#fff;text-decoration:none;font-weight:800;text-align:center}

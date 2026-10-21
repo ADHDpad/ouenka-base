@@ -302,7 +302,7 @@
                     </div>
 
                     <h2>
-                        選手名から検索
+                        選手検索
                     </h2>
 
                 </div>
@@ -410,8 +410,10 @@
 
 
 
+<section id="homeLyricsSearch" class="home-lyrics" aria-labelledby="homeLyricsTitle"><div class="section-header"><div class="section-number">02</div><div class="section-heading"><div class="section-english">LYRICS SEARCH</div><h2 id="homeLyricsTitle">歌詞検索</h2></div><div class="section-code">OUENKA LYRICS ///</div></div><div class="home-lyrics-body search-section"><div class="search-area"><label class="home-lyrics-label" for="homeLyricsQuery">歌詞</label><div class="search-input-wrapper"><span class="search-icon" aria-hidden="true">⌕</span><input id="homeLyricsQuery" type="search" placeholder="例：夢　勝利　北の大地" autocomplete="off"></div><div class="home-lyrics-filters"><label>球団<select id="homeLyricsTeam"><option value="">すべての球団</option></select></label><label>対象<select id="homeLyricsActive"><option value="all">すべて</option><option value="active">現役のみ</option><option value="ob">現在未使用のみ</option></select></label></div><p id="homeLyricsStatus" role="status" aria-live="polite">空白で区切ると、すべての言葉を含む曲を探せます。</p><button id="homeLyricsRetry" type="button" hidden>もう一度読み込む</button><div id="homeLyricsResults"></div><button id="homeLyricsMore" type="button" hidden>もっと表示</button><p id="homeLyricsPlaybackStatus" role="status"></p></div></div></section>
+
         <!-- =================================
-             02 TEAM SEARCH
+             03 TEAM SEARCH
         ================================== -->
 
         <section class="team-section" id="homeTeams">
@@ -420,7 +422,7 @@
             <div class="section-header">
 
                 <div class="section-number">
-                    02
+                    03
                 </div>
 
 
@@ -431,7 +433,7 @@
                     </div>
 
                     <h2>
-                        球団から探す
+                        球団から選択
                     </h2>
 
                 </div>
@@ -896,7 +898,7 @@
 </section>
 
 
-<section id="homeLyricsSearch" class="home-lyrics" aria-labelledby="homeLyricsTitle"><div class="section-header"><div class="section-number">03</div><div class="section-heading"><div class="section-english">LYRICS SEARCH</div><h2 id="homeLyricsTitle">歌詞から検索</h2></div><div class="section-code">OUENKA LYRICS ///</div></div><div class="home-lyrics-body search-section"><div class="search-area"><label class="home-lyrics-label" for="homeLyricsQuery">歌詞</label><div class="search-input-wrapper"><span class="search-icon" aria-hidden="true">⌕</span><input id="homeLyricsQuery" type="search" placeholder="例：夢　勝利　北の大地" autocomplete="off"></div><div class="home-lyrics-filters"><label>球団<select id="homeLyricsTeam"><option value="">すべての球団</option></select></label><label>対象<select id="homeLyricsActive"><option value="all">すべて</option><option value="active">現役のみ</option><option value="ob">現在未使用のみ</option></select></label></div><p id="homeLyricsStatus" role="status" aria-live="polite">空白で区切ると、すべての言葉を含む曲を探せます。</p><button id="homeLyricsRetry" type="button" hidden>もう一度読み込む</button><div id="homeLyricsResults"></div><button id="homeLyricsMore" type="button" hidden>もっと表示</button><p id="homeLyricsPlaybackStatus" role="status"></p></div></div></section>
+
     </main>
 
 
@@ -961,7 +963,7 @@
                             await navigator
                                 .serviceWorker
                                 .register(
-                                    "./service-worker.js?v=20261021-r161"
+                                    "./service-worker.js?v=20261021-r164"
                                 );
 
 
