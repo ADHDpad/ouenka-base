@@ -116,7 +116,7 @@ body.row-dragging *{cursor:grabbing!important}
 .top-actions>button:hover{background:#ffffff18}.top-actions>button:focus-visible{outline:2px solid #68baff;outline-offset:-3px}
 @media(max-width:600px){.top-actions>.chat,.top-actions>.back{min-height:50px;padding:7px 14px;font-size:13px}.top-actions>button::before{font-size:22px}input,textarea,select{scroll-margin-top:90px}}
 </style>
-<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style></head>
+<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row .position{font-size:16px;font-weight:750;text-align:center;text-align-last:center;padding:0 4px}</style></head>
 <body>
 <header class="topbar">
 
@@ -184,6 +184,8 @@ const MEDLEY_INTERVAL_SEC=MEDLEY_BAR_SEC*8; // 9小節目の頭
 const MEDLEY_LIMIT=0.98;
 
 const positions=["ポジション選択","投手","捕手","一塁手","二塁手","三塁手","遊撃手","左翼手","中堅手","右翼手","指名打者","代打"];
+// Keep the full position value for saved lineups and illustration exports.
+function shortPosition(position){return position?String(position).slice(0,1):'—'}
 const rowSearchRequests={};
 let rowCount=IS_MEDLEY?3:9;
 let rowAudio=null;
@@ -268,7 +270,7 @@ function createRow(n,data={}){
   else if(["左翼手","中堅手","右翼手"].includes(p))cls="opt-outfield";
   else if(p==="指名打者")cls="opt-dh";
   else if(p==="代打")cls="opt-pinch";
-  return `<option class="${cls}" value="${i?p:""}">${p}</option>`;
+  return `<option class="${cls}" value="${i?p:""}" aria-label="${p}">${i?shortPosition(p):"—"}</option>`;
  }).join("");
 
  row.innerHTML=`
@@ -1130,7 +1132,7 @@ function buildPreview(){
  const title=document.getElementById("lineupTitle").value.trim()||"無題の1-9",year=document.getElementById("yearSelect").value||"年度未選択",team=document.getElementById("teamSelect").value||"球団未選択";
  document.getElementById("previewMeta").textContent=`${title}　｜　${year}年度　｜　${team}`;
  const list=document.getElementById("previewList");list.innerHTML="";
- filled.forEach((r,i)=>{const li=document.createElement("li");li.className="preview-item";li.innerHTML=`<span class="preview-num">${i+1}</span><span class="preview-pos">${r.position}</span><span class="preview-name">${r.name}</span>`;list.appendChild(li)});
+ filled.forEach((r,i)=>{const li=document.createElement("li");li.className="preview-item";li.innerHTML=`<span class="preview-num">${i+1}</span><span class="preview-pos">${shortPosition(r.position)}</span><span class="preview-name">${r.name}</span>`;list.appendChild(li)});
  document.getElementById("previewCard").style.display="block";saveDraft();setStatus("1-9の並びを作成しました。","ok");
 }
 // YouTubeの説明欄にある「左 水谷」などを選手名と守備位置に分離する。

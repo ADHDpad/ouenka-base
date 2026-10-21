@@ -226,7 +226,7 @@
 .top-menu .mobile-version{display:none!important}
 .top-menu .top-menu-button{box-sizing:border-box;height:55px;min-height:55px;max-height:55px;line-height:1.2}
 @media(max-width:600px){.top-menu{padding:9px 10px;gap:8px}.top-menu .top-menu-button{height:50px;min-height:50px;max-height:50px}.top-menu .system-version{font-size:9px}.top-menu .top-brand-main{font-size:12px;letter-spacing:1px}.top-menu .top-brand-sub{font-size:8px;letter-spacing:1px}}
-</style><style>.play-discovery{max-width:1200px;margin:20px auto 30px;padding:24px;border:1px solid #cbdbea;border-radius:14px;background:#fff;color:#143149}.play-discovery small{font-size:10px;letter-spacing:.2em;font-weight:800;color:#587990}.play-discovery h2{font-size:23px;margin:8px 0 20px}.play-discovery-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.play-discovery-grid a{display:grid;gap:8px;padding:18px 14px;background:#edf5fc;color:#123b5c;border:1px solid #cfdfed;border-radius:10px;text-decoration:none}.play-discovery-grid a:hover{background:#dfedfb}.play-discovery-grid span{font-size:12px;color:#52738d}@media(max-width:760px){.play-discovery{margin:18px 12px;padding:18px}.play-discovery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.play-discovery-grid a{padding:16px 10px;font-size:14px}}</style><link rel="stylesheet" href="home-navigation.css?v=20261021-r152"></head>
+</style><link rel="stylesheet" href="home-navigation.css?v=20261021-r159"></head>
 
 
 <body>
@@ -238,83 +238,13 @@
          上部システムバー
     ====================================== -->
 
-    <header class="top-menu">
-
-        <div class="top-actions">
-
-
-
-            <button type="button" class="top-menu-button" onclick="location.href='./play.html'"><span class="top-button-icon">♫</span><span>遊ぶ・探す<small>PLAY</small></span></button>
-<button type="button" class="top-menu-button" onclick="location.href='./play.html#quiz'"><span class="top-button-icon">♪</span><span>応援歌クイズ<small>QUIZ</small></span></button><button type="button" class="top-menu-button" onclick="location.href='./play.html#compare'"><span class="top-button-icon">⇄</span><span>聴き比べ<small>COMPARE</small></span></button>
-            <!-- 更新 -->
-
-            <button
-                type="button"
-                class="top-menu-button"
-                onclick="updateApp()"
-            >
-
-                <span class="top-button-icon">
-                    ↻
-                </span>
-
-                <span>
-                    更新
-                    <small>UPDATE</small>
-                </span>
-
-            </button>
-
-
-            <button type="button" class="top-menu-button" onclick="location.href='./favorites.html'"><span class="top-button-icon">★</span><span>お気に入り<small>FAVORITES</small></span></button>
-
-            <!-- 1-9作成 -->
-
-            <button
-                type="button"
-                class="top-menu-button"
-                onclick="openOneNineCreator()"
-            >
-
-                <span class="top-button-icon">
-                    1-9
-                </span>
-
-                <span>
-                    1-9作成
-                    <small>1-9 CREATOR</small>
-                </span>
-
-            </button>
-
-
-
-
-            <button type="button" class="top-menu-button" onclick="location.href='./medley.html'"><span class="top-button-icon">♫</span><span>メドレー作成<small>MEDLEY</small></span></button>
-
-            <button type="button" class="top-menu-button" onclick="location.href='./settings.html'">
-                ⚙ 設定
-            </button>
-            <button
-                type="button"
-                class="top-menu-button"
-                onclick="openDataRegister()"
-            >
-
-                <span class="top-button-icon">
-                    ＋
-                </span>
-
-                <span>
-                    データ登録
-                    <small>DATA REGISTER</small>
-                </span>
-
-            </button>
-            
-</div>
-
-    </header>
+    <header class="top-menu"><div class="top-actions"><button type="button" class="top-menu-button" onclick="updateApp()"><span class="top-button-icon">↻</span><span>更新<small>UPDATE</small></span></button>
+<button type="button" class="top-menu-button" onclick="location.href='./favorites.html'"><span class="top-button-icon">★</span><span>お気に入り<small>FAVORITES</small></span></button>
+<button type="button" class="top-menu-button" onclick="openOneNineCreator()"><span class="top-button-icon">1-9</span><span>1-9<small>LINEUP</small></span></button>
+<button type="button" class="top-menu-button" onclick="location.href='./medley.html'"><span class="top-button-icon">♫</span><span>メドレー<small>MEDLEY</small></span></button>
+<button type="button" class="top-menu-button" onclick="location.href='./play.html#quiz'"><span class="top-button-icon">♪</span><span>クイズ<small>QUIZ</small></span></button>
+<button type="button" class="top-menu-button" onclick="openDataRegister()"><span class="top-button-icon">＋</span><span>データ登録<small>REGISTER</small></span></button>
+<button type="button" class="top-menu-button" onclick="location.href='./settings.html'"><span class="top-button-icon">⚙</span><span>設定<small>SETTINGS</small></span></button></div></header>
 
 
 
@@ -344,12 +274,7 @@
         </p>
 
     </section>
-<section class="play-discovery" aria-label="応援歌でもっと遊ぶ"><div><small>MORE WAYS TO PLAY</small><h2>応援歌を、もっと楽しもう。</h2></div><div class="play-discovery-grid"><a href="play.html#quiz"><b>♪ 応援歌クイズ</b><span>聴いて選手を当てよう</span></a><a href="play.html#lyricsquiz"><b>▤ 歌詞クイズ</b><span>歌詞を見て選手を当てよう</span></a><a href="play.html#compare"><b>⇄ 新旧を聴き比べ</b><span>別バージョン・移籍前後</span></a></div></section>
-
-
-
-
-    <!-- =====================================
+<!-- =====================================
          メイン
     ====================================== -->
 
@@ -971,7 +896,7 @@
 </section>
 
 
-<section id="homeLyricsSearch" class="home-lyrics" aria-labelledby="homeLyricsTitle"><div class="home-lyrics-heading"><small>LYRICS SEARCH</small><h2 id="homeLyricsTitle">歌詞から応援歌を探す</h2><p>覚えている一節を入力してください。</p></div><div class="home-lyrics-filters"><label class="home-lyrics-query">歌詞<input id="homeLyricsQuery" type="search" placeholder="例：夢　勝利　北の大地" autocomplete="off"></label><label>球団<select id="homeLyricsTeam"><option value="">すべての球団</option></select></label><label>対象<select id="homeLyricsActive"><option value="all">すべて</option><option value="active">現役のみ</option><option value="ob">現在未使用のみ</option></select></label></div><p id="homeLyricsStatus" role="status" aria-live="polite">空白で区切ると、すべての言葉を含む曲を探せます。</p><button id="homeLyricsRetry" type="button" hidden>もう一度読み込む</button><div id="homeLyricsResults"></div><button id="homeLyricsMore" type="button" hidden>もっと表示</button><p id="homeLyricsPlaybackStatus" role="status"></p></section>
+<section id="homeLyricsSearch" class="home-lyrics" aria-labelledby="homeLyricsTitle"><div class="section-header"><div class="section-number">03</div><div class="section-heading"><div class="section-english">LYRICS SEARCH</div><h2 id="homeLyricsTitle">歌詞から検索</h2></div><div class="section-code">OUENKA LYRICS ///</div></div><div class="home-lyrics-body search-section"><div class="search-area"><label class="home-lyrics-label" for="homeLyricsQuery">歌詞</label><div class="search-input-wrapper"><span class="search-icon" aria-hidden="true">⌕</span><input id="homeLyricsQuery" type="search" placeholder="例：夢　勝利　北の大地" autocomplete="off"></div><div class="home-lyrics-filters"><label>球団<select id="homeLyricsTeam"><option value="">すべての球団</option></select></label><label>対象<select id="homeLyricsActive"><option value="all">すべて</option><option value="active">現役のみ</option><option value="ob">現在未使用のみ</option></select></label></div><p id="homeLyricsStatus" role="status" aria-live="polite">空白で区切ると、すべての言葉を含む曲を探せます。</p><button id="homeLyricsRetry" type="button" hidden>もう一度読み込む</button><div id="homeLyricsResults"></div><button id="homeLyricsMore" type="button" hidden>もっと表示</button><p id="homeLyricsPlaybackStatus" role="status"></p></div></div></section>
     </main>
 
 
@@ -1036,7 +961,7 @@
                             await navigator
                                 .serviceWorker
                                 .register(
-                                    "./service-worker.js?v=20261021-r152"
+                                    "./service-worker.js?v=20261021-r161"
                                 );
 
 
