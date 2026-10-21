@@ -132,7 +132,7 @@ body.row-dragging *{cursor:grabbing!important}
  <section class="hero"><h1>メドレー作成</h1><p>曲を自由に追加・並べ替えしてメドレーを作成できます。守備位置の指定は不要です。</p></section>
  <section class="panel">
   <div hidden><select id="yearSelect"><option value=""></option></select><select id="teamSelect"><option value=""></option></select></div>
-  <dialog id="savedLineupsDialog"><h2>保存済のメドレー</h2><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
+  <dialog id="savedLineupsDialog"><h2>保存済のメドレー</h2><label for="savedTitleSearch">保存タイトルを検索</label><input id="savedTitleSearch" type="search" placeholder="タイトルの一部を入力" autocomplete="off" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 14px;padding:12px;font-size:16px;border:1px solid #a8bdcf;border-radius:8px"><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
   <div class="title-row"><label for="lineupTitle">メドレータイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
   <div id="lineup" class="lineup"></div>
   <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div>
@@ -141,6 +141,7 @@ body.row-dragging *{cursor:grabbing!important}
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
    <button id="medleyPlayButton" class="action create" type="button">▶ メドレーを作成・再生</button>
   </div>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:700"><input id="medleyLoop" type="checkbox" style="width:22px;height:22px">ループ再生</label><p style="font-size:13px;color:#526d87">最後の曲が終わると、先頭曲もメドレー用音源で繰り返します。</p>
   <div id="status" class="status"></div>
   <section id="previewCard" class="preview-card">
    <div class="preview-head">1-9 プレビュー</div><div id="previewMeta" class="preview-meta"></div><ol id="previewList" class="preview-list"></ol>
@@ -913,17 +914,17 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
 
 let preparedOneNineAudio=null;
 function oneNineAudioKey(){return (window.OuenkaCalls?.signature()||'')+JSON.stringify(currentRows().map(r=>({name:r.name,productionNumber:r.productionNumber,songId:r.songId,reuseName:r.reuseName,reuseProductionNumber:r.reuseProductionNumber,audioUrl:r.audioUrl,melodyUrl:r.melodyUrl,accompanimentUrl:r.accompanimentUrl,introAccompanimentUrl:r.introAccompanimentUrl})))}
-async function makeOneNineAudio(ctx,selected){
+async function makeOneNineAudio(ctx,selected,medleyOnly=false){
   /* 全選手の分離音源を並列取得。
      1番だけは本編メロディーとして audio.m4a を使用する。 */
   let loaded=0;setStatus('音源を読み込み中… 0 / '+selected.length,'ok');
   const separated=await Promise.all(selected.map(async(item,i)=>{
    try{
-    const melodyFile=i===0?"audio.m4a":"melody.m4a";
+    const melodyFile=i===0&&!medleyOnly?"audio.m4a":"melody.m4a";
     const [melody,normalAccompaniment,openingAccompaniment]=await Promise.all([
-     (i===0?fetchFirstExistingAudio(ctx,item,melodyFile,true).then(v=>v||fetchFirstExistingAudio(ctx,item,"melody.m4a")):fetchFirstExistingAudio(ctx,item,melodyFile)),
+     (i===0&&!medleyOnly?fetchFirstExistingAudio(ctx,item,melodyFile,true).then(v=>v||fetchFirstExistingAudio(ctx,item,"melody.m4a")):fetchFirstExistingAudio(ctx,item,melodyFile)),
      fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
-     i===0?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
+     i===0&&!medleyOnly?fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true):Promise.resolve(null)
     ]);
     loaded++;setStatus('音源を読み込み中… '+loaded+' / '+selected.length,'ok');
     return {melody,accompaniment:(i===0&&openingAccompaniment)||normalAccompaniment,
@@ -972,6 +973,25 @@ async function prepareIllustrationAudio(){
  }finally{if(ctx)ctx.close().catch(()=>{})}
 }
 
+const medleyLoopTimelines=new WeakMap();
+window.OuenkaMedleyLoop={repeat(ctx,timeline){
+ if(!document.getElementById('medleyLoop').checked||liveMedleyContext!==ctx||ctx.state==='closed')return false;
+ const next=medleyLoopTimelines.get(timeline);if(!next)return false;
+ liveMedleySources=[];
+ const base=ctx.currentTime+.005,source=scheduleBuffer(ctx,next.buffer,base);
+ window.OuenkaLineupTransport?.attach(ctx,next,base);
+ if(navigator.mediaSession)navigator.mediaSession.playbackState='playing';
+ source.addEventListener('ended',()=>{
+  if(liveMedleyContext!==ctx||!liveMedleySources.includes(source))return;
+  if(!window.OuenkaMedleyLoop.repeat(ctx,next)){
+   window.OuenkaLineupTransport?.ended();liveMedleySources=[];liveMedleyContext=null;
+   ctx.close().catch(()=>{});document.getElementById('medleyPlayButton').textContent='▶ メドレーを作成・再生';
+   if(navigator.mediaSession)navigator.mediaSession.playbackState='none';
+  }
+ },{once:true});
+ return true;
+}};
+
 async function buildAndPlayOneNineMedley(){
  if(medleyBuilding)return;
  if(liveMedleyContext){stopOneNineMedley();hideStatus();return}
@@ -1001,6 +1021,11 @@ async function buildAndPlayOneNineMedley(){
   const timeline=preparedOneNineAudio?.key===key?preparedOneNineAudio.timeline:await makeOneNineAudio(ctx,selected);
   if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度再生してください。');
   preparedOneNineAudio={key,timeline};
+  if(!medleyLoopTimelines.has(timeline)){
+   const repeatTimeline=await makeOneNineAudio(ctx,selected,true);
+   if(key!==oneNineAudioKey())throw Error('作成中に選手が変わりました。もう一度再生してください。');
+   medleyLoopTimelines.set(timeline,repeatTimeline);medleyLoopTimelines.set(repeatTimeline,repeatTimeline);
+  }
   liveMedleyContext=ctx;
   const base=ctx.currentTime+0.06,mixed=timeline.buffer;
   const masterSource=scheduleBuffer(ctx,mixed,base);
@@ -1010,6 +1035,7 @@ async function buildAndPlayOneNineMedley(){
      バックグラウンドでAudioContextが停止しても終了判定だけ先に進ませない。 */
   masterSource.addEventListener("ended",()=>{
    if(liveMedleyContext!==ctx||!liveMedleySources.includes(masterSource))return;
+   if(window.OuenkaMedleyLoop.repeat(ctx,timeline))return;
    window.OuenkaLineupTransport?.ended();
    liveMedleySources=[];
    try{ctx.close()}catch(e){}
@@ -1096,10 +1122,14 @@ function saveNamedLineup(){
  if(existing>=0)saved[existing]=entry;else saved.push(entry);localStorage.setItem(SAVED_LINEUPS_KEY,JSON.stringify(saved));document.getElementById("lineupTitle").value=data.title;saveDraft();updateAllInputFieldColors();setStatus("「"+data.title+"」を保存しました。保存済を読込から呼び出せます。","ok")
  }catch(e){setStatus("保存できませんでした。端末の保存容量やブラウザの設定を確認してください。","error")}
 }
+function normalizeSavedTitle(value){return String(value||"").normalize("NFKC").toLocaleLowerCase("ja-JP").replace(/[\s　]+/g,"")}
 function showSavedLineups(){
  const dialog=document.getElementById("savedLineupsDialog"),list=document.getElementById("savedLineupsList");list.replaceChildren();
  try{const saved=readSavedLineups();if(!saved.length){const text=document.createElement("p");text.textContent="保存済のメドレーはありません。保存ボタンで追加できます。";list.append(text)}
- saved.slice().reverse().forEach(entry=>{const wrapper=document.createElement("div");wrapper.className="saved-entry";const load=document.createElement("button");load.type="button";load.className="saved-load";load.textContent=entry.title;const meta=document.createElement("small");meta.textContent=(entry.rows||[]).filter(r=>r.name).length+"人 · "+new Date(entry.savedAt).toLocaleString("ja-JP");load.append(meta);
+ const query=normalizeSavedTitle(document.getElementById("savedTitleSearch").value);
+ const matches=saved.filter(entry=>normalizeSavedTitle(entry.title).includes(query));
+ if(saved.length&&!matches.length){const text=document.createElement("p");text.textContent="一致する保存タイトルはありません。";list.append(text)}
+ matches.slice().reverse().forEach(entry=>{const wrapper=document.createElement("div");wrapper.className="saved-entry";const load=document.createElement("button");load.type="button";load.className="saved-load";load.textContent=entry.title;const meta=document.createElement("small");meta.textContent=(entry.rows||[]).filter(r=>r.name).length+"人 · "+new Date(entry.savedAt).toLocaleString("ja-JP");load.append(meta);
  load.addEventListener("click",()=>{if(!confirm("編集中の1-9を「"+entry.title+"」に入れ替えますか？"))return;stopOneNineMedley();document.getElementById("lineupTitle").value=entry.title||"";document.getElementById("yearSelect").value=entry.year||"";document.getElementById("teamSelect").value=entry.team||"";renderRows(entry.rows||[]);document.getElementById("previewCard").style.display="none";saveDraft();updateAllInputFieldColors();dialog.close();setStatus("「"+entry.title+"」を読み込みました。","ok")});
  const del=document.createElement("button");del.type="button";del.className="saved-delete";del.textContent="削除";del.addEventListener("click",()=>{if(!confirm("「"+entry.title+"」を削除しますか？"))return;try{localStorage.setItem(SAVED_LINEUPS_KEY,JSON.stringify(readSavedLineups().filter(x=>x.id!==entry.id)));dialog.close();showSavedLineups()}catch(e){setStatus("削除できませんでした。","error")}});wrapper.append(load,del);list.append(wrapper)});
  if(!dialog.open)dialog.showModal();
@@ -1280,6 +1310,7 @@ document.getElementById("resetButton").addEventListener("click",resetAll);
 document.getElementById("addButton").addEventListener("click",addPlayer);
 document.getElementById("saveLineupButton").addEventListener("click",saveNamedLineup);
 document.getElementById("loadLineupButton").addEventListener("click",showSavedLineups);
+document.getElementById("savedTitleSearch").addEventListener("input",showSavedLineups);
 async function illustrationLineupData(){
  const data=lineupSnapshot();
  const results=await Promise.allSettled(data.rows.map(async r=>{
@@ -1308,6 +1339,6 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
 <script src="./active-roster.js?v=20261020-r133"></script>
-<script src="./lineup-controls.js?v=20261020-r133"></script>
+<script src="./lineup-controls.js?v=20261021-r142"></script>
 </body>
 </html>

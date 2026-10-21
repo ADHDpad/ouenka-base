@@ -90,7 +90,7 @@
    const jersey=identity(p);const nameLeft=jersey!==''?left+208:left;
    if(jersey!=='')text(ctx,jersey,left,267,144,accentInk,185,{weight:900,italic:true});
    text(ctx,position(p),nameLeft,166,Math.min(36,Number(options.fontSizes?.order)||36),ink,right-nameLeft,{...fontStyle(options,'order'),shadow:false});
-   text(ctx,p.name,nameLeft,242,Math.min(80,Number(options.fontSizes?.name)||80),ink,right-nameLeft,fontStyle(options,'name'));
+   text(ctx,p.name,nameLeft,242,Number(options.fontSizes?.name)||150,ink,right-nameLeft,fontStyle(options,'name'));
    if(p.romanName)text(ctx,p.romanName,nameLeft,279,16,accentInk,right-nameLeft,{weight:600});
    rule(ctx,left,312,width,t.line,2);rule(ctx,left,347,3,t.line,286);rule(ctx,left+181,347,2,t.line,286);
    const fields=options.fields||[['avg','打率'],['hr','本塁打'],['rbi','打点'],['sb','盗塁'],['ops','OPS']];
@@ -101,7 +101,7 @@
   text(ctx,brand(options.team),left,86,28,accentInk,width-150,{weight:900});
   text(ctx,position(p),right,132,Math.min(40,Number(options.fontSizes?.order)||40),ink,width*.65,{...fontStyle(options,'order'),align:'right',shadow:false});
   const jersey=identity(p);if(jersey!=='')text(ctx,jersey,left,148,64,light?'#000000':accentInk,width*.3,{weight:900});
-  text(ctx,p.name,left,242,Math.min(100,Number(options.fontSizes?.name)||84),ink,width,{...fontStyle(options,'name'),shadow:options.shadows?.name});
+  text(ctx,p.name,left,242,Number(options.fontSizes?.name)||150,ink,width,{...fontStyle(options,'name'),shadow:options.shadows?.name});
   if(p.romanName)text(ctx,p.romanName,left,280,19,accentInk,width,{weight:600});
   rule(ctx,left,302,width,t.line,3);
   statsRows(ctx,p,left,345,width,ink,t,options);

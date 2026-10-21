@@ -22,3 +22,5 @@ main{max-width:1050px;margin:auto;padding:10px 12px calc(84px + env(safe-area-in
 #songList .song-row .name{padding-right:7px}
 .song-row:focus-visible{outline:2px solid #0799e6;outline-offset:-2px}
 @media(max-width:650px){.song-row{grid-template-columns:30px minmax(80px,1fr) 68px minmax(0,1fr) 48px}.tag{font-size:10px;padding:3px}.filter{font-size:12px}}
+
+.team-topline{display:flex;height:auto;min-height:38px}.lyrics-link-wrap{justify-content:flex-start}#teamPlayAll[aria-pressed=true]{background:#0799e6}

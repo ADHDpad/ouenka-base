@@ -3,12 +3,14 @@ const PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
 const params=new URLSearchParams(location.search);
 const team=params.get("team")||"北海道日本ハムファイターズ";
 let favoritesOnly=false;
+let allQueue=[],allIndex=-1;
+function clearAllQueue(){allQueue=[];allIndex=-1;$("teamPlayAll").setAttribute("aria-pressed","false")}
 let songs=[],filter="all",current=null,currentAudios=[],paused=false;
 let teamAudioContext=null,teamSources=[],teamPlayToken=0,teamStartedAt=0,teamPauseOffset=0,teamBuffers=null,teamTimeline=[],teamTotalDuration=0;
 let teamSavedDuration=0,teamStoppedPosition=0;
 let teamEndTimer=null,teamRemainingMs=0,teamTimerStartedAt=0;
 const $=id=>document.getElementById(id);
-$("teamTitle").textContent=team;
+
 document.title=team+" | OUENKA BASE";
 
 function activeOf(song){const v=String(song.player_type??song.active??"").trim();return v==="現在使用"||v==="現役"||v==="1"||v==="true"}
@@ -56,7 +58,8 @@ function render(){
  });
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function stopAudio(clear=true){
+function stopAudio(clear=true,keepQueue=false){
+ if(!keepQueue)clearAllQueue();
  teamPlayToken++;
  if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
  teamRemainingMs=0;teamTimerStartedAt=0;
@@ -101,7 +104,9 @@ function armTeamEndTimer(ms){
  const token=teamPlayToken;
  teamEndTimer=setTimeout(()=>{
   teamEndTimer=null;
-  if(token===teamPlayToken&&!paused){teamSavedDuration=teamTotalDuration;teamStoppedPosition=teamTotalDuration;stopAudio();}
+  if(token===teamPlayToken&&!paused){teamSavedDuration=teamTotalDuration;teamStoppedPosition=teamTotalDuration;stopAudio(true,true);
+   if(allIndex>=0&&allIndex+1<allQueue.length){allIndex++;playSong(allQueue[allIndex],true)}else{clearAllQueue()}
+  }
  },teamRemainingMs);
 }
 function startSyncedBuffers(offset=0){
@@ -118,9 +123,10 @@ function startSyncedBuffers(offset=0){
  teamStartedAt=when-offset;
  armTeamEndTimer(Math.max(0,(teamTotalDuration-offset+.2)*1000));
 }
-async function playSong(s){
+async function playSong(s,fromQueue=false){
+ if(!fromQueue)clearAllQueue();
  if(current&&current.name===s.name&&current.productionNumber===s.productionNumber&&teamBuffers){togglePause();return}
- stopAudio();const token=++teamPlayToken;current=s;
+ stopAudio(true,fromQueue);const token=++teamPlayToken;current=s;
  $("miniPlayer").hidden=false;$("miniTitle").textContent=s.name;$("miniState").textContent="読み込み中…";
  document.querySelectorAll(".song-row").forEach(x=>x.classList.toggle("playing",x.dataset.key===s.name+"#"+s.productionNumber));setMediaSession(s);
  try{
@@ -137,7 +143,7 @@ async function playSong(s){
   teamTotalDuration=Math.max(...teamTimeline.map(x=>x.start+x.buffer.duration));
   teamPauseOffset=0;teamStoppedPosition=0;teamSavedDuration=teamTotalDuration;paused=false;startSyncedBuffers(0);attachTeamTransport(s);
   $("miniState").textContent="再生中";if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";
- }catch(e){console.warn("球団別同期再生エラー",e);if(token===teamPlayToken){$("miniState").textContent="再生できませんでした"}}
+ }catch(e){console.warn("球団別同期再生エラー",e);if(token===teamPlayToken){stopAudio();$("teamStatus").style.display="block";$("teamStatus").textContent=s.name+"を再生できませんでした。もう一度お試しください"}}
 }
 async function togglePause(){
  if(!teamAudioContext||!teamBuffers)return;
@@ -181,3 +187,5 @@ window.addEventListener("ouenka-favorites-change",render);
 loadSongs();
 
 function attachTeamTransport(song){const queue=()=>visibleSongs(),index=()=>queue().findIndex(s=>s.name===song.name&&s.productionNumber===song.productionNumber);window.OuenkaTransport?.mount({state:()=>({title:current?.name||song.name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamAudioContext.currentTime-teamStartedAt)):teamStoppedPosition,playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:index()>0,hasNext:index()>=0&&index()<queue().length-1}),pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playSong(song);if(at>0){teamPauseOffset=at;startSyncedBuffers(at)}return}if(paused)return togglePause()},stop:()=>{const duration=teamTotalDuration;stopAudio();teamTotalDuration=duration;teamStoppedPosition=0},previous:()=>{const i=index();if(i>0)return playSong(queue()[i-1])},next:()=>{const i=index();if(i>=0&&i+1<queue().length)return playSong(queue()[i+1])},seek:position=>{if(!teamAudioContext){teamStoppedPosition=Math.min(teamTotalDuration||teamSavedDuration,Math.max(0,position));return}const time=Math.min(teamTotalDuration,Math.max(0,position));teamPauseOffset=time;startSyncedBuffers(time);if(paused&&teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}}})}
+
+$("teamPlayAll").addEventListener("click",()=>{const queue=visibleSongs();if(!queue.length)return;stopAudio();allQueue=[...queue];allIndex=0;$("teamPlayAll").setAttribute("aria-pressed","true");playSong(allQueue[0],true)});
