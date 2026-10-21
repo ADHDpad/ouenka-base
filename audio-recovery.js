@@ -15,6 +15,7 @@
  let retryButton=null;
  let recoveryNeeded=false;
  let retryCallback=null;
+ let retryContext=null;
  // iPhone Home Screen WebKit can leave the media route inactive after another app.
  // Prime that route with a short silent WAV within the same user gesture; song PCM is untouched.
  const mediaWakes=new Map();
@@ -72,10 +73,19 @@
  }
  // Deliberately not async: calling create() must not yield before initiating resume().
  function create(){const ctx=makeContext();try{wakeMediaRoute(ctx);return unlock(ctx)}catch(e){try{ctx.close()}catch(_){}throw e}}
+ // Only an explicit recovery tap releases a stuck session. Never reset a healthy player.
+ function recreate(ctx){
+   pendingGestureContext=null;
+   try{ctx.close().catch(e=>{lastError=String(e)})}catch(e){lastError=String(e)}
+   if(isIPhoneHomeApp()){
+     try{if(navigator.audioSession)navigator.audioSession.type='auto'}catch(e){lastError=String(e)}
+   }
+   return create();
+ }
  // Explicit second user gesture if standalone WebKit defers resume() indefinitely.
  function showRetry(ctx, retryPlayback){
    if(!ctx || ctx.state==='running' || ctx.state==='closed'||deliberatelyPaused.has(ctx)||window.OuenkaTransport?.healthy?.()){hideRetry();return;}
-   recoveryNeeded=true;retryCallback=typeof retryPlayback==='function'?retryPlayback:null;
+   retryContext=ctx;recoveryNeeded=true;retryCallback=typeof retryPlayback==='function'?retryPlayback:null;
    if(!retryButton){
      retryButton=document.createElement('button');
      retryButton.type='button';retryButton.textContent='▶ 音声を再起動';
@@ -87,19 +97,21 @@
      // An iOS audio interruption can leave the old context permanently suspended.
      // Retry with a NEW context inside this exact user gesture (not after await).
      if(typeof retryPlayback==='function'){
-       const fresh=create();
-       retryButton.hidden=true;recoveryNeeded=false;
-       retryPlayback(fresh);
+       try{
+         const fresh=recreate(ctx);
+         retryButton.hidden=true;recoveryNeeded=false;
+         Promise.resolve(retryPlayback(fresh)).catch(e=>{lastError=String(e);showRetry(fresh,retryPlayback)});
+       }catch(e){lastError=String(e);retryButton.hidden=false}
      }else{
        try{unlock(ctx)}catch(e){console.warn('再起動',e)}
        const p=ctx.resume();if(p&&p.catch)p.catch(e=>console.warn('再開失敗',e));
        if(ctx.state==='running')retryButton.hidden=true;
      }
    };
-   const onstate=()=>{if(ctx.state==='running'){retryButton.hidden=true;ctx.removeEventListener('statechange',onstate)}};
+   const onstate=()=>{if(ctx.state==='running'||ctx.state==='closed'){if(retryContext===ctx)hideRetry();ctx.removeEventListener('statechange',onstate)}};
    ctx.addEventListener('statechange',onstate);
  }
- function hideRetry(){recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
+ function hideRetry(){retryContext=null;recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
 
  // Include WebKit's interrupted state after another app takes the audio session.
  async function resumeExisting(){
@@ -121,7 +133,7 @@
    const ctx=await create();await ctx.close();lastError='';
    return '音声エンジンを再初期化しました。曲の再生ボタンを押してください。';
  }
- window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,diagnostics:()=>({build:'20261015-r103',contexts:state(),lastError,visibility:document.visibilityState})};
+ window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,diagnostics:()=>({build:'20261022-r176',contexts:state(),lastError,visibility:document.visibilityState})};
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendingGestureContext){const stale=pendingGestureContext;pendingGestureContext=null;try{stale.close().catch(()=>{})}catch(_){}}else if(!document.hidden)resumeExisting()});
  window.addEventListener('pageshow',()=>{resumeExisting()});
  // A fresh user tap is required by iOS after some audio interruptions.

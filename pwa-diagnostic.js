@@ -1,7 +1,7 @@
 /* Diagnostics only: preserve native promises and playback values. */
 (()=>{'use strict';
  if(window.__ouenkaDiagnosticInstalled)return;window.__ouenkaDiagnosticInstalled=true;
- const BUILD='20261020-r131',started=performance.now(),logs=[],contexts=new Map(),pending=new Map();
+ const BUILD='20261022-r176',started=performance.now(),logs=[],contexts=new Map(),pending=new Map();
  let button,panel,output,ready=false,wanted=false,loadingTimer=null,lastStatus='';
  const short=e=>String(e?.message||e).slice(0,500),stamp=()=>((performance.now()-started)/1000).toFixed(2)+'s';
  function log(message){logs.push(stamp()+' '+message);if(logs.length>250)logs.shift();if(panel?.open&&document.activeElement!==output)output.value=report()}
