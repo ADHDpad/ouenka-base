@@ -1,0 +1,24 @@
+/* One size for application titlebar controls; exported artwork headers are excluded. */
+:root{--bar-button-height:48px}
+body[data-page] {--bar-button-height:48px}
+body>header,body>header.top-menu,body>header.topbar,body>header.feature-header,body>.toolbar{box-sizing:border-box!important;min-height:64px!important;padding-top:8px!important;padding-bottom:8px!important;align-items:center!important;gap:8px}
+body>header button,body>header a,body>header .button,body>header.top-menu button,body>header.topbar button,body>header.feature-header a,body>.toolbar button,body>header #homeMenuButton{box-sizing:border-box!important;height:48px!important;min-height:48px!important;max-height:48px!important;padding:5px 11px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0;line-height:1.15!important;vertical-align:middle;border-radius:6px!important;margin-top:0!important;margin-bottom:0!important}
+body>header .top-actions[hidden],body>header [hidden],.settings-tabs~[hidden],#siteThemeGradientFields[hidden]{display:none!important}
+body>header:has(.custom-titlebar-links){display:flex!important;flex-wrap:wrap!important;height:auto!important;overflow:visible!important}
+body>header.top-menu:has(.custom-titlebar-links){flex-wrap:nowrap!important;overflow:hidden!important}
+.custom-titlebar-links{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none;flex:1 1 100%}
+.custom-titlebar-links::-webkit-scrollbar{display:none}
+.custom-titlebar-link{gap:8px;color:inherit;text-decoration:none;border:1px solid currentColor;background:#ffffff0d;font:700 13px system-ui;white-space:nowrap}
+.custom-titlebar-icon{font-size:22px}
+.settings-tabs{display:flex;gap:8px;margin:20px 0}.settings-tabs button{flex:1;min-height:48px;height:auto;padding:10px 12px;border:1px solid #7390a8;border-radius:7px;background:var(--site-surface,#edf4fa);color:var(--site-text,#143650);font:700 15px system-ui;cursor:pointer}
+.settings-tabs button[aria-selected=true]{background:var(--site-main,#0b2f55);color:var(--site-main-ink,#fff)}
+#user-settings,#admin-settings{min-width:0}#user-settings[hidden],#admin-settings[hidden]{display:none!important}
+#admin-settings label{display:grid;gap:6px;margin:14px 0}#admin-settings input{box-sizing:border-box;width:100%;min-height:44px;padding:10px;font:16px system-ui}#admin-settings button{min-height:44px;height:auto;padding:10px 14px;cursor:pointer}
+.settings-data-link{display:inline-flex;padding:14px;margin-bottom:20px;background:var(--site-main,#0b2f55);color:var(--site-main-ink,#fff);border-radius:7px;text-decoration:none}
+.titlebar-settings{margin-bottom:24px}#titlebarChoices{padding:0;margin:18px 0;list-style:none}#titlebarChoices li{display:flex;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--site-line,#d4dfe9)}#titlebarChoices label{display:flex;gap:10px;align-items:center;flex:1;min-width:0;margin:0}#titlebarChoices input[type=checkbox]{width:22px;height:22px;min-height:22px;padding:0;flex-shrink:0}#titlebarChoices button{width:42px;height:42px;min-height:42px;flex-shrink:0;padding:6px;border:1px solid #7895ad;border-radius:5px;background:var(--site-surface,#eff5fa);color:var(--site-text,#163b60);cursor:pointer}#titlebarChoices button:disabled{opacity:.35}
+#siteThemeSettings #siteThemeGradientToggle{height:auto;min-height:44px;padding:10px 14px;cursor:pointer}#siteThemeSettings select{padding:10px;font:16px system-ui;min-height:46px}#siteThemePreview{display:flex;align-items:center;justify-content:center;min-height:80px;border-radius:8px;margin:16px 0;font:800 20px system-ui}
+body[data-page]>header,body[data-page]>header.top-menu,body[data-page]>header.topbar{min-height:64px!important;padding-top:8px!important;padding-bottom:8px!important}
+body[data-page]>header :is(button,a,.button,.back),body[data-page]>header.top-menu :is(button,a,.button,.back),body[data-page]>header.topbar :is(button,a,.button,.back){box-sizing:border-box!important;height:48px!important;min-height:48px!important;max-height:48px!important;padding:5px 11px!important}
+body[data-page]>header [hidden]{display:none!important}
+
+.design-pagination{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0}.design-pagination button{min-height:44px;min-width:44px}.design-pagination span{font-size:13px}.design-pagination button:disabled{opacity:.4;cursor:default}.template-choice b{font-size:14px;line-height:1.5}

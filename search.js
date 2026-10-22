@@ -314,7 +314,7 @@ async function searchPlayers() {
                         );
 
                     candidate.className =
-                        "search-candidate";
+                        "search-candidate"; candidate.dataset.team=player.team||""; candidate.style.setProperty("--candidate-team",window.OuenkaTeamColors?.get(player.team)?.[0]||"#52788e");
 
                     // 1-9と同じ「名前・球団・歌詞1行目」の3行表示
                     const candidateName = document.createElement("strong");
@@ -330,7 +330,7 @@ async function searchPlayers() {
                     const candidateLyric = document.createElement("small");
                     candidateLyric.className = "candidate-lyric";
                     candidateLyric.textContent = (player.lyrics || "")
-                        .split(/\r?\n/).map(line => line.trim()).find(Boolean) || "歌詞未登録";
+                        .replace(/<br\s*\/?\s*>/gi,' ').replace(/\\n/g,' ').replace(/\s+/g,' ').trim() || "歌詞未登録";
 
                     candidate.append(candidateName, candidateTeam, candidateLyric);
                     if(window.OuenkaFavorites)candidate.appendChild(window.OuenkaFavorites.button(player));

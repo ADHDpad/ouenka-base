@@ -31,7 +31,9 @@
   if(opts.shadow)paint(x+2,y+3,'#000000');paint(x,y,color);ctx.restore();return actual;
  }
  function identity(p){return p.jerseyNumber??p.number??p.uniformNumber??p.backNumber??''}
- function position(p){const n=Number(p.order);return [(n>=1&&n<=9)?n+'番':'',p.position||''].filter(Boolean).join('  ')}
+ function compactPosition(value){return ({SS:"遊撃手",C:"捕手","1B":"一塁手","2B":"二塁手","3B":"三塁手",LF:"左翼手",CF:"中堅手",RF:"右翼手",DH:"指名打者",P:"投手",SP:"先発",RP:"中継ぎ",CP:"抑え"})[value]||String(value||"")}
+
+ function position(p){const n=Number(p.order);return [(n>=1&&n<=9)?n+'番':'',compactPosition(p.position)||''].filter(Boolean).join('  ')}
  function drawPhotoImage(ctx,image,rect,p={}){
   if(!image?.complete||!image.naturalWidth)return;
   const [x,y,w,h]=rect,finite=(v,f)=>Number.isFinite(Number(v))?Number(v):f;
@@ -94,7 +96,7 @@
    if(jersey!=='')text(ctx,jersey,left,267,144,accentInk,185,{weight:900,italic:true});
    text(ctx,position(p),nameLeft,138,Math.min(36,Number(options.fontSizes?.order)||36),ink,right-nameLeft,{...fontStyle(options,'order'),shadow:false});
    text(ctx,p.name,nameLeft,256,Number(options.fontSizes?.name)||100,ink,right-nameLeft,{...fontStyle(options,'name'),band:[158,280]});
-   if(p.romanName)text(ctx,p.romanName,nameLeft,299,16,accentInk,right-nameLeft,{weight:600});
+   
    rule(ctx,left,312,width,t.line,2);rule(ctx,left,347,3,t.line,286);rule(ctx,left+181,347,2,t.line,286);
    const fields=options.fields||[['avg','打率'],['hr','本塁打'],['rbi','打点'],['sb','盗塁'],['ops','OPS']];
    fields.forEach(([key,label],i)=>{const y=380+i*57;text(ctx,label,left+15,y,20,'#d6e7f7',147,fontStyle(options,'stats'));text(ctx,String(p[key]??'').trim()||'—',left+160,y+1,Math.min(31,Number(options.fontSizes?.stats)||31),'#ffffff',95,{...fontStyle(options,'stats'),align:'right'})});
@@ -104,7 +106,7 @@
   text(ctx,position(p),right,124,Math.min(40,Number(options.fontSizes?.order)||40),ink,width*.65,{...fontStyle(options,'order'),align:'right',shadow:false});
   const jersey=identity(p);if(jersey!=='')text(ctx,jersey,left,148,64,light?'#000000':accentInk,width*.3,{weight:900});
   text(ctx,p.name,left,252,Number(options.fontSizes?.name)||100,ink,width,{...fontStyle(options,'name'),shadow:options.shadows?.name,band:[158,280]});
-  if(p.romanName)text(ctx,p.romanName,left,298,19,accentInk,width,{weight:600});
+  
   rule(ctx,left,302,width,t.line,3);
   statsRows(ctx,p,left,345,width,ink,t,options);
   rule(ctx,left,412,width,light?mix(t.color,'#ffffff',.65):t.line,1);
@@ -126,7 +128,7 @@
    if(active){ctx.fillStyle=light?mix(t.color,'#ffffff',.84):mix(t.dark,t.color,.55);ctx.fillRect(54,yy-4,1172,rowH-2);rule(ctx,54,yy-4,5,t.line,rowH-2)}
    text(ctx,String(i+1).padStart(2,'0'),76,yy+33,30,light?t.color:t.line,68,{weight:900,italic:true});
    rule(ctx,163,yy+5,2,t.line,28);
-   text(ctx,p.position||'—',184,yy+31,22,light?t.color:mix(t.accent,'#ffffff',.5),180,{weight:700});
+   text(ctx,compactPosition(p.position)||'',184,yy+31,22,light?t.color:mix(t.accent,'#ffffff',.5),180,{weight:700});
    text(ctx,p.name||'—',390,yy+33,33,ink,760,{weight:900});
    rule(ctx,76,yy+44,1120,light?mix(t.color,'#ffffff',.83):mix(t.dark,t.accent,.3),1);
   }
@@ -160,7 +162,7 @@
     ctx.save();ctx.beginPath();ctx.rect(x+1,y0+1,cw-2,bottom-y0-2);ctx.clip();
     const progress=isActive&&options.elapsed!==undefined?Math.min(1,Math.max(0,options.elapsed)/.42):1;
     ctx.translate(0,Math.pow(1-progress,3)*24);
-    text(ctx,positions[p.position]||p.position||'',x+cw-12,y0+42,19,'#ffffff',cw-72,{align:'right'});
+    text(ctx,compactPosition(p.position)||'',x+cw-12,y0+42,19,'#ffffff',cw-72,{align:'right'});
     const im=options.images?.[index];
     if(p.photoEnabled!==false&&im?.complete&&im.naturalWidth)photo(ctx,p,[x+5,y0+65,cw-10,300],t,im,options.credit);
     else{ctx.fillStyle=mix(t.color,'#080d13',.78);ctx.fillRect(x+5,y0+65,cw-10,300);text(ctx,identity(p)||String(i+1),x+cw/2,y0+250,80,mix(t.color,'#ffffff',.4),cw-20,{align:'center',weight:900})}
@@ -168,7 +170,7 @@
     const parts=String(p.name).trim().split(/[\s　]+/);
     if(parts.length>1){text(ctx,parts[0],x+12,y0+468,24,'#ffffff',cw-24);text(ctx,parts.slice(1).join(' '),x+12,y0+501,24,'#ffffff',cw-24)}
     else text(ctx,p.name,x+12,y0+482,27,'#ffffff',cw-24);
-    text(ctx,p.romanName||'',x+12,bottom-14,12,'#d1dce6',cw-24,{weight:600});
+    
     ctx.restore();
    }
    rule(ctx,x,y0,1,'#aebbc7',bottom-y0);

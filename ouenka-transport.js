@@ -5,7 +5,7 @@ const labels=[['previous','前の曲',svg('<path d="M5 4h3v16H5zm14 0v16L8 12z"/
 const format=n=>{n=Math.max(0,Number(n)||0);return Math.floor(n/60)+':'+String(Math.floor(n%60)).padStart(2,'0')};
 function state(){try{return adapter?.state?.()||{}}catch{return {}}}
 function update(){if(!root||!adapter)return;const s=state();lastState=s;const time=Math.max(0,Number(s.currentTime)||0),duration=Math.max(0,Number(s.duration)||0);if(s.playing&&time>lastPosition+.005)lastAdvance=performance.now();lastPosition=time;
- root.querySelector('.ot-title').textContent=s.title||'応援歌';root.querySelector('.ot-time').textContent=format(time)+' / '+format(duration);const range=root.querySelector('input');range.max=String(duration);if(!scrubbing)range.value=String(Math.min(time,duration));range.disabled=!duration||!!s.locked||!adapter.seek;
+ const loading=!!s.busy;root.classList.toggle('ot-loading',loading);root.querySelector('.ot-title').textContent=loading?'音源を検索中…':(s.title||'応援歌');root.querySelector('.ot-time').textContent=format(time)+' / '+format(duration);const range=root.querySelector('input');range.max=String(duration);if(!scrubbing)range.value=String(Math.min(time,duration));range.disabled=!duration||!!s.locked||!adapter.seek;
  for(const [action]of labels){const b=root.querySelector('[data-action='+action+']');b.disabled=!!s.busy||(!!s.locked&&['previous','pause','play','next'].includes(action))||!adapter[action]||(action==='previous'&&s.hasPrevious===false)||(action==='next'&&s.hasNext===false);if(action==='play')b.classList.toggle('is-playing',!!s.playing)}
  root.dataset.playing=String(!!s.playing);
 }

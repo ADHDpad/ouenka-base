@@ -123,6 +123,7 @@ function startSyncedBuffers(offset=0){
   src.start(when+delay,Math.min(seek,Math.max(0,item.buffer.duration-.01)));teamSources.push(src);
  }
  teamStartedAt=when-offset;
+ if(!teamMedley){const song=current;window.OuenkaSongbook?.track(teamAudioContext,song,()=>current===song&&!paused&&teamSources.length>0,when)}
  if(teamMedley){
   if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
   const source=teamSources[0],token=teamPlayToken;
@@ -134,7 +135,7 @@ async function playSong(s,fromQueue=false){
  if(!fromQueue)clearAllQueue();
  if(!wasMedley&&current&&current.name===s.name&&current.productionNumber===s.productionNumber&&teamBuffers){togglePause();return}
  stopAudio(true,fromQueue);const token=++teamPlayToken;current=s;
- $("miniPlayer").hidden=false;$("miniTitle").textContent=s.name;$("miniState").textContent="読み込み中…";
+ $("miniPlayer").hidden=false;$("miniTitle").textContent=s.name;$("miniState").textContent="読み込み中…";window.OuenkaTransport?.mount({state:()=>({busy:true,title:"音源を検索中…"}),stop:()=>{stopAudio();window.OuenkaTransport?.hide()}});
  document.querySelectorAll(".song-row").forEach(x=>x.classList.toggle("playing",x.dataset.key===s.name+"#"+s.productionNumber));setMediaSession(s);
  try{
   const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error("AudioContext非対応");
@@ -150,7 +151,7 @@ async function playSong(s,fromQueue=false){
   teamTotalDuration=Math.max(...teamTimeline.map(x=>x.start+x.buffer.duration));
   teamPauseOffset=0;teamStoppedPosition=0;teamSavedDuration=teamTotalDuration;paused=false;startSyncedBuffers(0);attachTeamTransport(s);
   $("miniState").textContent="再生中";if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";
- }catch(e){console.warn("球団別同期再生エラー",e);if(token===teamPlayToken){stopAudio();$("teamStatus").style.display="block";$("teamStatus").textContent=s.name+"を再生できませんでした。もう一度お試しください"}}
+ }catch(e){console.warn("球団別同期再生エラー",e);if(token===teamPlayToken){window.OuenkaTransport?.hide();stopAudio();$("teamStatus").style.display="block";$("teamStatus").textContent=s.name+"を再生できませんでした。もう一度お試しください"}}
 }
 async function togglePause(){
  if(!teamAudioContext||!teamBuffers)return;
@@ -201,7 +202,7 @@ async function playTeamMedley(queue=visibleSongs()){
  queue=[...queue];if(!queue.length)return;
  stopAudio();const token=++teamPlayToken;
  teamMedley={queue,starts:[],index:-1};
- $('teamPlayAll').setAttribute('aria-pressed','true');$('miniPlayer').hidden=false;$('miniState').textContent='メドレーを作成中…';
+ $('teamPlayAll').setAttribute('aria-pressed','true');$('miniPlayer').hidden=false;$('miniState').textContent='メドレーを作成中…';window.OuenkaTransport?.mount({state:()=>({busy:true,title:'音源を検索中…'}),stop:()=>{stopAudio();window.OuenkaTransport?.hide()}});
  $('teamStatus').style.display='block';$('teamStatus').textContent='メドレー用音源を読み込み中… 0 / '+queue.length;
  let ctx;
  try{
@@ -238,7 +239,7 @@ async function playTeamMedley(queue=visibleSongs()){
   if(navigator.mediaSession)navigator.mediaSession.playbackState='playing';
  }catch(error){
   if(token!==teamPlayToken){if(ctx&&ctx!==teamAudioContext)ctx.close().catch(()=>{});return}
-  stopAudio();$('teamStatus').style.display='block';$('teamStatus').textContent=error.message||'メドレーを再生できませんでした。';
+  stopAudio();window.OuenkaTransport?.hide();$('teamStatus').style.display='block';$('teamStatus').textContent=error.message||'メドレーを再生できませんでした。';
  }
 }
 function teamMedleyPosition(){return teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamAudioContext.currentTime-teamStartedAt)):teamStoppedPosition}

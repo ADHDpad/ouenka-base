@@ -1,0 +1,9 @@
+.lyric-search-candidate{position:relative;box-sizing:border-box;min-height:90px;margin:10px 0;padding:16px 94px 16px 18px!important;border:1px solid #789bb3;border-left:5px solid var(--candidate-team,#07549a);border-radius:8px;cursor:pointer;text-align:left;background:linear-gradient(110deg,var(--candidate-dark,#062e55),var(--candidate-light,#1392c6) 70%,var(--candidate-team,#07549a))!important;color:white!important;text-shadow:0 1px 2px #00182d99;overflow:hidden}
+.lyric-search-candidate .candidate-name{display:block;margin:0 0 4px;font:800 18px/1.4 system-ui;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyric-search-candidate .candidate-team,.lyric-search-candidate .candidate-lyric{display:block;margin:0;font:500 12px/1.6 system-ui;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyric-search-candidate::after{content:'›';position:absolute;right:12px;top:50%;transform:translateY(-50%);font:bold 28px/1 system-ui;color:inherit}
+.lyric-search-candidate .favorite-star{position:absolute!important;right:40px!important;top:50%!important;transform:translateY(-50%)!important;isolation:isolate}
+.lyric-search-candidate:focus-visible{outline:3px solid #60c4ff;outline-offset:2px}
+@media(max-width:650px){.lyric-search-candidate{padding-left:14px!important}.lyric-search-candidate .candidate-name{font-size:17px}}
+
+.search-candidate.lyric-search-candidate{padding-right:94px!important}

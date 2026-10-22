@@ -42,15 +42,15 @@ function maskName(text,name){
 const lyricCatalogs=new WeakMap();
 function lyricGroups(allSongs){
  if(lyricCatalogs.has(allSongs))return lyricCatalogs.get(allSongs);
- const groups=new Map();for(const song of allSongs){const id=key(song.name);if(!groups.has(id))groups.set(id,{id,song,lyrics:[]});groups.get(id).lyrics.push(key(song.lyrics))}
+ const groups=new Map();for(const song of allSongs){const id=key(song.name);if(!groups.has(id))groups.set(id,{id,song,lyrics:[]});groups.get(id).lyrics.push(key(mainLyrics(song).join("\n")))}
  const result=[...groups.values()];lyricCatalogs.set(allSongs,result);return result;
 }
 function lyricsQuestion(song,allSongs,lineCount='2',options={}){
- const needed=Math.max(1,Math.min(9,Number(options.minAlternatives)||3));
- const lines=String(song.lyrics||'').replace(/\r\n?/g,'\n').split('\n').map(s=>s.trim()).filter(Boolean);
+ const needed=options.minAlternatives===0?0:Math.max(1,Math.min(9,Number(options.minAlternatives)||3));
+ const lines=mainLyrics(song);
  if(!lines.length)return null;
- const count=lineCount==='all'?lines.length:Math.min(lines.length,Math.max(1,Number(lineCount)||2));
- const offsets=shuffled(Array.from({length:lines.length-count+1},(_,i)=>i));
+ const count=Math.min(4,lines.length,Math.max(1,Number(lineCount)||1));
+ const offsets=[0];
  for(const offset of offsets){
   const raw=lines.slice(offset,offset+count).join('\n'),prompt=maskName(raw,song.name);
   if(key(prompt).replace(/■/g,'').length<2)continue;
@@ -59,7 +59,7 @@ function lyricsQuestion(song,allSongs,lineCount='2',options={}){
    if(group.id===key(song.name)||group.lyrics.some(lyrics=>lyrics.includes(fragment)))continue;
    wrong.set(group.id,group.song);if(wrong.size>=needed)break;
   }
-  if(wrong.size>=needed)return {prompt,fragment,acceptedNames:lyricGroups(allSongs).filter(group=>group.lyrics.some(lyrics=>lyrics.includes(fragment))).map(group=>group.song.name),alternatives:[...wrong.values()].slice(0,needed)};
+  if(wrong.size>=needed)return {prompt,fragment,lines:lines.slice(0,4),count,acceptedNames:lyricGroups(allSongs).filter(group=>group.lyrics.some(lyrics=>lyrics.includes(fragment))).map(group=>group.song.name),alternatives:[...wrong.values()].slice(0,needed)};
  }
  return null;
 }
@@ -84,5 +84,16 @@ function audioAlternatives(song,allSongs,needed){
  }
  return result;
 }
-window.OuenkaQuizRules={excerpt,maskName,lyricsQuestion,audioAlternatives,key};
+function mainLyrics(song){
+ const unknown=line=>/^(?:[（(【\[]\s*)?(?:歌詞\s*)?(?:不明|なし|無し|未登録|未設定|準備中|調査中)(?:\s*[）)】\]])?[。.!！]*$/.test(line)||/^[—－ー\-\s]+$/.test(line);
+ const text=String(song.lyrics||'').replace(/<br\s*\/?\s*>/gi,'\n').replace(/\\n/g,'\n').replace(/(【(?:前奏|本編|歌詞|メイン)】|\[(?:前奏|本編|歌詞|メイン)\])/g,'\n$1\n');
+ let intro=false;const lines=[];
+ for(const raw of text.split(/\r?\n/)){const line=raw.trim();if(/^[【\[]?前奏[】\]:：]?$/.test(line)){intro=true;continue}if(/^[【\[]?(?:本編|歌詞|メイン)[】\]:：]?$/.test(line)){intro=false;continue}if(!intro&&line&&!unknown(line))lines.push(line)}
+ return lines.slice(Math.max(0,Number(song.lyricsIntroLines||song.lyrics_intro_lines)||0));
+}
+function validLyrics(song){return mainLyrics(song).length>0}
+function sameBody(a,b){const group=s=>s.mainMelodyGroup||s.main_melody_group||s.body_group_id;if(group(a)&&group(b))return String(group(a))===String(group(b));const source=s=>{const r=s.audioSource||{};return key(s.reuseName||s.reuse_name||r.reuseName||r.name||s.name)+'#'+String(s.reuseProductionNumber||s.reuse_production_number||r.reuseProductionNumber||r.productionNumber||s.productionNumber||s.production_number||1)};if(source(a)===source(b))return true;const melody=s=>String(s.melodyUrl||s.melody_url||s.melody_filename||'');return !!melody(a)&&melody(a).includes('/')&&melody(a)===melody(b)}
+
+function lyricsMatch(song,prompt){const body=key(maskName(mainLyrics(song).join('\n'),song.name)),asked=key(prompt);return !!asked&&body.includes(asked)}
+window.OuenkaQuizRules={excerpt,maskName,lyricsQuestion,audioAlternatives,key,mainLyrics,validLyrics,sameBody,lyricsMatch};
 })();

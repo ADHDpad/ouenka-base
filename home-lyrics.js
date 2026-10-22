@@ -13,9 +13,7 @@ function draw(){
  matches=catalog.filter(s=>(!team.value||s.team===team.value)&&(active.value==='all'||(active.value==='active'?s.isActive:!s.isActive))&&terms.every(term=>normalize(s.lyrics).includes(term)));
  status.textContent=matches.length+'曲が見つかりました。';
  for(const song of matches.slice(0,limit)){
-  const card=node('article');card.className='home-lyrics-result';const title=node('h3',song.name),meta=node('small',song.team+' ／ 制作番号 '+song.productionNumber+' ／ '+(song.isActive?'現役':'現在未使用')),lyrics=node('p',song.lyrics),actions=node('div');actions.className='home-lyrics-actions';
-  const play=node('button','▶ 再生');play.type='button';play.addEventListener('click',async()=>{window.ouenkaHomeQueue=matches;play.disabled=true;$('homeLyricsPlaybackStatus').textContent=song.name+' の音源を読み込み中…';try{await window.playSongData(song);$('homeLyricsPlaybackStatus').textContent=$('nowPlaying')?.textContent||song.name}catch(error){$('homeLyricsPlaybackStatus').textContent='再生できませんでした。'}finally{play.disabled=false}});
-  const compare=node('a','聴き比べ');compare.href='play.html?name='+encodeURIComponent(song.name)+'#compare';actions.append(play);if(window.OuenkaFavorites)actions.append(window.OuenkaFavorites.button(song));actions.append(compare);card.append(title,meta,lyrics,actions);list.append(card);
+  const card=window.OuenkaLyricCandidates.create(song,async selected=>{window.ouenkaHomeQueue=matches;$('homeLyricsPlaybackStatus').textContent=selected.name+' の音源を読み込み中…';try{await window.playSongData(selected);$('homeLyricsPlaybackStatus').textContent=$('nowPlaying')?.textContent||selected.name}catch{$('homeLyricsPlaybackStatus').textContent='再生できませんでした。'}});list.append(card);
  }
  $('homeLyricsMore').hidden=matches.length<=limit;
 }

@@ -144,7 +144,7 @@ async function playSongData(player, gestureCtx=null) {
     let ctx=null;
 
     // 音源候補を探している間は失敗表示にしない
-    setNowPlaying("音源を検索中…");
+    setNowPlaying("音源を検索中…");window.OuenkaTransport?.mount({state:()=>({title:"音源を検索中…",busy:true}),stop:()=>{stopHomePlayback();window.OuenkaTransport?.hide()}});
 
     try{
         ctx=gestureCtx || window.ouenkaAudioRecovery.create();
@@ -292,7 +292,7 @@ async function playSongData(player, gestureCtx=null) {
         console.error("トップ個人再生エラー:",error);
         if(ctx){try{await ctx.close()}catch(e){}}
         if(attemptId===playAttemptId){
-            setNowPlaying("音源が見つからないため再生できませんでした");
+            setNowPlaying("音源が見つからないため再生できませんでした");window.OuenkaTransport?.hide();
         }
     }
 }
@@ -373,7 +373,7 @@ window.addEventListener("focus",recoverHomeAudio);
 function homePosition(){return homeAudioContext?Math.min(homeTotalDuration,Math.max(0,homeAudioContext.currentTime-homeStartedAt)):homeTransportOffset}
 function homeQueue(){return window.ouenkaHomeQueue||((typeof d1Players!=='undefined'&&Object.keys(d1Players).length)?Object.values(d1Players):[])}
 function homeQueueIndex(){const song=homeRecoverySong;return homeQueue().findIndex(p=>p.name===song?.name&&String(p.productionNumber)===String(song?.productionNumber))}
-function attachHomeTransport(ctx,timeline,base,player){homeTimeline=timeline;homeTotalDuration=Math.max(...timeline.map(x=>x.start+x.buffer.duration));homeStartedAt=base;homeTransportOffset=0;
- window.OuenkaTransport?.mount({state:()=>({title:homeRecoverySong?.name||player.name,duration:homeTotalDuration,currentTime:homePosition(),playing:homePlaybackActive&&!homePaused&&homeAudioContext?.state==='running',paused:homePaused,hasPrevious:homeQueueIndex()>0,hasNext:homeQueueIndex()>=0&&homeQueueIndex()<homeQueue().length-1}),pause:pauseHomePlayback,play:async()=>{if(homePlaybackActive)return resumeHomePlayback();const at=homeTransportOffset;await playSongData(homeRecoverySong);if(at>0)seekHomePlayback(at)},stop:stopHomePlayback,previous:()=>{const i=homeQueueIndex();if(i>0)return playSongData(homeQueue()[i-1])},next:()=>{const i=homeQueueIndex();if(i>=0&&i+1<homeQueue().length)return playSongData(homeQueue()[i+1])},seek:seekHomePlayback});
+function attachHomeTransport(ctx,timeline,base,player){window.OuenkaSongbook?.track(ctx,player,()=>homeAudioContext===ctx&&!homePaused&&homeAudioSources.length>0,base);homeTimeline=timeline;homeTotalDuration=Math.max(...timeline.map(x=>x.start+x.buffer.duration));homeStartedAt=base;homeTransportOffset=0;
+ window.OuenkaTransport?.mount({state:()=>({title:homeTotalDuration?(homeRecoverySong?.name||player.name):"音源を検索中…",busy:!homeTotalDuration,duration:homeTotalDuration,currentTime:homePosition(),playing:homePlaybackActive&&!homePaused&&homeAudioContext?.state==='running',paused:homePaused,hasPrevious:homeQueueIndex()>0,hasNext:homeQueueIndex()>=0&&homeQueueIndex()<homeQueue().length-1}),pause:pauseHomePlayback,play:async()=>{if(homePlaybackActive)return resumeHomePlayback();const at=homeTransportOffset;await playSongData(homeRecoverySong);if(at>0)seekHomePlayback(at)},stop:stopHomePlayback,previous:()=>{const i=homeQueueIndex();if(i>0)return playSongData(homeQueue()[i-1])},next:()=>{const i=homeQueueIndex();if(i>=0&&i+1<homeQueue().length)return playSongData(homeQueue()[i+1])},seek:seekHomePlayback});
 }
 function seekHomePlayback(position){if(!homeAudioContext){homeTransportOffset=Math.min(homeTotalDuration,Math.max(0,Number(position)||0));return}if(!homeTimeline.length)return;const ctx=homeAudioContext,epoch=++homeSeekEpoch,offset=Math.max(0,Math.min(Number(position)||0,homeTotalDuration)),wasPaused=homePaused;const old=homeAudioSources;homeAudioSources=[];old.forEach(src=>{try{src.stop();src.disconnect()}catch{}});homeTransportOffset=offset;if(offset>=homeTotalDuration){homePlaybackActive=false;homePaused=false;homeAudioContext=null;ctx.close().catch(()=>{});return}const base=ctx.currentTime+.04;homeStartedAt=base-offset;homePlaybackActive=true;const entries=homeTimeline.filter(x=>x.start+x.buffer.duration>offset);let pending=entries.length;for(const item of entries){const source=ctx.createBufferSource();source.buffer=item.buffer;source.connect(ctx.destination);source.start(base+Math.max(0,item.start-offset),Math.max(0,offset-item.start));homeAudioSources.push(source);source.onended=()=>{if(epoch!==homeSeekEpoch||--pending>0)return;homeTransportOffset=homeTotalDuration;homePlaybackActive=false;homeAudioSources=[]}}if(!wasPaused&&ctx.state!=='running')window.ouenkaAudioRecovery?.unlock(ctx)}
