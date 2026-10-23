@@ -1,0 +1,10 @@
+.assignment-note{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:5px;padding:5px 7px;background:#edf5ff;color:#16446b;border-radius:5px;font-size:11px;line-height:1.4}
+html body .assignment-note button{min-height:28px;height:auto;padding:4px 8px;font-size:11px;line-height:1.3;white-space:nowrap}
+html body .suggestions .search-pending{padding:8px 12px;background:#edf3f8!important;color:#425e74!important;font-size:12px}
+.player-row:has(.assignment-note){align-items:start}
+
+html body .suggestions .suggestion[data-unregistered="true"]{background:#ffffff!important;background-image:none!important;color:#123650!important;border-color:#c6d5e2!important;border-left-color:#c6d5e2!important;box-shadow:none!important}
+html body .suggestions .suggestion[data-unregistered="true"] :is(strong,small,span){color:#123650!important}
+html body .suggestions .search-summary,html body .suggestions .search-more{background:#fff!important;background-image:none!important;color:#123650!important;font-size:12px;opacity:1!important}
+html body .suggestions .search-summary{position:sticky;top:0;z-index:1;padding:8px 10px;border-bottom:1px solid #ccd7e1}
+html body .suggestions .search-more{width:100%;padding:12px;cursor:pointer;border:1px solid #ccd7e1;text-align:center;font-weight:700}

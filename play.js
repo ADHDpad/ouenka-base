@@ -50,7 +50,10 @@ function bestKey(){
 function showBest(){try{const best=JSON.parse(localStorage.getItem(bestKey())||'null');$('quizBest').textContent=best?'この条件の最高記録：'+best.score+' / '+best.total+'問正解':''}catch{$('quizBest').textContent=''}}
 for(const id of ['quizTeam','quizActive','quizSeconds','quizExcerpt','quizUnit','quizBars','quizStartBar','quizLyricLines','quizChoiceCount'])$(id).addEventListener('change',()=>{syncQuizControls();showBest()});
 $('quizKind').addEventListener('change',()=>showMode($('quizKind').value==='lyrics'?'lyricsquiz':'quiz'));
-$('quizStart').onclick=()=>{
+let quizPreparing=false;
+$('quizStart').onclick=async()=>{
+ if(quizPreparing)return;quizPreparing=true;$('quizStart').disabled=true;
+ try{const directory=await window.OuenkaNpbDirectory?.load();window.OuenkaQuizRules.setPlayerNames([...catalog,...(directory||[])])}catch{window.OuenkaQuizRules.setPlayerNames(catalog)}finally{quizPreparing=false;$('quizStart').disabled=false}
  const direct=$('quizAnswerMode').value==='search',kind=$('quizKind').value,choiceCount=Math.max(4,Math.min(10,Number($('quizChoiceCount').value)||4));
  if(kind==='audio'&&$('quizUnit').value==='bars'&&$('quizExcerpt').value==='custom'&&(!Number.isInteger(Number($('quizStartBar').value))||Number($('quizStartBar').value)<1||Number($('quizStartBar').value)>128)){$('quizBest').textContent='開始小節を1〜128の整数で入力してください。';return}
  audio.stop();quizToken++;
@@ -62,7 +65,7 @@ $('quizStart').onclick=()=>{
   for(const song of shuffled(versions)){
    if(kind==='audio'&&direct){questions.push({...song,quizAlternatives:[]});break}if(kind==='audio'){const alternatives=window.OuenkaQuizRules.audioAlternatives(song,eligible,choiceCount-1);if(alternatives.length===choiceCount-1){questions.push({...song,quizAlternatives:alternatives});break}continue}
    const problem=window.OuenkaQuizRules.lyricsQuestion(song,eligible,$('quizLyricLines').value,{minAlternatives:direct?0:choiceCount-1});
-   if(problem){questions.push({...song,quizPrompt:problem.prompt,quizFragment:problem.fragment,quizAcceptedNames:problem.acceptedNames,quizLines:problem.lines,quizVisibleLines:problem.count,quizAlternatives:problem.alternatives});break}
+   if(problem){questions.push({...song,quizPrompt:problem.prompt,quizFragment:problem.fragment,quizAcceptedNames:problem.acceptedNames,quizLines:problem.lines,quizLyricStart:problem.offset,quizVisibleLines:problem.count,quizAlternatives:problem.alternatives});break}
   }
   if(questions.length>=10)break;
  }
@@ -105,7 +108,7 @@ function finishQuiz(){
  $('quizResult').scrollIntoView?.({behavior:'smooth',block:'start'});
 }
 $('quizSettings').onclick=resetQuizSetup;$('quizResultSettings').onclick=resetQuizSetup;$('quizRetry').onclick=()=>{$('quizStart').onclick()};
-$('quizAnswerQuery').addEventListener('input',()=>{if(!quiz||quiz.answered)return;const q=nameKey($('quizAnswerQuery').value),seen=new Set();const songs=q?catalog.filter(s=>{const id=nameKey(s.name);if(seen.has(id)||!nameKey(s.name+' '+s.reading).includes(q))return false;seen.add(id);return true}).slice(0,20):[];$('quizAnswerCandidates').replaceChildren(...songs.map(song=>{const b=node('button');b.type='button';b.className='suggestion';b.dataset.team=song.team;b.append(node('strong',song.name),node('small',song.team));b.onclick=()=>answer(song,b);return b}))});$('quizMoreLyrics').onclick=()=>{if(!quiz||quiz.answered)return;const correct=quiz.questions[quiz.at];correct.quizVisibleLines=Math.min(4,correct.quizLines.length,correct.quizVisibleLines+1);$('quizLyricPrompt').textContent=window.OuenkaQuizRules.maskName(correct.quizLines.slice(0,correct.quizVisibleLines).join('\n'),correct.name);$('quizMoreLyrics').hidden=correct.quizVisibleLines>=Math.min(4,correct.quizLines.length)};
+$('quizAnswerQuery').addEventListener('input',()=>{if(!quiz||quiz.answered)return;const q=nameKey($('quizAnswerQuery').value),seen=new Set();const songs=q?catalog.filter(s=>{const id=nameKey(s.name);if(seen.has(id)||!nameKey(s.name+' '+s.reading).includes(q))return false;seen.add(id);return true}).slice(0,20):[];$('quizAnswerCandidates').replaceChildren(...songs.map(song=>{const b=node('button');b.type='button';b.className='suggestion';b.dataset.team=song.team;b.append(node('strong',song.name),node('small',song.team));b.onclick=()=>answer(song,b);return b}))});$('quizMoreLyrics').onclick=()=>{if(!quiz||quiz.answered)return;const correct=quiz.questions[quiz.at];const limit=Math.min(4,correct.quizLines.length);if(correct.quizLyricStart+correct.quizVisibleLines>=correct.quizLines.length)correct.quizLyricStart=Math.max(0,correct.quizLyricStart-1);correct.quizVisibleLines=Math.min(limit,correct.quizVisibleLines+1);$('quizLyricPrompt').textContent=window.OuenkaQuizRules.maskName(correct.quizLines.slice(correct.quizLyricStart,correct.quizLyricStart+correct.quizVisibleLines).join('\n'),correct);$('quizMoreLyrics').hidden=correct.quizVisibleLines>=Math.min(4,correct.quizLines.length)};
 $('quizReplay').onclick=hearQuestion;$('quizStop').onclick=()=>{quizToken++;audio.stop();setListening(false);$('quizReplay').disabled=!!quiz?.answered;$('quizListenStatus').textContent='停止しました。'};$('quizSkip').onclick=()=>answer(null);$('quizNext').onclick=()=>{if(quiz?.answered){quiz.at++;nextQuestion()}};
 $('quizAnswerPlay').onclick=()=>{if(quiz?.answered)playSong(quiz.questions[quiz.at])};
 async function playSong(song){$('audioStatus').textContent=song.name+' の音源を読み込み中…';try{const result=await audio.play(song);if(result)$('audioStatus').textContent='再生中：'+song.name+' ／ '+song.team+' ／ 制作番号 '+song.productionNumber}catch(error){$('audioStatus').textContent=error.message}}

@@ -35,3 +35,8 @@ html body.has-shared-navigation .titlebar-pinned:has(.lineup-menu-trigger.shared
 /* Back belongs to the normal action row, while only the menu trigger is fixed. */
 html body .shared-titlebar #sharedBackButton{position:static!important;inset:auto!important;flex:0 0 auto;width:auto!important;white-space:nowrap;background:var(--site-menu-button,#124b70)!important;color:var(--site-menu-button-ink,#fff)!important}
 html[data-titlebar-blend] body .shared-titlebar #sharedBackButton{background:transparent!important;border:0!important;color:var(--site-blended-button-ink,var(--site-menu-ink))!important;box-shadow:none!important}
+
+html body .shared-titlebar #sharedBackButton{margin-left:auto!important;justify-self:end!important;order:999;float:right}
+html body .shared-titlebar #lineupTopActions{display:flex!important;align-items:center;gap:6px;overflow-x:auto;min-width:0}
+html body .shared-titlebar:has(>#sharedBackButton){display:flex!important;align-items:center;gap:8px}
+html body .shared-titlebar .team-topline{display:flex!important;align-items:center;gap:8px;min-width:0;width:100%}

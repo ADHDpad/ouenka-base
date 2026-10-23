@@ -30,19 +30,25 @@ function excerpt(duration,options={},barSeconds=(60/170)*4){
  const clip=Math.min(requested,duration),start=Number.isFinite(options.start)?Math.min(Math.max(0,options.start),Math.max(0,duration-clip)):0;
  return {start,duration:clip};
 }
-function maskName(text,name){
- const pieces=[String(name||'').replace(/\s/g,''),...String(name||'').split(/[\s　・･]+/)].filter(s=>s.length>=2).sort((a,b)=>b.length-a.length);
- let result=String(text);
- for(const part of new Set(pieces)){
-  const pattern=Array.from(part).map(c=>c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('[\\s　]*');
-  result=result.replace(new RegExp(pattern,'gi'),'■■');
- }
+let knownNames=[],knownPattern=null,nameAliases=new Map(),lyricCatalogs=new WeakMap();
+const namePattern=part=>Array.from(String(part).normalize('NFKC').replace(/[\s　・･]/g,'')).map(c=>c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('[\\s　・･]*');
+function setPlayerNames(players=[]){
+ knownNames=[];nameAliases=new Map();
+ for(const p of players){const full=String(p.name||p.player_name||'').replace(/[（(][^）)]*[）)]/g,'').trim();if(!full)continue;knownNames.push(full);const aliases=[...(Array.isArray(p.aliases)?p.aliases:[]),...full.split(/[\s　・･]+/)];nameAliases.set(key(full),[...(nameAliases.get(key(full))||[]),...aliases])}
+ knownNames=[...new Set(knownNames)].filter(n=>Array.from(n).length>=2).sort((a,b)=>b.length-a.length);knownPattern=knownNames.length?new RegExp(knownNames.map(namePattern).join('|'),'gi'):null;lyricCatalogs=new WeakMap();
+}
+function maskName(text,song){
+ const name=typeof song==='string'?song:String(song?.name||song?.player_name||''),plain=name.replace(/[（(][^）)]*[）)]/g,'');
+ let own=nameAliases.get(key(plain))||[];
+ if(!own.length){const related=knownNames.find(n=>key(n).length>=3&&(key(plain).endsWith(key(n))||key(n).endsWith(key(plain))));if(related)own=nameAliases.get(key(related))||[]}
+ const pieces=[plain,...plain.split(/[\s　・･]+/),...own,...(typeof song==='object'&&Array.isArray(song.aliases)?song.aliases:[])].filter(Boolean).sort((a,b)=>b.length-a.length);
+ const hide=match=>match.replace(/[^\s　]/gu,'〇');let result=String(text).normalize('NFKC');if(knownPattern)result=result.replace(knownPattern,hide);
+ for(const part of new Set(pieces)){const pattern=namePattern(part);if(pattern)result=result.replace(new RegExp(pattern,'gi'),hide)}
  return result;
 }
-const lyricCatalogs=new WeakMap();
 function lyricGroups(allSongs){
  if(lyricCatalogs.has(allSongs))return lyricCatalogs.get(allSongs);
- const groups=new Map();for(const song of allSongs){const id=key(song.name);if(!groups.has(id))groups.set(id,{id,song,lyrics:[]});groups.get(id).lyrics.push(key(mainLyrics(song).join("\n")))}
+ const groups=new Map();for(const song of allSongs){const id=key(song.name);if(!groups.has(id))groups.set(id,{id,song,lyrics:[]});groups.get(id).lyrics.push(key(maskName(mainLyrics(song).join("\n"),song)))}
  const result=[...groups.values()];lyricCatalogs.set(allSongs,result);return result;
 }
 function lyricsQuestion(song,allSongs,lineCount='2',options={}){
@@ -50,16 +56,16 @@ function lyricsQuestion(song,allSongs,lineCount='2',options={}){
  const lines=mainLyrics(song);
  if(!lines.length)return null;
  const count=Math.min(4,lines.length,Math.max(1,Number(lineCount)||1));
- const offsets=[0];
+ const offsets=shuffled(Array.from({length:Math.max(1,lines.length-count+1)},(_,i)=>i));
  for(const offset of offsets){
-  const raw=lines.slice(offset,offset+count).join('\n'),prompt=maskName(raw,song.name);
-  if(key(prompt).replace(/■/g,'').length<2)continue;
-  const fragment=key(raw),wrong=new Map();
+  const raw=lines.slice(offset,offset+count).join('\n'),prompt=maskName(raw,song);
+  if(key(prompt).replace(/〇/g,'').length<2)continue;
+  const fragment=key(prompt),wrong=new Map();
   for(const group of shuffled(lyricGroups(allSongs))){
    if(group.id===key(song.name)||group.lyrics.some(lyrics=>lyrics.includes(fragment)))continue;
    wrong.set(group.id,group.song);if(wrong.size>=needed)break;
   }
-  if(wrong.size>=needed)return {prompt,fragment,lines:lines.slice(0,4),count,acceptedNames:lyricGroups(allSongs).filter(group=>group.lyrics.some(lyrics=>lyrics.includes(fragment))).map(group=>group.song.name),alternatives:[...wrong.values()].slice(0,needed)};
+  if(wrong.size>=needed)return {prompt,fragment,lines,offset,count,acceptedNames:lyricGroups(allSongs).filter(group=>group.lyrics.some(lyrics=>lyrics.includes(fragment))).map(group=>group.song.name),alternatives:[...wrong.values()].slice(0,needed)};
  }
  return null;
 }
@@ -94,6 +100,6 @@ function mainLyrics(song){
 function validLyrics(song){return mainLyrics(song).length>0}
 function sameBody(a,b){const group=s=>s.mainMelodyGroup||s.main_melody_group||s.body_group_id;if(group(a)&&group(b))return String(group(a))===String(group(b));const source=s=>{const r=s.audioSource||{};return key(s.reuseName||s.reuse_name||r.reuseName||r.name||s.name)+'#'+String(s.reuseProductionNumber||s.reuse_production_number||r.reuseProductionNumber||r.productionNumber||s.productionNumber||s.production_number||1)};if(source(a)===source(b))return true;const melody=s=>String(s.melodyUrl||s.melody_url||s.melody_filename||'');return !!melody(a)&&melody(a).includes('/')&&melody(a)===melody(b)}
 
-function lyricsMatch(song,prompt){const body=key(maskName(mainLyrics(song).join('\n'),song.name)),asked=key(prompt);return !!asked&&body.includes(asked)}
-window.OuenkaQuizRules={excerpt,maskName,lyricsQuestion,audioAlternatives,key,mainLyrics,validLyrics,sameBody,lyricsMatch};
+function lyricsMatch(song,prompt){const body=key(maskName(mainLyrics(song).join('\n'),song)),asked=key(prompt);return !!asked&&body.includes(asked)}
+window.OuenkaQuizRules={excerpt,maskName,setPlayerNames,lyricsQuestion,audioAlternatives,key,mainLyrics,validLyrics,sameBody,lyricsMatch};
 })();
