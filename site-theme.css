@@ -1,10 +1,146 @@
-/* Theme affects site chrome only; player/team palettes and exported images keep their own colors. */
-html[data-site-theme] {--navy:var(--site-main-dark);--navy2:var(--site-main);--blue:var(--site-main);--text:var(--site-text);--sub-text:var(--site-muted);--background:var(--site-bg);--line:var(--site-line);background:var(--site-bg)!important;color:var(--site-text)!important}
+/* Shared application chrome. Team identity, artwork and export surfaces retain their own palette. */
+html[data-site-theme]{--navy:var(--site-main-dark);--navy2:var(--site-main);--blue:var(--site-main);--text:var(--site-text);--sub-text:var(--site-muted);--background:var(--site-bg);--line:var(--site-line);background:var(--site-bg)!important;color:var(--site-text)!important}
 html[data-site-theme] body{background:var(--site-bg)!important;color:var(--site-text)!important}
-html[data-site-theme] body>header,html[data-site-theme] .top-menu,html[data-site-theme] .titlebar-pinned,html[data-site-theme] .site-header,html[data-site-theme] .play-hero,html[data-site-theme] .search-section,html[data-site-theme] #rankingNow,html[data-site-theme] #homeMenuDialog .home-menu-heading,html[data-site-theme] .lineup-menu-heading{background:var(--site-bar-background,var(--site-main))!important;color:var(--site-main-ink)!important}
-html[data-site-theme] header button,html[data-site-theme] header .back,html[data-site-theme] header a.button,html[data-site-theme] .home-menu-heading button,html[data-site-theme] .lineup-menu-heading button{background:var(--site-main-dark)!important;color:var(--site-main-ink)!important;border-color:currentColor!important}
-html[data-site-theme] .panel,html[data-site-theme] .card,html[data-site-theme] .lineup-menu,html[data-site-theme] #homeMenuDialog{background:var(--site-surface)!important;color:var(--site-text)!important;border-color:var(--site-line)!important}
-html[data-site-theme] .cardhead,html[data-site-theme] .league,html[data-site-theme] .league-title,html[data-site-theme] .room-entry,html[data-site-theme] .save,html[data-site-theme] #quizStart,html[data-site-theme] #quizNext{background:var(--site-main)!important;color:var(--site-main-ink)!important}
-html[data-site-theme] .desc,html[data-site-theme] .muted,html[data-site-theme] .section-english,html[data-site-theme] .section-number,html[data-site-theme] .section-code{color:var(--site-muted)!important}
-html[data-site-theme] .section-heading h2{color:var(--site-text)!important}
+/* Every application title bar, including lyric-card tools and pinned menu entries. */
+html[data-site-theme] body :is(body>header,body>.toolbar,.top-menu,.titlebar-pinned,.site-header,.play-hero,.search-section,.feature-hero,#rankingNow,#homeMenuDialog .home-menu-heading,.lineup-menu-heading){background:var(--site-bar-background,var(--site-main))!important;color:var(--site-bar-ink)!important;border-color:var(--site-line)!important}
+html[data-site-theme] body :is(body>header,body>.toolbar,.top-menu,.titlebar-pinned,.site-header,.play-hero,.search-section,.feature-hero,#rankingNow,.home-menu-heading,.lineup-menu-heading) :is(h1,h2,h3,strong,small,p,label,.brand,.top-brand-main,.top-brand-sub,.subtitle,.tap-hint,.home-lyrics-label,#toolbarTitle,#pageTitle,#homeMenuTitle,#rankingSongName){color:inherit!important;text-shadow:none!important}
+/* Application buttons share one palette; team swatches and content thumbnails are separate content. */
+html[data-site-theme] body :is(button,input[type=button],input[type=submit],a.button,.feature-button,.feature-actions a,.settings-data-link,.home-lyrics-actions a,.back-button,.register-button,.submit-data-button):not(:where(.team-button,.legacy-team-button,.favorite-star,.design,.template-choice,.search-candidate,.suggestion,.favorite-suggestion,[data-theme-main],.swatch,.color-swatch,#page *)){background:var(--site-action-background,var(--site-main))!important;color:var(--site-main-ink)!important;border-color:var(--site-main)!important;text-shadow:none!important}
+html[data-site-theme] body :is(button.secondary,button.alt,.btn.alt,.action.reset,button.reset,button.back,.back-button,button.move,button.filter,button.tab,button.mode-button,.playerlist button,#homeMenuDialog nav a,#homeMenuUpdate,#homeMenuAudioReset):not(:where(#page *)){background:var(--site-surface)!important;color:var(--site-text)!important;border-color:var(--site-line)!important}
+html[data-site-theme] body :is(button.active,button[aria-selected=true],button[aria-pressed=true]):not(:where(.team-button,.legacy-team-button,.favorite-star,.design,.template-choice,.search-candidate,.suggestion,.favorite-suggestion,[data-theme-main],#page *)){background:var(--site-main)!important;color:var(--site-main-ink)!important;border-color:var(--site-main)!important}
+/* Header links, fixed menu trigger, and the player transport are shared controls too. */
+html[data-site-theme] body :is(body>header,body>.toolbar,.titlebar-pinned,.home-menu-heading,.lineup-menu-heading) :is(button,a,.back,.custom-titlebar-link),html[data-site-theme] body #homeMenuButton{background:var(--site-main-dark)!important;color:var(--site-dark-ink)!important;border-color:currentColor!important}
+html[data-site-theme] body :is(body>header,body>.toolbar) :is(button,a) :is(small,strong,span){color:inherit!important}
+html[data-site-theme] body :is(.ot-player,.ouenka-transport,.mini-player){background:var(--site-main-dark)!important;color:var(--site-dark-ink)!important;border-color:var(--site-line)!important}
+/* Surfaces and form controls use the configured page color, including dark backgrounds. */
+html[data-site-theme] body :is(.panel,.card,.section,.feature-panel,.feature-song,.room-entry,.lineup-menu,#homeMenuDialog,.home-lyrics-result):not(:where(#page *)){background:var(--site-surface)!important;color:var(--site-text)!important;border-color:var(--site-line)!important}
+html[data-site-theme] body :is(input:not([type=color]):not([type=range]):not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]),select,textarea){background:var(--site-surface)!important;color:var(--site-text)!important;border-color:var(--site-line)!important}
+html[data-site-theme] body :is(input,textarea)::placeholder{color:var(--site-muted)!important;opacity:1}
+html[data-site-theme] body :is(.cardhead,.league,.league-title){background:var(--site-main)!important;color:var(--site-main-ink)!important}
+html[data-site-theme] body :is(.cardhead,.league,.league-title) *{color:inherit!important}
+html[data-site-theme] body :is(main,.wrap,.container,.feature-main) :is(h1,h2,h3,.section-title,.section-heading,.section-heading h2):not(:where(#page *,.card-preview *,.stage *,.feature-hero *,.play-hero *,.search-section *,#rankingNow *,.league-title *)){color:var(--site-text)!important}
+html[data-site-theme] body :is(.desc,.muted,.hint,.feature-note,.section-english,.section-number,.section-code):not(:where(#page *,.stage *,.card-preview *)){color:var(--site-muted)!important}
+html[data-site-theme] body :is(.feature-links a,.settings-data-link){color:var(--site-text)!important}
 #siteThemeSettings{margin-bottom:24px}#siteThemeSettings .theme-fields{display:flex;gap:20px;flex-wrap:wrap;margin:18px 0}#siteThemeSettings label{display:grid;gap:8px;font-weight:700}#siteThemeSettings input[type=color]{width:80px;height:46px;padding:3px;cursor:pointer}#siteThemeSettings .theme-presets{display:flex;gap:8px;flex-wrap:wrap}#siteThemeSettings .theme-presets button{padding:9px 12px;border:1px solid #9aabba;border-radius:6px;background:white;color:#173650;cursor:pointer}#siteThemeStatus{min-height:1.5em}
+/* Preserve meaningful action and quiz-result states. */
+html[data-site-theme] body button:is(.danger,.reset,.delete,.delete-button){background:#fff0f0!important;color:#9d2525!important;border-color:#c57373!important}
+html[data-site-theme] body button.correct{background:#e1f5e9!important;color:#165c31!important;border-color:#28804a!important}
+html[data-site-theme] body button.wrong{background:#fff0ed!important;color:#9d3020!important;border-color:#d15c46!important}
+html[data-site-theme] body :is(input[type=range],input[type=checkbox],input[type=radio]){accent-color:var(--site-main)}
+html[data-site-theme] body :is(.ot-title,.ot-time,.mini-player strong,.mini-player small){color:inherit!important}
+html[data-site-theme] body :is(.feature-hero,.play-hero,.search-section,#rankingNow) :is(.muted,.hint,.feature-note,#homeLyricsStatus,#homeLyricsPlaybackStatus){color:var(--site-bar-ink)!important}
+html[data-site-theme] body :is(body>header,.site-header) :is(.top-brand-title,.header-system-label,.brand small){color:inherit!important}
+html[data-site-theme] body :is(body>header,.titlebar-pinned) :is(button.active,button[aria-current=page],button[aria-selected=true]){background:var(--site-surface)!important;color:var(--site-text)!important;border-color:var(--site-text)!important}
+html[data-site-theme] body :is(.title-row,.song-row,.song-list,.song,.result,.badge):not(:where(#page *,.card-preview *,.stage *)){background:var(--site-surface)!important;color:var(--site-text)!important;border-color:var(--site-line)!important}
+/* Player search results keep team colors, including names and lyric snippets. */
+html[data-site-theme] body :is(.search-candidate,.suggestion,.favorite-suggestion) :is(h1,h2,h3,.hint,.muted){color:inherit!important}
+/* Title panels use the selected accent, rather than the page surface color. */
+html[data-site-theme] body :is(main.page>.hero,.title-row,.site-header){background:var(--site-bar-background,var(--site-main))!important;color:var(--site-bar-ink)!important;border-color:var(--site-main)!important}
+html[data-site-theme] body :is(main.page>.hero,.title-row,.site-header) :is(h1,h2,p,label,.subtitle,.header-system-label){color:var(--site-bar-ink)!important}
+html[data-site-theme] body .title-row input#lineupTitle{background:var(--site-main-dark)!important;color:var(--site-dark-ink)!important;border-color:var(--site-bar-ink)!important}
+html[data-site-theme] body .title-row input#lineupTitle::placeholder{color:var(--site-dark-ink)!important;opacity:.7}
+html[data-site-theme] body header .top-brand{background:var(--site-main-dark)!important;color:var(--site-dark-ink)!important;border-radius:6px;padding:8px 12px}
+html[data-site-theme] body header .top-brand :is(.top-brand-main,.top-brand-title,.top-brand-sub){color:inherit!important}
+/* One solid main color for application actions; content and semantic result colors stay distinct. */
+html[data-site-theme] body :is(button,input[type=button],input[type=submit],a.button,.feature-button,.feature-actions a,.settings-data-link,.home-lyrics-actions a,.lineup-menu nav a,#homeMenuDialog nav a):not(:where(.team-button,.legacy-team-button,.favorite-star,.design,.template-choice,.search-candidate,.suggestion,.favorite-suggestion,[data-theme-main],.swatch,.color-swatch,.danger,.delete,.delete-button,.correct,.wrong,#page *)){background:var(--site-action-background,var(--site-main))!important;color:var(--site-main-ink)!important;border-color:var(--site-main)!important;text-shadow:none!important}
+/* Menu bar and menu controls can each use white or the configured main color. */
+html[data-site-theme] body :is(body>header,body>.toolbar,.top-menu,.topbar,.titlebar-pinned,#homeMenuDialog .home-menu-heading,.lineup-menu-heading){background:var(--site-menu-background)!important;color:var(--site-menu-ink)!important}
+html[data-site-theme] body :is(body>header,body>.toolbar,.titlebar-pinned) :is(button,a.button,a.custom-titlebar-link,nav>a,.back,.menu-action),html[data-site-theme] body button#homeMenuButton{background:var(--site-menu-button)!important;color:var(--site-menu-button-ink)!important;border-color:var(--site-main)!important}
+html[data-site-theme] body :is(body>header,body>.toolbar,.top-menu,.topbar,#homeMenuDialog .home-menu-heading,.lineup-menu-heading) :is(h1,h2,strong,small,.brand,.top-brand-main,.top-brand-sub,#toolbarTitle,#homeMenuTitle){color:inherit!important}
+html[data-site-theme] body :is(body>header,body>.toolbar) button:is(.active,[aria-current=page],[aria-selected=true]){box-shadow:inset 0 -3px 0 currentColor}
+#siteThemeSettings .gradient-presets{margin-top:10px}#siteThemeSettings .theme-fields select{min-height:44px}
+#siteThemeSettings [data-theme-end]{background:linear-gradient(135deg,var(--preset-start),var(--preset-end));color:#fff}
+#siteThemeSettings [data-theme-end="#38bdf8"]{--preset-start:#07549a;--preset-end:#38bdf8}
+#siteThemeSettings [data-theme-end="#d85d95"]{--preset-start:#62428b;--preset-end:#d85d95}
+#siteThemeSettings [data-theme-end="#98db39"]{--preset-start:#159447;--preset-end:#98db39;color:#102030}
+#siteThemeSettings [data-theme-end="#ee8534"]{--preset-start:#c31c35;--preset-end:#ee8534}
+
+/* Keep the home logo on a white surface and preserve historical team buttons. */
+body .site-header,html[data-site-theme] body .site-header{background:#ffffff!important;color:#102030!important}
+html[data-site-theme] body .site-header :is(h1,h2,p,.subtitle,.header-system-label){color:#102030!important}
+html[data-site-theme] body button.legacy-team-button{background:#ffffff!important;color:#092d4b!important;border-color:#cbd9e6!important}
+html[data-site-theme] body button.legacy-team-button::before{background:var(--team-accent,#1d6fa5)!important}
+/* Use the same foreground for headings within the same kind of title panel. */
+html[data-site-theme] body :is(main.page>.hero,.feature-hero,.play-hero,.title-row) :is(h1,h2,label,p){color:var(--site-bar-ink)!important}
+html[data-site-theme] body :is(body>header,body>.toolbar,.top-menu,.topbar) :is(h1,h2,h3,#pageTitle,#toolbarTitle){color:var(--site-menu-ink)!important}
+.songbook-icon{display:inline-block;vertical-align:-.15em;flex-shrink:0}
+/* Explicit text colors use the same button palette on normal actions and menu actions. */
+html[data-site-theme] body :is(.ouenka-transport) button:not(:where(.favorite-star,.design,.template-choice)){color:var(--site-button-text)!important}
+html[data-site-theme] body :is(.ouenka-transport,.mini-player){color:var(--site-custom-bar-text,var(--site-dark-ink))!important}
+html[data-site-theme][data-button-border="off"] body :is(button,input[type=button],input[type=submit],a.button,.custom-titlebar-link,#homeMenuDialog nav a,.lineup-menu nav a):not(:where(.team-button,.legacy-team-button,.favorite-star,.design,.template-choice,.search-candidate,.suggestion,.favorite-suggestion,[data-theme-main],#page *)){border-color:transparent!important;border-width:0!important}
+html[data-site-theme][data-button-border="on"] body :is(button,input[type=button],input[type=submit],a.button,.custom-titlebar-link,#homeMenuDialog nav a,.lineup-menu nav a):not(:where(.team-button,.legacy-team-button,.favorite-star,.design,.template-choice,.search-candidate,.suggestion,.favorite-suggestion,[data-theme-main],#page *)){border:1px solid currentColor!important}
+
+/* Transparent titlebar controls show the bar's actual gradient continuously. */
+html[data-site-theme][data-titlebar-blend] body :is(body>header,body>.toolbar,.titlebar-pinned,#homeMenuButton) :is(button,a.button,a.custom-titlebar-link,.back),html[data-site-theme][data-titlebar-blend] body #homeMenuButton{background:transparent!important;color:var(--site-blended-button-ink,var(--site-menu-ink))!important;box-shadow:none!important}
+
+/* Selection colors are deliberately independent of the user's site palette. */
+html body #activeRosterDialog #rosterPlayers .roster-player{background:#ffffff!important;color:#123650!important;border:1px solid #b5ccdc!important;opacity:1!important;text-shadow:none!important}
+html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"]{background:#bfeaff!important;color:#123650!important;border-color:#57b8e9!important}
+html body #activeRosterDialog #rosterPlayers .roster-shirt{background:#eef5fa!important;color:#123650!important}
+html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{background:#9bdcff!important}
+html body #activeRosterDialog .roster-body{display:flex;flex-direction:column;overflow:hidden;min-height:0}
+html body #activeRosterDialog .roster-pinned{flex:0 1 auto;min-height:0;max-height:42%;overflow-y:auto;overscroll-behavior:contain;background:var(--site-surface,#fff);padding-bottom:5px}
+html body #activeRosterDialog .roster-hint{flex:0 0 auto;margin:0 0 5px;font-size:11px;line-height:1.4}
+html body #activeRosterDialog .roster-tools,html body #activeRosterDialog .roster-count,html body #activeRosterDialog .roster-notice{flex:0 0 auto;margin:5px 0}
+html body #activeRosterDialog #rosterPlayers{flex:1 1 0;min-height:60px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+html body #activeRosterDialog .roster-slot{min-height:28px;padding:4px 6px;font-size:12px;line-height:1.3}
+html body #activeRosterDialog .roster-target{font-size:12px;margin:5px 0}
+html body #activeRosterDialog .roster-add-slot{margin-top:5px;padding:6px 10px;min-height:32px;font-size:12px}
+body:is([data-page="1-9"],[data-page="medley"])>header button::after{display:none!important;content:none!important}
+body:is([data-page="1-9"],[data-page="medley"])>header :is(button,a) small{display:none!important}
+
+/* Seamless mode: only the parent bar paints a background, even with button borders enabled. */
+html[data-site-theme][data-titlebar-blend] body :is(body>header,body>.toolbar,.titlebar-pinned,#homeMenuButton) :is(button,a.button,a.custom-titlebar-link,.back),html[data-site-theme][data-titlebar-blend] body #homeMenuButton{background:transparent!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important}
+html[data-site-theme][data-titlebar-blend] body :is(header .titlebar-pinned,header .top-actions,header nav){background:transparent!important;background-image:none!important;box-shadow:none!important;border:0!important}
+html[data-site-theme][data-titlebar-blend] body :is(body>header,body>.toolbar,#homeMenuButton) :is(button,a.button,a.custom-titlebar-link):is(:hover,:active,[aria-current=page],.active){background:transparent!important;box-shadow:none!important}
+
+/* Roster candidates retain team lyric-card colors; only filled lineup slots turn light blue. */
+html body #activeRosterDialog #rosterPlayers .roster-player,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"]{background:linear-gradient(110deg,var(--roster-dark,#062e55),var(--roster-light,#1392c6) 70%,var(--roster-team,#07549a))!important;color:#ffffff!important;border:1px solid var(--roster-team,#07549a)!important;opacity:1!important}
+html body #activeRosterDialog #rosterPlayers .roster-shirt,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{background:#ffffff22!important;color:#ffffff!important}
+html body #activeRosterDialog #rosterLineup .roster-slot{background:#ffffff!important;color:#123650!important;border:1px solid #b5ccdc!important;box-shadow:none!important}
+html body #activeRosterDialog #rosterLineup .roster-slot[data-filled="true"]{background:#bfeaff!important;border-color:#57b8e9!important}
+html body #activeRosterDialog #rosterLineup .roster-slot.active{outline:2px solid #0877dc;outline-offset:-2px}
+html body #activeRosterDialog .roster-head #closeActiveRoster{box-sizing:border-box;height:34px!important;min-height:34px!important;max-height:34px!important;padding:5px 14px!important;line-height:1.2!important;font-size:13px!important;align-self:center}
+html body #activeRosterDialog .roster-head{padding:8px 12px;min-height:50px;align-items:center}
+
+/* Team-page chrome uses the same saved menu palette, including anchor-style buttons. */
+html[data-site-theme] body header#teamTitlebar.team-fixed{background:var(--site-menu-background)!important;color:var(--site-menu-ink)!important;border-color:var(--site-main)!important}
+html[data-site-theme] body header#teamTitlebar :is(.team-topline,.lyrics-link-wrap,.filter-tabs){background:transparent!important;background-image:none!important}
+html[data-site-theme] body header#teamTitlebar :is(button,a.lyrics-link){background:var(--site-menu-button)!important;color:var(--site-menu-button-ink)!important;border:1px solid currentColor!important;box-shadow:none!important}
+html[data-site-theme] body header#teamTitlebar .tap-hint{color:var(--site-menu-ink)!important}
+html[data-site-theme] body header#teamTitlebar .filter.active{box-shadow:inset 0 -3px 0 currentColor!important}
+html[data-site-theme][data-button-border="off"] body header#teamTitlebar :is(button,a.lyrics-link){border:0!important}
+html[data-site-theme][data-titlebar-blend] body header#teamTitlebar :is(button,a.lyrics-link){background:transparent!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important}
+html[data-site-theme] body:has(header#teamTitlebar)::before{background:var(--site-menu-background)!important}
+/* Selected candidates use the original grey fill; unselected candidates retain team gradients. */
+html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"]{background:#e3e9ef!important;background-image:none!important;color:#60758b!important;border-color:#cad6e1!important;opacity:1!important;text-shadow:none!important}
+html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{background:#d4dee7!important;color:#60758b!important}
+/* Historical teams and national-team section headers share the league-heading palette. */
+html[data-site-theme] body .legacy-extra-title{background:var(--site-main)!important;color:var(--site-main-ink)!important;border-color:var(--site-main)!important}
+html[data-site-theme] body .legacy-extra-title :is(span,small){color:inherit!important}
+html[data-site-theme][data-custom-title-text] body .legacy-extra-title{color:var(--site-title-text)!important}
+
+/* Automatic foregrounds follow the surface that is actually painted. */
+html[data-site-theme] body :is(.panel,.card,.feature-panel,.feature-song) :is(h1,h2,h3){color:var(--site-text)!important}
+html[data-site-theme] body :is(.feature-hero,.play-hero,.search-section,#rankingNow,main.page>.hero,.title-row) :is(h1,h2,h3){color:var(--site-heading-ink)!important}
+html[data-site-theme] body :is(.play-hero,.feature-hero) :is(.eyebrow,.hero-tagline,.hero-tags span){color:var(--site-bar-ink)!important;opacity:1!important}
+html[data-site-theme] body :is(.league-title,.legacy-extra-title,.cardhead){color:var(--site-league-ink)!important}
+html[data-site-theme] body :is(button,a.button,.feature-button,.feature-actions a,.settings-data-link):not(:where(.team-button,.legacy-team-button,.favorite-star,.design,.template-choice,.search-candidate,.suggestion,.favorite-suggestion,[data-theme-main],#page *)) :is(span,small,strong,.muted,.hint){color:inherit!important;opacity:1!important;text-shadow:none!important}
+html[data-site-theme] body :is(.quiz-setup .lead,.quiz-setup label,.setup-note,#catalogStatus){color:var(--site-muted)!important}
+#siteThemeSettings .team-color-presets{margin:12px 0 20px}
+#siteThemeSettings .team-color-presets button{border-left:8px solid var(--team-preset);color:#102030;background:#fff;font-weight:700}
+
+/* These two introductory headings always use black, including manual title palettes. */
+html body h2:is(#popularJoinHeading,#rankingSetupHeading){color:#000000!important;text-shadow:none!important;opacity:1!important}
+
+/* Main page titles stay white; section headings keep their own foreground. */
+html body :is(main.page>.hero,.feature-hero,.play-hero) h1,html[data-site-theme] body :is(main.page>.hero,.feature-hero,.play-hero) h1{color:var(--site-main-title-ink,#ffffff)!important;text-shadow:none!important;opacity:1!important}
+
+/* Pale page surfaces take precedence over a manually selected white title color. */
+html[data-site-theme][data-light-page] body :is(main,.wrap,.container,.feature-main) :is(h1,h2,h3):not(:where(#page *,.stage *,.card-preview *,.hero *,.feature-hero *,.play-hero *,.search-section *,#rankingNow *,.league-title *,.title-row *)){color:#000000!important}
+
+#siteThemeSettings .team-gradient-presets{margin:12px 0 20px}#siteThemeSettings .team-gradient-presets button{font-weight:700;text-shadow:0 1px 2px #0009}#siteThemeSettings #siteThemeTailField[hidden]{display:none}
+#siteThemeSettings .recommended-presets{margin:12px 0 20px}#siteThemeSettings .recommended-presets button{font-weight:700;min-height:44px}
+
+/* Drawer actions follow ordinary action buttons, independently of titlebar controls. */
+html[data-site-theme] body :is(#homeMenuDialog,#sharedMenuDialog,#settingsNavigation) nav :is(a,button){background:var(--site-action-background,var(--site-main))!important;color:var(--site-main-ink)!important;border-color:var(--site-main)!important;text-shadow:none!important}

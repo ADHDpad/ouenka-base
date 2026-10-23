@@ -1,0 +1,37 @@
+body.has-shared-navigation{margin-top:0!important}
+html body.has-shared-navigation .shared-titlebar{position:sticky!important;top:0!important;z-index:1600!important;box-sizing:border-box;width:100%;height:auto!important;min-height:calc(64px + env(safe-area-inset-top))!important;padding:calc(8px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 8px max(74px,calc(64px + env(safe-area-inset-left)))!important}
+html body.has-shared-navigation .shared-original-control{display:none!important}
+html body #sharedNavigation{position:fixed;z-index:10010;pointer-events:none;top:0;left:0;right:auto;box-sizing:border-box;height:calc(64px + env(safe-area-inset-top));padding:calc(8px + env(safe-area-inset-top)) 0 8px max(10px,env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;background:transparent;color:var(--site-menu-ink,#fff);box-shadow:none}
+html body #sharedNavigation button{pointer-events:auto;flex:0 0 auto;height:48px!important;min-height:48px!important;max-height:48px!important;width:auto!important;margin:0!important;padding:8px 14px!important;background:var(--site-menu-button,#124b70)!important;color:var(--site-menu-button-ink,#fff)!important;border:1px solid currentColor!important;border-radius:6px;font-size:15px;line-height:1;font-weight:700;cursor:pointer}
+html body #sharedNavigation #sharedMenuButton{font-size:24px}
+html[data-titlebar-blend] body #sharedNavigation button{background:transparent!important;border:0!important;color:var(--site-blended-button-ink,var(--site-menu-ink))!important;box-shadow:none!important}
+html[data-button-border="off"] body #sharedNavigation button{border:0!important}
+html body dialog.shared-menu{position:fixed;inset:0 auto 0 0;box-sizing:border-box;margin:0;width:min(390px,92vw);height:100dvh;max-height:100dvh;max-width:92vw;border:0;border-radius:0;padding:0 0 env(safe-area-inset-bottom);overflow-y:auto;background:var(--site-bg,#fff);color:var(--site-text,#102030);box-shadow:8px 0 36px #0004}
+.shared-menu::backdrop{background:#00152680}
+html body .shared-menu .lineup-menu-heading{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;background:var(--site-menu-background,#092d4b);color:var(--site-menu-ink,#fff);z-index:1}
+.shared-menu .lineup-menu-heading button{min-width:44px;min-height:44px}
+html body .shared-menu nav{display:grid;gap:8px;padding:14px;margin:0}
+html body .shared-menu nav :is(a,button){display:block;text-align:left;box-sizing:border-box;width:100%;padding:12px 14px;min-height:44px;text-decoration:none;border:1px solid var(--site-line,#cedce6);border-radius:7px;background:var(--site-action-background,#eef5fa);color:var(--site-main-ink,#102030);font-size:15px;font-weight:650}
+.shared-menu nav p{margin:16px 0 0;font-size:13px;font-weight:800;color:var(--site-muted,#536b7d)}
+.shared-menu nav svg{vertical-align:-.15em}
+html body .shared-menu [hidden]{display:none!important}
+.shared-menu-tabs{display:flex;gap:6px;padding:12px 14px 0}
+html body .shared-menu-tabs button{flex:1;min-height:44px;padding:10px 6px;border-radius:7px;border:1px solid var(--site-line,#bbcddd);font-size:14px;background:var(--site-surface,#edf3f8)!important;color:var(--site-text,#102030)!important}
+html body .shared-menu-tabs button[aria-selected=true]{background:var(--site-main,#092d4b)!important;color:var(--site-league-ink,#fff)!important;box-shadow:inset 0 -3px currentColor}
+@media print{#sharedNavigation{display:none!important}body.has-shared-navigation{margin-top:0!important}}
+
+/* Match the home drawer's 220 ms entry and 200 ms exit on every page. */
+html body dialog.shared-menu[open]{animation:shared-menu-enter .22s ease-out}
+html body dialog.shared-menu.shared-menu-closing{animation:shared-menu-exit .2s ease-in forwards!important;pointer-events:none}
+html body dialog.shared-menu{border-radius:0 16px 16px 0}
+html body dialog.shared-menu::backdrop{background:#00182d99}
+html body dialog.shared-menu .lineup-menu-heading [data-close]{display:grid;place-items:center;width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;flex:0 0 44px;border-radius:8px;border:0;font:700 20px/1 system-ui;cursor:pointer}
+@keyframes shared-menu-enter{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@keyframes shared-menu-exit{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@media(prefers-reduced-motion:reduce){html body dialog.shared-menu[open],html body dialog.shared-menu.shared-menu-closing{animation:none!important}}
+
+html body.has-shared-navigation .titlebar-pinned:has(.lineup-menu-trigger.shared-original-control){display:none!important}
+
+/* Back belongs to the normal action row, while only the menu trigger is fixed. */
+html body .shared-titlebar #sharedBackButton{position:static!important;inset:auto!important;flex:0 0 auto;width:auto!important;white-space:nowrap;background:var(--site-menu-button,#124b70)!important;color:var(--site-menu-button-ink,#fff)!important}
+html[data-titlebar-blend] body .shared-titlebar #sharedBackButton{background:transparent!important;border:0!important;color:var(--site-blended-button-ink,var(--site-menu-ink))!important;box-shadow:none!important}

@@ -1,0 +1,12 @@
+/* Titlebar labels share one size across every screen; artwork is outside this scope. */
+:root{--titlebar-font-size:14px}
+html body :is(body>header,body>.toolbar,#sharedNavigation) :is(h1,h2,h3,b,strong,small,button,a,label,.brand,.top-brand-main,.top-brand-title,.top-brand-sub,.header-system-label,.top-button-text,.custom-titlebar-link){font-size:var(--titlebar-font-size)!important;line-height:1.25!important;font-weight:700!important}
+html body :is(body>header,body>.toolbar,#sharedNavigation) :is(button,a) :is(span,small,strong,b):not(:where(.custom-titlebar-icon,.top-button-icon,.lineup-box-icon,.songbook-icon)){font-size:var(--titlebar-font-size)!important;line-height:1.25!important}
+html body :is(body>header,body>.toolbar) :is(button,a)::after{font-size:var(--titlebar-font-size)!important}
+/* Symbols retain their icon size independently of readable label text. */
+html body :is(body>header,body>.toolbar,#sharedNavigation) :is(.custom-titlebar-icon,.top-button-icon){font-size:22px!important}
+html body #sharedNavigation #sharedMenuButton,html body header #homeMenuButton{font-size:24px!important}
+html body :is(body>header,body>.toolbar) .lineup-box-icon{font-size:14px!important}
+
+/* Menu and every titlebar action use the same 48 px outer height. */
+html body :is(body>header,body>.toolbar) :is(button,a.button,a.custom-titlebar-link,.back,.lyrics-link),html body #sharedNavigation button{box-sizing:border-box!important;height:48px!important;min-height:48px!important;max-height:48px!important;padding-top:5px!important;padding-bottom:5px!important;align-items:center!important}
