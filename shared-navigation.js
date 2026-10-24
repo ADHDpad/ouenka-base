@@ -53,8 +53,9 @@ general.querySelector('[data-audio-reset]').onclick=async e=>{const b=e.currentT
 }
 if(document.readyState!=='complete')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
-/* One flat list, with a fixed icon column and a readable label column. */
+/* Keep dedicated menu tabs, with one icon and bilingual labels per action. */
 window.addEventListener('load',()=>{
+const subtitles={'選手名から検索':'PLAYER SEARCH','球団一覧':'TEAMS','お気に入り':'FAVORITES','球場モード':'STADIUM','リクエスト箱':'REQUESTS','聴き比べ':'COMPARE','1-9作成':'LINEUP','メドレー作成':'MEDLEY','人気ランキング':'POPULAR','応援歌クイズ':'SONG QUIZ','歌詞クイズ':'LYRICS QUIZ','応援歌ドラフト':'DRAFT','応援歌 即興ランキング':'RANKING','応援歌図鑑':'SONGBOOK','iPhone音声復旧リセット':'AUDIO RESET','データ登録':'REGISTER','設定・端末間共有':'SETTINGS / SHARE','サイトを更新':'UPDATE','ホーム':'HOME','戻る':'BACK','汎用流用設定':'REUSE SETTINGS','保存':'SAVE','保存済み読込':'LOAD','保存済を読込':'LOAD','挿絵作成':'ILLUSTRATION','現役リストから選択':'ACTIVE ROSTER','現役から選択':'ACTIVE ROSTER','ランダム選択':'RANDOM','共有コード':'SHARE'};
 const icons={'favorites.html':'★','medley.html':'♫','popular.html':'♛','ranking.html':'♛','draft.html':'▦','songbook.html':'▤','stadium.html':'⚑','requests.html':'✉','save.html':'＋','settings.html':'⚙','play.html':'♪','index.html':'⌂'};
 document.querySelectorAll('#homeMenuDialog nav,#sharedMenuDialog nav').forEach(nav=>{
 nav.querySelectorAll('p').forEach(p=>p.remove());
@@ -64,13 +65,15 @@ if(label)return;
 const oldIcon=item.querySelector('.menu-action-icon,.lineup-box-icon,svg');
 let text=item.textContent.trim();
 if(oldIcon?.textContent.trim())text=text.replace(oldIcon.textContent.trim(),'').trim();
-text=text.replace(/^[★☆♪♫♛▦▤＋⚙︎⌂⌕⇄↻⚑✉]+\s*/u,'');
+text=text.replace(/^[★☆♪♫♛▦▤＋+⚙︎️⌂⌕⇄↻⚑✉◀▶▣▧⚄]+\s*/u,'');
 const href=item.getAttribute('href')||'',path=href.split('#')[0];
 const icon=document.createElement('span');icon.className='menu-item-icon';icon.setAttribute('aria-hidden','true');
 if(path==='1-9.html'){icon.classList.add('lineup-box-icon');icon.innerHTML='<svg class="lineup-symbol" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2-2v10M2.5 17h5M10 12h3M20.5 12h-3a2.5 2.5 0 0 1 0-5h.5a2.5 2.5 0 0 1 2.5 2.5V14a3 3 0 0 1-3 3H16"/></svg>'}
 else if(oldIcon?.tagName.toLowerCase()==='svg')icon.append(oldIcon.cloneNode(true));
 else icon.textContent=oldIcon?.textContent.trim()||icons[path]||(href.includes('#home')?'⌕':item.matches('[data-audio-reset],#homeMenuAudioReset')?'↻':'↻');
-const span=document.createElement('span');span.className='menu-item-label';span.textContent=text;
+const span=document.createElement('span');span.className='menu-item-label';
+const title=document.createElement('span');title.className='menu-item-title';title.textContent=text;
+const subtitle=document.createElement('small');subtitle.className='menu-item-subtitle';subtitle.lang='en';subtitle.textContent=subtitles[text]||(/保存済|読込/.test(text)?'LOAD':/保存/.test(text)?'SAVE':/現役/.test(text)?'ACTIVE ROSTER':/共有/.test(text)?'SHARE':/設定/.test(text)?'SETTINGS':'MENU');span.append(title,subtitle);
 item.replaceChildren(icon,span);
 });
 });
