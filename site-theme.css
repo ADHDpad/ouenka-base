@@ -160,3 +160,9 @@ html body #activeRosterDialog #rosterPlayers .roster-player,html body #activeRos
 html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"],html body #activeRosterDialog #rosterLineup .roster-slot[data-filled="true"]{background:#ffffff!important;background-image:none!important;color:#15384f!important;border-color:#a8cfe5!important;opacity:1!important}
 html body #activeRosterDialog #rosterPlayers .roster-shirt,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{background:transparent!important;color:#15384f!important;text-shadow:none!important}
 html body #activeRosterDialog #rosterPlayers .roster-name{color:#15384f!important;text-shadow:none!important}
+
+/* r254: roster player cards follow lyric-card team colors; selected players are dark gray. */
+html body #activeRosterDialog #rosterPlayers .roster-player,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="false"]{background:linear-gradient(110deg,var(--roster-dark,#062e55),var(--roster-light,#1392c6) 70%,var(--roster-team,#07549a))!important;color:#ffffff!important;border:1px solid var(--roster-team,#07549a)!important;opacity:1!important;text-shadow:none!important}
+html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"]{background:#404040!important;background-image:none!important;color:#ffffff!important;border-color:#404040!important;opacity:1!important;text-shadow:none!important}
+html body #activeRosterDialog #rosterPlayers .roster-name,html body #activeRosterDialog #rosterPlayers .roster-shirt,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{color:#ffffff!important;text-shadow:none!important}
+html body #activeRosterDialog #rosterPlayers .roster-shirt,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{background:#ffffff22!important}
