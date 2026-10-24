@@ -166,3 +166,7 @@ html body #activeRosterDialog #rosterPlayers .roster-player,html body #activeRos
 html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"]{background:#404040!important;background-image:none!important;color:#ffffff!important;border-color:#404040!important;opacity:1!important;text-shadow:none!important}
 html body #activeRosterDialog #rosterPlayers .roster-name,html body #activeRosterDialog #rosterPlayers .roster-shirt,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{color:#ffffff!important;text-shadow:none!important}
 html body #activeRosterDialog #rosterPlayers .roster-shirt,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{background:#ffffff22!important}
+
+/* r263: align theme checkboxes and labels on the same center line. */
+html body #siteThemeSettings label:has(>input[type=checkbox]){display:flex;align-items:center;gap:8px;line-height:1.5;min-height:28px}
+html body #siteThemeSettings label>input[type=checkbox]{flex:0 0 20px;width:20px;height:20px;min-height:20px;margin:0;padding:0}

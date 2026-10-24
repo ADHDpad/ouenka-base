@@ -23,3 +23,5 @@ html body #teams progress::-moz-progress-bar{background:#7dd3fc;border-radius:99
 html body #teams .team-card .achievement-count{color:#7dd3fc!important;text-shadow:none!important;font-weight:800}
 
 .song{grid-template-columns:minmax(0,1fr) auto}.song .lyric{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.song-sort-controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
