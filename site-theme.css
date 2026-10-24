@@ -154,3 +154,9 @@ html body .title-row #lineupTitle::placeholder{color:#526d87!important}
 html body #activeRosterDialog .roster-head{background:var(--site-menu-background,#0b2f55)!important;color:var(--site-menu-ink,#ffffff)!important}
 html body #activeRosterDialog .roster-head h2{color:inherit!important}
 html body #activeRosterDialog .roster-head button{background:var(--site-menu-button,#163b60)!important;color:var(--site-menu-button-ink,#ffffff)!important}
+
+/* r251: unselected roster entries are light blue; selected entries are white. */
+html body #activeRosterDialog #rosterPlayers .roster-player,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="false"],html body #activeRosterDialog #rosterLineup .roster-slot{background:#dff3ff!important;background-image:none!important;color:#15384f!important;border:1px solid #a8cfe5!important;opacity:1!important;text-shadow:none!important}
+html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"],html body #activeRosterDialog #rosterLineup .roster-slot[data-filled="true"]{background:#ffffff!important;background-image:none!important;color:#15384f!important;border-color:#a8cfe5!important;opacity:1!important}
+html body #activeRosterDialog #rosterPlayers .roster-shirt,html body #activeRosterDialog #rosterPlayers .roster-player[aria-pressed="true"] .roster-shirt{background:transparent!important;color:#15384f!important;text-shadow:none!important}
+html body #activeRosterDialog #rosterPlayers .roster-name{color:#15384f!important;text-shadow:none!important}

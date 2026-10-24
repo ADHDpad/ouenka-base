@@ -55,3 +55,17 @@ html body .lineup-box-icon{padding:0!important;letter-spacing:0!important;line-h
 html body :is(#homeMenuDialog,#sharedMenuDialog) .menu-item-label{display:flex;flex-direction:column;justify-content:center;gap:2px;line-height:1.15}
 html body :is(#homeMenuDialog,#sharedMenuDialog) .menu-item-title{display:block;overflow:hidden;text-overflow:ellipsis;font-size:15px;font-weight:700;line-height:1.2}
 html body :is(#homeMenuDialog,#sharedMenuDialog) small.menu-item-subtitle{display:block;margin:0;color:inherit!important;opacity:.8;font:600 9px/1.15 system-ui!important;letter-spacing:.08em;white-space:nowrap;text-shadow:none!important}
+
+/* r252: the home menu is the shared visual reference on every screen. */
+html body :is(#homeMenuButton,#sharedMenuButton){display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:row!important;box-sizing:border-box!important;width:54px!important;height:48px!important;min-height:48px!important;max-height:48px!important;padding:8px 13px!important;border-radius:6px!important;box-shadow:none!important;background:var(--site-menu-button,#102f4e)!important;color:var(--site-menu-button-ink,#fff)!important;border:1px solid currentColor!important}
+html body :is(#homeMenuButton,#sharedMenuButton)>span{display:flex!important;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;line-height:0!important}
+html body :is(#homeMenuButton,#sharedMenuButton) .home-menu-symbol{display:block!important;width:28px!important;height:28px!important;flex-shrink:0}
+html[data-titlebar-blend] body :is(#homeMenuButton,#sharedMenuButton){background:transparent!important;border:0!important;color:var(--site-blended-button-ink,var(--site-menu-ink,#fff))!important}
+html[data-button-border="off"] body :is(#homeMenuButton,#sharedMenuButton){border:0!important}
+html body :is(dialog#homeMenuDialog,dialog#sharedMenuDialog){box-sizing:border-box;position:fixed;inset:0 auto 0 0;margin:0;width:min(360px,90vw);max-width:90vw;height:100dvh;max-height:100dvh;padding:max(22px,env(safe-area-inset-top)) 20px max(22px,env(safe-area-inset-bottom));border:0;border-radius:0 16px 16px 0;background:var(--site-surface,#f7fbff);color:var(--site-text,#143149);overflow-y:auto;text-align:left;box-shadow:8px 0 30px #001c3040}
+html body :is(#homeMenuDialog .home-menu-heading,#sharedMenuDialog .lineup-menu-heading){display:flex;position:sticky;top:0;z-index:5;justify-content:space-between;align-items:center;gap:20px;margin:0 0 12px;padding:14px;border-radius:8px;background:var(--site-menu-background,#0b2f55);color:var(--site-menu-ink,#fff)}
+html body :is(#homeMenuTitle,#sharedMenuDialog .lineup-menu-heading>b){font:800 23px/1.3 system-ui;margin:0;color:inherit}
+html body :is(#homeMenuClose,#sharedMenuDialog [data-close]){display:grid;place-items:center;box-sizing:border-box;flex:0 0 44px;width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;border:0;border-radius:8px;font:700 20px/1 system-ui;background:var(--site-menu-button,#183f63);color:var(--site-menu-button-ink,#fff);cursor:pointer}
+html body :is(#homeMenuDialog,#sharedMenuDialog) nav{display:grid;gap:6px;margin:0;padding:0}
+html body #sharedMenuDialog .shared-menu-tabs{margin:0 0 12px;padding:0;gap:6px}
+html body :is(#homeMenuDialog,#sharedMenuDialog)::backdrop{background:#00182d99}
