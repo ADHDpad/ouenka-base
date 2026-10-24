@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const KEY='ouenkaSiteThemeV1',valid=c=>/^#[0-9a-f]{6}$/i.test(c||''),defaults={main:'#0b2f55',background:'#ffffff',buttonText:'#ffffff',barText:'#ffffff',titleText:'#ffffff',textDefaultsVersion:227};
-const textDefaults=t=>t?{...t,buttonText:'#ffffff',barText:'#ffffff',titleText:'#ffffff',textDefaultsVersion:227}:t;
+const textDefaults=t=>t?{...t,...(t.gradient&&valid(t.main)&&valid(t.end)&&luminance(t.main)>luminance(t.end)?{main:t.end,end:t.main}:{}),buttonText:'#ffffff',barText:'#ffffff',titleText:'#ffffff',textDefaultsVersion:227}:t;
 const read=()=>{try{const t=JSON.parse(localStorage.getItem(KEY));return valid(t?.main)&&valid(t?.background)?textDefaults(t):null}catch{return null}};
 const rgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
 const mix=(a,b,t)=>'#'+rgb(a).map((n,i)=>Math.round(n*(1-t)+rgb(b)[i]*t).toString(16).padStart(2,'0')).join('');
@@ -45,3 +45,5 @@ document.querySelectorAll('[data-theme-main]').forEach(b=>b.onclick=()=>{main.va
 document.getElementById('siteThemeReset').onclick=()=>{try{localStorage.removeItem(KEY);apply(null);load();status.textContent='標準の配色に戻しました。'}catch{status.textContent='配色を戻せませんでした。'}};load();
 });
 })();
+
+(()=>{function sync(){const meta=document.querySelector('meta[name="theme-color"]');if(meta){const color=getComputedStyle(document.documentElement).getPropertyValue('--site-main').trim();if(color)meta.content=color}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();new MutationObserver(sync).observe(document.documentElement,{attributes:true,attributeFilter:['style','data-site-theme']})})();

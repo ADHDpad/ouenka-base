@@ -43,7 +43,7 @@ dialog.id='sharedMenuDialog';dialog.classList.add('shared-menu');trigger.setAttr
 const specific=special?dialog.querySelector('nav'):null;
 const general=document.createElement('section');general.id='sharedGeneralMenu';general.innerHTML='<nav aria-label="サイトメニュー"><p>探す・聴く</p><a href="index.html#homePlayerSearch">選手名から検索</a><a href="index.html#homeTeams">球団一覧</a><a href="favorites.html">★ お気に入り</a><a href="stadium.html">球場モード</a><a href="requests.html">リクエスト箱</a><a href="play.html#compare">⇄ 聴き比べ</a><p>作る・遊ぶ</p><a href="1-9.html">1-9作成</a><a href="medley.html">メドレー作成</a><a href="popular.html"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M3 6l5 4 4-7 4 7 5-4-2 12H5L3 6zm2 14h14v2H5z"/></svg> 人気ランキング</a><a href="play.html#quiz">♪ 応援歌クイズ</a><a href="play.html#lyricsquiz">▤ 歌詞クイズ</a><a href="draft.html">応援歌ドラフト</a><a href="ranking.html"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" focusable="false" style="vertical-align:-.15em"><path d="M3 6l5 4 4-7 4 7 5-4-2 12H5L3 6zm2 14h14v2H5z"/></svg> 応援歌 即興ランキング</a><a href="songbook.html">応援歌図鑑</a><p>管理</p><button data-audio-reset type="button">iPhone音声復旧リセット</button><a href="save.html">データ登録</a><a href="settings.html">設定・端末間共有</a><button data-site-update type="button">↻ サイトを更新</button></nav>';
 const home=document.createElement('a');home.href='index.html';home.textContent='⌂ ホーム';general.querySelector('nav').prepend(home);dialog.append(general);
-if(specific){specific.id='sharedSpecificMenu';specific.setAttribute('role','tabpanel');general.setAttribute('role','tabpanel');const tabs=document.createElement('div');tabs.className='shared-menu-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','メニューの種類');for(const [i,label,panel]of [[0,'通常メニュー',general],[1,page==='1-9.html'?'1-9メニュー':'メドレーメニュー',specific]]){const b=document.createElement('button');b.type='button';b.id='sharedMenuTab'+i;b.textContent=label;b.setAttribute('role','tab');b.setAttribute('aria-controls',panel.id);panel.setAttribute('aria-labelledby',b.id);b.onclick=()=>select(i);tabs.append(b)}function select(i){[general,specific].forEach((p,k)=>{p.hidden=i!==k;tabs.children[k].setAttribute('aria-selected',String(i===k));tabs.children[k].tabIndex=i===k?0:-1})}tabs.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const n=tabs.children[0].getAttribute('aria-selected')==='true'?1:0;select(n);tabs.children[n].focus()}};dialog.querySelector('.lineup-menu-heading').after(tabs);select(0)}
+if(specific){general.querySelector('nav').prepend(...specific.children);specific.remove()}
 general.querySelector('a[href="1-9.html"]').innerHTML='<span class="lineup-box-icon" aria-hidden="true">1-9</span> 1-9作成';
 setupMenuMotion(dialog);
 trigger.onclick=()=>{dialog.showModal();trigger.setAttribute('aria-expanded','true')};dialog.addEventListener('close',()=>{trigger.setAttribute('aria-expanded','false');trigger.focus()});
@@ -53,3 +53,25 @@ general.querySelector('[data-audio-reset]').onclick=async e=>{const b=e.currentT
 }
 if(document.readyState!=='complete')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+/* One flat list, with a fixed icon column and a readable label column. */
+window.addEventListener('load',()=>{
+const icons={'favorites.html':'★','medley.html':'♫','popular.html':'♛','ranking.html':'♛','draft.html':'▦','songbook.html':'▤','stadium.html':'⚑','requests.html':'✉','save.html':'＋','settings.html':'⚙','play.html':'♪','index.html':'⌂'};
+document.querySelectorAll('#homeMenuDialog nav,#sharedMenuDialog nav').forEach(nav=>{
+nav.querySelectorAll('p').forEach(p=>p.remove());
+nav.querySelectorAll('a,button').forEach(item=>{
+let label=item.querySelector('.menu-item-label')?.textContent;
+if(label)return;
+const oldIcon=item.querySelector('.menu-action-icon,.lineup-box-icon,svg');
+let text=item.textContent.trim();
+if(oldIcon?.textContent.trim())text=text.replace(oldIcon.textContent.trim(),'').trim();
+text=text.replace(/^[★☆♪♫♛▦▤＋⚙︎⌂⌕⇄↻⚑✉]+\s*/u,'');
+const href=item.getAttribute('href')||'',path=href.split('#')[0];
+const icon=document.createElement('span');icon.className='menu-item-icon';icon.setAttribute('aria-hidden','true');
+if(path==='1-9.html'){icon.classList.add('lineup-box-icon');icon.textContent='1-9'}
+else if(oldIcon?.tagName.toLowerCase()==='svg')icon.append(oldIcon.cloneNode(true));
+else icon.textContent=oldIcon?.textContent.trim()||icons[path]||(href.includes('#home')?'⌕':item.matches('[data-audio-reset],#homeMenuAudioReset')?'↻':'↻');
+const span=document.createElement('span');span.className='menu-item-label';span.textContent=text;
+item.replaceChildren(icon,span);
+});
+});
+},{once:true});

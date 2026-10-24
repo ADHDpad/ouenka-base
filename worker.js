@@ -1037,7 +1037,7 @@ async function handleShortShare(request,env){
    if(kind==='favorites'){const items=favorites(data.items);if(!items.length)fail('お気に入りを登録してから共有してください。');return {version:1,items}}
    if(kind==='songbook'){
     if(!Array.isArray(data.records)||data.records.length>20000)fail('図鑑の記録件数を確認してください。');
-    const records=data.records.map(r=>{const name=String(r?.name||'').trim(),productionNumber=String(r?.productionNumber||'').trim();if(!name||name.length>120||!/^\d{1,10}$/.test(productionNumber))fail('図鑑の曲情報を確認してください。');return {name,productionNumber,heard:r.heard===true,sung:r.sung===true,quizCorrect:r.quizCorrect===true}});
+    const records=data.records.map(r=>{const name=String(r?.name||'').trim(),productionNumber=String(r?.productionNumber||'').trim();if(!name||name.length>120||!/^\d{1,10}$/.test(productionNumber))fail('図鑑の曲情報を確認してください。');return {name,productionNumber,heard:r.heard===true,quizCorrect:r.quizCorrect===true}});
     const items=favorites(data.favorites||[]);if(!records.length&&!items.length)fail('図鑑の記録またはお気に入りを追加してから共有してください。');return {version:1,records,favorites:items};
    }
    if(kind==='playlist'){
