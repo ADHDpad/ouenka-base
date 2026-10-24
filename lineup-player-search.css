@@ -8,3 +8,7 @@ html body .suggestions .suggestion[data-unregistered="true"] :is(strong,small,sp
 html body .suggestions .search-summary,html body .suggestions .search-more{background:#fff!important;background-image:none!important;color:#123650!important;font-size:12px;opacity:1!important}
 html body .suggestions .search-summary{position:sticky;top:0;z-index:1;padding:8px 10px;border-bottom:1px solid #ccd7e1}
 html body .suggestions .search-more{width:100%;padding:12px;cursor:pointer;border:1px solid #ccd7e1;text-align:center;font-weight:700}
+
+/* r258: all known-team player candidates share the home search palette. */
+html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-team]:not([data-team=""]){background:linear-gradient(110deg,var(--candidate-dark,#062e55),var(--candidate-light,#1392c6) 70%,var(--candidate-team,#07549a))!important;color:#ffffff!important;border-color:var(--candidate-team,#07549a)!important;text-shadow:0 1px 2px #00182d99}
+html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-team]:not([data-team=""]) :is(strong,small,span){color:inherit!important}
