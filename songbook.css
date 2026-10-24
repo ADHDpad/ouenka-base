@@ -21,3 +21,5 @@ html body #teams progress::-webkit-progress-bar{background:#ffffff;border-radius
 html body #teams progress::-webkit-progress-value{background:#7dd3fc;border-radius:999px}
 html body #teams progress::-moz-progress-bar{background:#7dd3fc;border-radius:999px}
 html body #teams .team-card .achievement-count{color:#7dd3fc!important;text-shadow:none!important;font-weight:800}
+
+.song{grid-template-columns:minmax(0,1fr) auto}.song .lyric{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

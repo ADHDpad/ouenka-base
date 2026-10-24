@@ -10,5 +10,9 @@ html body .suggestions .search-summary{position:sticky;top:0;z-index:1;padding:8
 html body .suggestions .search-more{width:100%;padding:12px;cursor:pointer;border:1px solid #ccd7e1;text-align:center;font-weight:700}
 
 /* r258: all known-team player candidates share the home search palette. */
-html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-team]:not([data-team=""]){background:linear-gradient(110deg,var(--candidate-dark,#062e55),var(--candidate-light,#1392c6) 70%,var(--candidate-team,#07549a))!important;color:#ffffff!important;border-color:var(--candidate-team,#07549a)!important;text-shadow:0 1px 2px #00182d99}
-html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-team]:not([data-team=""]) :is(strong,small,span){color:inherit!important}
+html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-team]:not([data-team=""]):not([data-unregistered="true"]){background:linear-gradient(110deg,var(--candidate-dark,#062e55),var(--candidate-light,#1392c6) 70%,var(--candidate-team,#07549a))!important;color:#ffffff!important;border-color:var(--candidate-team,#07549a)!important;text-shadow:0 1px 2px #00182d99}
+html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-team]:not([data-team=""]):not([data-unregistered="true"]) :is(strong,small,span){color:inherit!important}
+
+/* r260: unregistered players remain white, including stadium setup candidates. */
+html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-unregistered="true"]{background:#ffffff!important;background-image:none!important;color:#123650!important;border-color:#c6d5e2!important;border-left-color:#c6d5e2!important;box-shadow:none!important;text-shadow:none!important}
+html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-unregistered="true"] :is(strong,small,span){color:#123650!important;text-shadow:none!important}
