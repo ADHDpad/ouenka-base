@@ -42,3 +42,11 @@ html:has(body[data-page=stadium])::before{content:'';position:fixed;inset:0 0 au
 html body[data-page=stadium]>header.stadium-header{background:var(--site-menu-background,#071d33)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;filter:none!important;box-shadow:none!important;overflow:visible!important}
 
 html body[data-page=stadium] .stadium-card-footer{justify-content:center}
+
+/* r245: a larger, heavier home menu symbol inside the existing 54 x 48 button. */
+html body #homeMenuButton>span{display:flex!important;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;line-height:0!important}
+html body #homeMenuButton .home-menu-symbol{display:block;width:28px!important;height:28px!important;flex-shrink:0}
+
+/* r246: draw the compact 1-9 mark independently of titlebar text fonts. */
+html body .lineup-box-icon .lineup-symbol{display:block!important;width:18px!important;height:18px!important;min-width:18px!important;flex:0 0 18px!important;overflow:visible;vertical-align:middle}
+html body .lineup-box-icon{padding:0!important;letter-spacing:0!important;line-height:1!important;overflow:hidden}
