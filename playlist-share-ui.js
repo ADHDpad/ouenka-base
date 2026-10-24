@@ -4,7 +4,7 @@ $('playlistShareButton').onclick=()=>{pending=null;token++;$('playlistShareApply
 $('playlistShareCreate').onclick=async()=>{
  const button=$('playlistShareCreate'),at=++token;button.disabled=true;try{
   const data={...lineupSnapshot(),version:1,mode:IS_MEDLEY?'medley':'lineup'};
-  const code=await api.encode(data);if(at!==token)return;$('playlistShareCode').value=code;pending=null;$('playlistShareApply').hidden=true;message('共有コードを作成しました。コピーして相手に渡してください。');
+  const code=await api.encode(data);if(at!==token)return;$('playlistShareCode').value=code;pending=null;$('playlistShareApply').hidden=true;message('数字4桁の共有コードを作成しました。有効期限は1時間です。');
  }catch(error){message(error.message)}finally{button.disabled=false}
 };
 $('playlistShareCopy').onclick=async()=>{const field=$('playlistShareCode');if(!field.value.trim()){message('先にコードを作成してください。');return}try{await navigator.clipboard.writeText(field.value);message('共有コードをコピーしました。')}catch{field.focus();field.select();message('コードを選択しました。コピーしてください。')}};

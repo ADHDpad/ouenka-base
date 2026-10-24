@@ -10,3 +10,16 @@ html body :is(body>header,body>.toolbar) .lineup-box-icon{font-size:14px!importa
 
 /* Menu and every titlebar action use the same 48 px outer height. */
 html body :is(body>header,body>.toolbar) :is(button,a.button,a.custom-titlebar-link,.back,.lyrics-link),html body #sharedNavigation button{box-sizing:border-box!important;height:48px!important;min-height:48px!important;max-height:48px!important;padding-top:5px!important;padding-bottom:5px!important;align-items:center!important}
+
+/* r238: the home symbol is a child span, so give it the same size as the shared symbol. */
+html body #homeMenuButton,html body #sharedNavigation #sharedMenuButton{box-sizing:border-box!important;width:54px!important;height:48px!important;min-height:48px!important;max-height:48px!important;padding:8px 14px!important;font-size:24px!important;line-height:1!important}
+html body #homeMenuButton>span{font-size:24px!important;line-height:1!important}
+html body #homeMenuButton{left:max(10px,env(safe-area-inset-left))!important;top:calc(8px + env(safe-area-inset-top))!important}
+html body .lineup-box-icon{box-sizing:border-box;display:inline-flex!important;align-items:center;justify-content:center;width:32px!important;height:32px!important;min-width:32px;border:2px solid currentColor!important;border-radius:50%!important;font:700 12px/1 system-ui!important;letter-spacing:-.5px;vertical-align:middle}
+html body :is(body>header,body>.toolbar) .lineup-box-icon{font-size:12px!important}
+#homeMenuDialog.menu-closing{animation:menu-exit .2s ease-in forwards!important}
+@keyframes menu-exit{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@media(prefers-reduced-motion:reduce){#homeMenuDialog[open],#homeMenuDialog.menu-closing{animation:none!important}}
+
+/* Home trigger is already inside the sticky header. */
+html body #homeMenuButton{position:absolute!important;top:8px!important}

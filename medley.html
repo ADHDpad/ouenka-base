@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
+<head><script src="short-share-client.js?v=20261024-r242"></script><script src="songbook-store.js?v=20261024-r242"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#071d33">
@@ -85,10 +85,10 @@ body.row-dragging *{cursor:grabbing!important}
 @media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
-<script src="./ouenka-transport.js?v=20261023-r237"></script>
-<script src="./lineup-settings.js?v=20261023-r237"></script>
-<script src="audio-recovery.js?v=20261023-r237"></script>
-<script src="pwa-diagnostic.js?v=20261023-r237"></script>
+<script src="./ouenka-transport.js?v=20261024-r242"></script>
+<script src="./lineup-settings.js?v=20261024-r242"></script>
+<script src="audio-recovery.js?v=20261024-r242"></script>
+<script src="pwa-diagnostic.js?v=20261024-r242"></script>
 <script src="team-order.js"></script>
 <style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
 <style>
@@ -116,7 +116,7 @@ body.row-dragging *{cursor:grabbing!important}
 .top-actions>button:hover{background:#ffffff18}.top-actions>button:focus-visible{outline:2px solid #68baff;outline-offset:-3px}
 @media(max-width:600px){.top-actions>.chat,.top-actions>.back{min-height:50px;padding:7px 14px;font-size:13px}.top-actions>button::before{font-size:22px}input,textarea,select{scroll-margin-top:90px}}
 </style>
-<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row{grid-template-columns:48px minmax(0,1fr) 42px!important}.player-row .position{display:none!important}@media(max-width:600px){.player-row{grid-template-columns:32px minmax(0,1fr) 32px!important}}</style><link rel="stylesheet" href="ui-r177.css?v=20261023-r237"><link rel="stylesheet" href="site-theme.css?v=20261023-r237"><script src="site-theme.js?v=20261023-r237"></script><link rel="stylesheet" href="site-settings.css?v=20261023-r237"><script defer src="site-settings.js?v=20261023-r237"></script><link rel="stylesheet" href="shared-navigation.css?v=20261023-r237"><script defer src="shared-navigation.js?v=20261023-r237"></script><link rel="stylesheet" href="titlebar-type.css?v=20261023-r237"><link rel="stylesheet" href="lineup-player-search.css?v=20261023-r237"><script src="npb-player-directory.js?v=20261023-r237"></script><script src="lineup-player-search.js?v=20261023-r237"></script></head>
+<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row{grid-template-columns:48px minmax(0,1fr) 42px!important}.player-row .position{display:none!important}@media(max-width:600px){.player-row{grid-template-columns:32px minmax(0,1fr) 32px!important}}</style><link rel="stylesheet" href="ui-r177.css?v=20261024-r242"><link rel="stylesheet" href="site-theme.css?v=20261024-r242"><script src="site-theme.js?v=20261024-r242"></script><link rel="stylesheet" href="site-settings.css?v=20261024-r242"><script defer src="site-settings.js?v=20261024-r242"></script><link rel="stylesheet" href="shared-navigation.css?v=20261024-r242"><script defer src="shared-navigation.js?v=20261024-r242"></script><link rel="stylesheet" href="titlebar-type.css?v=20261024-r242"><link rel="stylesheet" href="lineup-player-search.css?v=20261024-r242"><script src="npb-player-directory.js?v=20261024-r242"></script><script src="lineup-player-search.js?v=20261024-r242"></script></head>
 <body>
 <header class="topbar">
  <div class="top-brand"><div class="top-brand-title">OUENKA BASE</div><div class="top-brand-sub">DATA REGISTER SYSTEM</div></div>
@@ -133,7 +133,7 @@ body.row-dragging *{cursor:grabbing!important}
  <section class="hero"><h1>メドレー作成</h1><p>曲を自由に追加・並べ替えしてメドレーを作成できます。守備位置の指定は不要です。</p></section>
  <section class="panel">
   <div hidden><select id="yearSelect"><option value=""></option></select><select id="teamSelect"><option value=""></option></select></div>
-<dialog id="playlistShareDialog" style="width:min(92vw,640px);max-height:85vh;overflow:auto;border:0;border-radius:16px;padding:22px;color:#143149"><h2>1-9・メドレーを共有</h2><p>コードをコピーして相手に渡すと、同じ打順・曲順を保存できます。コードは長めですが、有効期限はありません。</p><button id="playlistShareCreate" type="button" class="chat">今の曲順からコードを作成</button><label style="display:block;margin:18px 0 6px" for="playlistShareCode">共有コードをコピー／貼り付け</label><textarea id="playlistShareCode" rows="5" spellcheck="false" style="width:100%;box-sizing:border-box;font:16px monospace;padding:12px;border:1px solid #b9cede;border-radius:8px;overflow-wrap:anywhere" placeholder="OBZ1. または OB1. で始まるコード"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button id="playlistShareCopy" type="button" class="chat">コピー</button><button id="playlistShareRead" type="button" class="chat">コードを読み込む</button><button id="playlistShareApply" type="button" class="chat" hidden>保存済み一覧に追加</button></div><p id="playlistShareStatus" role="status" style="white-space:pre-line;overflow-wrap:anywhere;max-height:35vh;overflow:auto"></p><button id="playlistShareClose" type="button" class="back" style="background:#163c5a">閉じる</button></dialog>
+<dialog id="playlistShareDialog" style="width:min(92vw,640px);max-height:85vh;overflow:auto;border:0;border-radius:16px;padding:22px;color:#143149"><h2>1-9・メドレーを共有</h2><p>コードをコピーして相手に渡すと、同じ打順・曲順を保存できます。共有コードは数字4桁で、有効期限は作成から1時間です。</p><button id="playlistShareCreate" type="button" class="chat">今の曲順からコードを作成</button><label style="display:block;margin:18px 0 6px" for="playlistShareCode">共有コードをコピー／貼り付け</label><textarea id="playlistShareCode" rows="1" inputmode="numeric" maxlength="4" spellcheck="false" style="width:100%;box-sizing:border-box;font:16px monospace;padding:12px;border:1px solid #b9cede;border-radius:8px;overflow-wrap:anywhere" placeholder="数字4桁（1時間有効）"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button id="playlistShareCopy" type="button" class="chat">コピー</button><button id="playlistShareRead" type="button" class="chat">コードを読み込む</button><button id="playlistShareApply" type="button" class="chat" hidden>保存済み一覧に追加</button></div><p id="playlistShareStatus" role="status" style="white-space:pre-line;overflow-wrap:anywhere;max-height:35vh;overflow:auto"></p><button id="playlistShareClose" type="button" class="back" style="background:#163c5a">閉じる</button></dialog>
   <dialog id="savedLineupsDialog"><h2>保存済のメドレー</h2><label for="savedTitleSearch">保存タイトルを検索</label><input id="savedTitleSearch" type="search" placeholder="タイトルの一部を入力" autocomplete="off" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 14px;padding:12px;font-size:16px;border:1px solid #a8bdcf;border-radius:8px"><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
   <div class="title-row"><label for="lineupTitle">メドレータイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
   <div id="lineup" class="lineup"></div>
@@ -151,7 +151,7 @@ body.row-dragging *{cursor:grabbing!important}
  </section>
 </main>
 
-<script src="./ouenka-audio-transfer.js?v=20261023-r237"></script>
+<script src="./ouenka-audio-transfer.js?v=20261024-r242"></script>
 <script>
 "use strict";
 
@@ -1309,9 +1309,9 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
-<script src="./active-roster.js?v=20261023-r237"></script>
-<script src="./ouenka-medley-core.js?v=20261023-r237"></script>
-<script src="./lineup-controls.js?v=20261023-r237"></script>
-<script src="playlist-share.js?v=20261023-r237"></script><script src="playlist-share-ui.js?v=20261023-r237"></script>
-<script src="team-colors.js?v=20261023-r237"></script><script src="popular-sync.js?v=20261023-r237"></script><script src="ui-r177.js?v=20261023-r237"></script></body>
+<script src="./active-roster.js?v=20261024-r242"></script>
+<script src="./ouenka-medley-core.js?v=20261024-r242"></script>
+<script src="./lineup-controls.js?v=20261024-r242"></script>
+<script src="playlist-share.js?v=20261024-r242"></script><script src="playlist-share-ui.js?v=20261024-r242"></script>
+<script src="team-colors.js?v=20261024-r242"></script><script src="popular-sync.js?v=20261024-r242"></script><script src="ui-r177.js?v=20261024-r242"></script></body>
 </html>

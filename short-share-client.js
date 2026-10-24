@@ -1,0 +1,6 @@
+(()=>{'use strict';const API='https://ouenka-base-data.ninzin5600.workers.dev/share';
+const code=value=>String(value??'').normalize('NFKC').replace(/\s/g,'');
+async function request(path,options={}){let response;try{response=await fetch(API+path,{...options,cache:'no-store',signal:AbortSignal.timeout(20000)})}catch{throw Error('共有サービスに接続できませんでした。通信状態を確認してください。')}let data;try{data=await response.json()}catch{throw Error('共有サービスの更新が必要です。付属worker.jsを反映してください。')}if(!response.ok||!data.ok)throw Error(data.error||'共有コードを確認してください。');return data}
+async function create(kind,payload){const data=await request('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,payload})});if(!/^\d{4}$/.test(data.code))throw Error('共有コードを確認できませんでした。');return data}
+async function read(raw,kind){const value=code(raw);if(!/^\d{4}$/.test(value))throw Error('共有コードは数字4桁で入力してください。');const data=await request('/'+value);if(data.kind!==kind)throw Error('このコードは別の種類の共有データです。対応する共有画面で読み込んでください。');if(!Number.isFinite(Date.parse(data.expiresAt))||Date.parse(data.expiresAt)<=Date.now())throw Error('共有コードは1時間で無効になります。作成し直してください。');return data.payload}
+window.OuenkaShortShare={create,read,code};})();

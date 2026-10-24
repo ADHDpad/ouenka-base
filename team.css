@@ -50,3 +50,15 @@ main{max-width:1050px;margin:auto;padding:10px 12px calc(84px + env(safe-area-in
 
 /* Button treatment applies to desktop, iPad and mobile alike. */
 .team-topline .back{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-height:36px;height:36px;padding:0 10px;border:1px solid #66839c;border-radius:6px;background:#163b60;color:#fff;font-size:13px;font-weight:750;line-height:1;white-space:nowrap}
+
+/* r238: reserve a full action row below the fixed shared menu control. */
+@media(max-width:650px){
+ html body.has-shared-navigation{padding-top:0}
+ html body.has-shared-navigation #teamTitlebar.shared-titlebar{display:grid!important;grid-template-columns:54px minmax(0,1fr)!important;gap:6px!important;padding:calc(8px + env(safe-area-inset-top)) 8px 8px!important}
+ html body #teamTitlebar .team-topline{grid-column:2!important;grid-row:1!important;width:100%;height:48px!important;min-height:48px!important}
+ html body #teamTitlebar .lyrics-link-wrap{grid-column:1/-1!important;grid-row:2!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) minmax(0,1fr)!important;gap:5px!important;width:100%;min-width:0}
+ html body #teamTitlebar .lyrics-link-wrap>.lyrics-link{min-width:0!important;padding:0 2px!important;font-size:clamp(10px,2.8vw,13px)!important;white-space:nowrap}
+ html body #teamTitlebar .tap-hint{grid-column:1/-1!important;grid-row:3!important}
+ html body #teamTitlebar .filter-tabs{grid-column:1/-1!important;grid-row:4!important;width:100%;min-width:0}
+ html body #teamTitlebar .filter{min-width:0!important;padding:0 2px!important;white-space:nowrap;font-size:clamp(10px,2.8vw,13px)!important}
+}

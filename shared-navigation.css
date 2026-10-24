@@ -40,3 +40,12 @@ html body .shared-titlebar #sharedBackButton{margin-left:auto!important;justify-
 html body .shared-titlebar #lineupTopActions{display:flex!important;align-items:center;gap:6px;overflow-x:auto;min-width:0}
 html body .shared-titlebar:has(>#sharedBackButton){display:flex!important;align-items:center;gap:8px}
 html body .shared-titlebar .team-topline{display:flex!important;align-items:center;gap:8px;min-width:0;width:100%}
+
+/* r239: the trigger and its titlebar scroll/bounce as one unit. */
+html body #sharedNavigation{position:absolute!important}
+html{overscroll-behavior-y:none}
+
+/* r240: opaque safe-area and toolbar surfaces on iPad Safari/PWA. */
+html:has(body.has-shared-navigation){background:var(--site-main,#071d33)}
+html body.has-shared-navigation .shared-titlebar{background-color:var(--site-menu-background,#071d33)!important;background-clip:border-box!important;opacity:1!important;isolation:isolate;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html:has(body.has-shared-navigation)::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--site-menu-background,#071d33);z-index:1601;pointer-events:none}

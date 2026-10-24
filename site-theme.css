@@ -144,3 +144,13 @@ html[data-site-theme][data-light-page] body :is(main,.wrap,.container,.feature-m
 
 /* Drawer actions follow ordinary action buttons, independently of titlebar controls. */
 html[data-site-theme] body :is(#homeMenuDialog,#sharedMenuDialog,#settingsNavigation) nav :is(a,button){background:var(--site-action-background,var(--site-main))!important;color:var(--site-main-ink)!important;border-color:var(--site-main)!important;text-shadow:none!important}
+
+/* r239: selected inputs match the filled roster slots. */
+html body #lineup :is(.position,.player-search){background:#ffffff!important;color:#123650!important;border-color:#b5ccdc!important}
+html body #lineup :is(.position,.player-search).has-value{background:#bfeaff!important;border-color:#57b8e9!important}
+html body .title-row input#lineupTitle,html[data-site-theme] body .title-row input#lineupTitle{background:#ffffff!important;color:#123650!important;border-color:#b5ccdc!important}
+html body .title-row input#lineupTitle.has-value,html[data-site-theme] body .title-row input#lineupTitle.has-value{background:#bfeaff!important;border-color:#57b8e9!important}
+html body .title-row #lineupTitle::placeholder{color:#526d87!important}
+html body #activeRosterDialog .roster-head{background:var(--site-menu-background,#0b2f55)!important;color:var(--site-menu-ink,#ffffff)!important}
+html body #activeRosterDialog .roster-head h2{color:inherit!important}
+html body #activeRosterDialog .roster-head button{background:var(--site-menu-button,#163b60)!important;color:var(--site-menu-button-ink,#ffffff)!important}

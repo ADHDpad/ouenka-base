@@ -85,6 +85,13 @@ async function fetchDecoded(ctx,s,fileName){
  }
  throw last||new Error(fileName+" が見つかりません");
 }
+const teamSpecialMissing=new Set();
+async function fetchTeamSpecial(ctx,s){
+ const url=audioCandidates(s,"special_audio.m4a")[0];
+ if(teamSpecialMissing.has(url))return null;
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),2500);
+ try{const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:controller.signal});if(response.status===404){teamSpecialMissing.add(url);return null}if(!response.ok)return null;const bytes=await response.arrayBuffer();return await ctx.decodeAudioData(bytes.slice(0))}catch(_){return null}finally{clearTimeout(timer)}
+}
 function audibleEnd(buffer){
  const sr=buffer.sampleRate,block=Math.max(1,Math.floor(sr*.020));
  const threshold=Math.pow(10,-48/20);let last=0;
@@ -124,6 +131,7 @@ function startSyncedBuffers(offset=0){
  }
  teamStartedAt=when-offset;
  if(!teamMedley){const song=current;window.OuenkaSongbook?.track(teamAudioContext,song,()=>current===song&&!paused&&teamSources.length>0,when)}
+ else{const context=teamAudioContext,medley=teamMedley,base=when-offset;window.OuenkaSongbook?.watch(()=>teamAudioContext!==context||teamMedley!==medley||teamStartedAt!==base||context.state==='closed'?null:{playing:context.state==='running'&&!paused,clock:context.currentTime,position:context.currentTime-base,entries:medley.starts.map((start,i)=>({song:medley.queue[i],start,end:medley.starts[i+1]??teamTotalDuration}))})}
  if(teamMedley){
   if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
   const source=teamSources[0],token=teamPlayToken;
@@ -140,14 +148,18 @@ async function playSong(s,fromQueue=false){
  try{
   const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error("AudioContext非対応");
   const ctx=await window.ouenkaAudioRecovery.create();teamAudioContext=ctx;
-  const [audio,normalAccompaniment,openingAccompaniment]=await Promise.all([
-   fetchDecoded(ctx,s,"audio.m4a"),fetchDecoded(ctx,s,"accompaniment.m4a"),
-   fetchDecoded(ctx,s,"intro_accompaniment.m4a").catch(()=>null)
-  ]);
+  // A special recording is a complete mix and must play without added accompaniment.
+  const special=await fetchTeamSpecial(ctx,s);
+  let timeline;
+  if(special){timeline=[{buffer:special,start:0}]}else{
+   const [audio,normalAccompaniment,openingAccompaniment]=await Promise.all([
+    fetchDecoded(ctx,s,"audio.m4a"),fetchDecoded(ctx,s,"accompaniment.m4a"),
+    fetchDecoded(ctx,s,"intro_accompaniment.m4a").catch(()=>null)
+   ]);
+   timeline=[{buffer:audio,start:0},{buffer:openingAccompaniment||normalAccompaniment,start:0}];
+  }
   if(token!==teamPlayToken){try{await ctx.close()}catch(_){};return}
-  const accompaniment=openingAccompaniment||normalAccompaniment;
-  teamBuffers=[audio,accompaniment];
-  teamTimeline=[{buffer:audio,start:0},{buffer:accompaniment,start:0}];
+  teamTimeline=timeline;teamBuffers=timeline.map(x=>x.buffer);
   teamTotalDuration=Math.max(...teamTimeline.map(x=>x.start+x.buffer.duration));
   teamPauseOffset=0;teamStoppedPosition=0;teamSavedDuration=teamTotalDuration;paused=false;startSyncedBuffers(0);attachTeamTransport(s);
   $("miniState").textContent="再生中";if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";
