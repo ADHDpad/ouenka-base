@@ -170,3 +170,7 @@ html body #activeRosterDialog #rosterPlayers .roster-shirt,html body #activeRost
 /* r263: align theme checkboxes and labels on the same center line. */
 html body #siteThemeSettings label:has(>input[type=checkbox]){display:flex;align-items:center;gap:8px;line-height:1.5;min-height:28px}
 html body #siteThemeSettings label>input[type=checkbox]{flex:0 0 20px;width:20px;height:20px;min-height:20px;margin:0;padding:0}
+
+/* r270: filtering never stretches the active-player grid rows. */
+html body #activeRosterDialog #rosterPlayers{grid-auto-rows:45px;align-content:start;align-items:start}
+html body #activeRosterDialog #rosterPlayers .roster-player{box-sizing:border-box;height:45px;min-height:45px;max-height:45px;align-self:start}

@@ -16,3 +16,9 @@ html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-tea
 /* r260: unregistered players remain white, including stadium setup candidates. */
 html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-unregistered="true"]{background:#ffffff!important;background-image:none!important;color:#123650!important;border-color:#c6d5e2!important;border-left-color:#c6d5e2!important;box-shadow:none!important;text-shadow:none!important}
 html body :is(.suggestions,.stadium-slot-suggestions) button.suggestion[data-unregistered="true"] :is(strong,small,span){color:#123650!important;text-shadow:none!important}
+
+/* Keep the clear action in the input row when an assignment hint is shown. */
+.player-row .search-wrap{display:grid;grid-template-columns:minmax(0,1fr)}
+.player-row .search-wrap>.player-search{grid-area:1/1;min-width:0}
+html body .player-row .search-wrap>.clear{grid-area:1/1;position:relative;top:auto;right:auto;transform:none;justify-self:end;align-self:center;margin:0 4px 0 0;width:30px;min-width:30px;height:30px;min-height:30px;padding:0;line-height:1}
+.player-row .search-wrap>.assignment-note{grid-column:1;grid-row:2}

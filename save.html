@@ -659,7 +659,7 @@ main{max-width:760px}
 input,textarea,select{scroll-margin-top:90px}
 @media(max-width:700px){input,textarea,select{font-size:16px!important}}
 </style>
-<link rel="stylesheet" href="ui-r177.css?v=20261025-r267"><link rel="stylesheet" href="site-theme.css?v=20261025-r267"><script src="site-theme.js?v=20261025-r267"></script><link rel="stylesheet" href="site-settings.css?v=20261025-r267"><script defer src="site-settings.js?v=20261025-r267"></script><link rel="stylesheet" href="shared-navigation.css?v=20261025-r267"><script defer src="shared-navigation.js?v=20261025-r267"></script><link rel="stylesheet" href="titlebar-type.css?v=20261025-r267"><link rel="stylesheet" href="npb-register-search.css?v=20261025-r267"><script src="npb-player-directory.js?v=20261025-r267"></script><script src="npb-register-search.js?v=20261025-r267"></script><script defer src="field-state.js?v=20261025-r267"></script></head>
+<link rel="stylesheet" href="ui-r177.css?v=20261026-r273"><link rel="stylesheet" href="site-theme.css?v=20261026-r273"><script src="site-theme.js?v=20261026-r273"></script><link rel="stylesheet" href="site-settings.css?v=20261026-r273"><script defer src="site-settings.js?v=20261026-r273"></script><link rel="stylesheet" href="shared-navigation.css?v=20261026-r273"><script defer src="shared-navigation.js?v=20261026-r273"></script><link rel="stylesheet" href="titlebar-type.css?v=20261026-r273"><link rel="stylesheet" href="npb-register-search.css?v=20261026-r273"><script src="npb-player-directory.js?v=20261026-r273"></script><script src="npb-register-search.js?v=20261026-r273"></script><script defer src="field-state.js?v=20261026-r273"></script></head>
 
 <body>
 
@@ -3427,5 +3427,35 @@ function backToBase(){
 </div>
 
 <script>document.addEventListener("DOMContentLoaded",()=>{const el=document.getElementById("specialAudioFile");if(el)el.addEventListener("change",()=>{selectedSpecialAudioFile=el.files?.[0]||null;document.getElementById("selectedSpecialAudioName").textContent=selectedSpecialAudioFile?.name||"未選択（通常版で再生）";});});</script>
-<script src="team-colors.js?v=20261025-r267"></script><script src="popular-sync.js?v=20261025-r267"></script><script src="ui-r177.js?v=20261025-r267"></script></body>
+<script src="team-colors.js?v=20261026-r273"></script><script src="popular-sync.js?v=20261026-r273"></script><script src="ui-r177.js?v=20261026-r273"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const fields=[
+  ['audioFile','selectedAudioName','再生用音源'],
+  ['melodyAudioFile','selectedMelodyAudioName','メロディー音源'],
+  ['accompanimentAudioFile','selectedAccompanimentAudioName','コード進行・ベース音源'],
+  ['introAccompanimentAudioFile','selectedIntroAccompanimentAudioName','前奏用コード進行'],
+  ['specialAudioFile','selectedSpecialAudioName','特別版音源']
+ ];
+ for(const [id,labelId,name] of fields){
+  const input=document.getElementById(id);if(!input)continue;
+  const button=document.createElement('button');
+  button.type='button';button.className='clear-audio-file';button.textContent='選択を取り消す';
+  button.setAttribute('aria-label',name+'のファイル選択を取り消す');
+  button.addEventListener('click',()=>{
+   input.value='';
+   // Use each field's change handler to clear both the File and its label.
+   input.dispatchEvent(new Event('change',{bubbles:true}));
+   if(editingSong){
+    const label=document.getElementById(labelId);
+    if(label)label.textContent='既存データを維持（変更する場合だけ選択）';
+   }
+  });
+  input.insertAdjacentElement('afterend',button);
+ }
+});
+</script>
+<style>.clear-audio-file{display:inline-flex;align-items:center;justify-content:center;margin:8px 0;padding:8px 12px;min-height:40px;border:1px solid #a6bfd7;border-radius:6px;font:700 14px system-ui;cursor:pointer}</style>
+
+</body>
 </html>
