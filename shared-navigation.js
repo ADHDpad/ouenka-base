@@ -28,7 +28,7 @@ return close;
 }
 function init(){
 let themeMeta=document.querySelector('meta[name="theme-color"]');if(!themeMeta){themeMeta=document.createElement('meta');themeMeta.name='theme-color';themeMeta.content=getComputedStyle(document.documentElement).getPropertyValue('--site-main').trim()||'#071d33';document.head.append(themeMeta)}
-const page=location.pathname.split('/').pop()||'index.html';if(page==='index.html')return;
+const rawPage=location.pathname.split('/').pop()||'index.html';const page=rawPage.includes('.')?rawPage:rawPage+'.html';if(page==='index.html')return;
 const special=page==='1-9.html'||page==='medley.html';
 let header=document.querySelector('body>header,body>.toolbar');if(!header){header=document.createElement('header');document.body.prepend(header)}header.classList.add('shared-titlebar');
 const oldBack=[...(header||document.body).querySelectorAll('button,a')].find(b=>/戻る|◀ ホーム/.test(b.textContent));
@@ -49,9 +49,9 @@ setupMenuMotion(dialog);
 trigger.onclick=()=>{dialog.showModal();trigger.setAttribute('aria-expanded','true')};dialog.addEventListener('close',()=>{trigger.setAttribute('aria-expanded','false');trigger.focus()});
 general.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>dialog.close()));
 general.querySelector('[data-site-update]').onclick=()=>{dialog.close();if(window.updateApp)window.updateApp();else location.reload()};
-general.querySelector('[data-audio-reset]').onclick=async e=>{const b=e.currentTarget;if(!window.ouenkaAudioRecovery?.reset){location.href='audio-diagnostic.html';return}b.disabled=true;try{window.stopCurrentSong?.();b.textContent=await window.ouenkaAudioRecovery.reset()}catch(err){b.textContent=err.message}finally{b.disabled=false}};
+general.querySelector('[data-audio-reset]').onclick=e=>window.OuenkaMenuReset(e.currentTarget);
 }
-if(document.readyState!=='complete')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+if(document.readyState!=='complete')window.addEventListener('load',init,{once:true});else init();
 })();
 /* Keep dedicated menu tabs, with one icon and bilingual labels per action. */
 window.addEventListener('load',()=>{
@@ -76,3 +76,12 @@ item.replaceChildren(icon,span);
 });
 });
 },{once:true});
+
+/* Prefer text glyphs for button symbols on iOS, including dynamically added controls. */
+(()=>{const symbols=/[\u2190-\u21ff\u2300-\u23ff\u2600-\u27bf\u2b00-\u2bff\u{1f300}-\u{1faff}]/gu;
+function scan(){document.querySelectorAll('button,a.button,.top-menu-button,.custom-titlebar-link').forEach(button=>{const walker=document.createTreeWalker(button,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){if(node.parentElement.closest('svg,style,script'))continue;const old=node.nodeValue;const next=old.replace(/\ufe0f/g,'').replace(symbols,'$&\ufe0e').replace(/\ufe0e+/g,'\ufe0e');if(next!==old)node.nodeValue=next}})}
+let queued=false;const schedule=()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;scan()})};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{scan();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,characterData:true})},{once:true});else{scan();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,characterData:true})}})();
+
+window.OuenkaMenuReset=async button=>{if(!window.ouenkaAudioRecovery?.reset){location.href='audio-diagnostic.html';return}let status=button.parentElement.querySelector('.menu-audio-status');if(!status){status=document.createElement('p');status.className='menu-audio-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');button.after(status)}button.disabled=true;status.textContent='音声を復旧しています…';try{window.stopCurrentSong?.();status.textContent=await window.ouenkaAudioRecovery.reset()}catch(e){status.textContent='復旧できませんでした：'+e.message}finally{button.disabled=false}};
+(()=>{const gear='<svg class="settings-gear-icon" aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="m9.5 2-.6 2.4-1.4.8-2.4-.7-2.5 4.3 1.8 1.7v1.6l-1.8 1.7 2.5 4.3 2.4-.7 1.4.8.6 2.4h5l.6-2.4 1.4-.8 2.4.7 2.5-4.3-1.8-1.7v-1.6l1.8-1.7-2.5-4.3-2.4.7-1.4-.8L14.5 2zM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8" fill-rule="evenodd"/></svg>';
+function scan(){document.querySelectorAll('button,a').forEach(button=>{const walker=document.createTreeWalker(button,NodeFilter.SHOW_TEXT);const nodes=[];let n;while(n=walker.nextNode())if(!n.parentElement.closest('svg,script,style')&&n.nodeValue.includes('⚙'))nodes.push(n);for(const node of nodes){const parts=node.nodeValue.split(/⚙[\ufe0e\ufe0f]*/u),fragment=document.createDocumentFragment();parts.forEach((part,i)=>{if(i){const span=document.createElement('span');span.className='settings-gear-wrap';span.innerHTML=gear;fragment.append(span)}fragment.append(document.createTextNode(part))});node.replaceWith(fragment)}})}let pending=false;function schedule(){if(pending)return;pending=true;queueMicrotask(()=>{pending=false;scan()})}window.addEventListener('load',()=>{scan();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,characterData:true})},{once:true})})();

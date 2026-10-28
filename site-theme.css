@@ -174,3 +174,9 @@ html body #siteThemeSettings label>input[type=checkbox]{flex:0 0 20px;width:20px
 /* r270: filtering never stretches the active-player grid rows. */
 html body #activeRosterDialog #rosterPlayers{grid-auto-rows:45px;align-content:start;align-items:start}
 html body #activeRosterDialog #rosterPlayers .roster-player{box-sizing:border-box;height:45px;min-height:45px;max-height:45px;align-self:start}
+/* Favorites sort selection follows the chosen site palette. */
+html[data-site-theme] body.favorites-page header.shared-titlebar #favoriteTopActions button[data-sort][aria-pressed="true"],html body.favorites-page header.shared-titlebar #favoriteTopActions button[data-sort][aria-pressed="true"]{background:var(--site-action-background,var(--site-main,#075daf))!important;color:var(--site-button-text,#fff)!important;border-color:var(--site-main,#075daf)!important}
+html[data-site-theme] body.favorites-page header.shared-titlebar #favoriteTopActions button[data-sort][aria-pressed="false"],html body.favorites-page header.shared-titlebar #favoriteTopActions button[data-sort][aria-pressed="false"]{background:#fff!important;color:var(--site-main,#075daf)!important;border-color:var(--site-main,#075daf)!important}
+/* Home team-group headings share the titlebar surface and foreground. */
+html[data-site-theme] body #homeTeams :is(.league-title,.legacy-extra-title){background:var(--site-menu-background,var(--site-bar-background))!important;color:var(--site-menu-ink,#fff)!important;border-color:var(--site-main)!important}
+html[data-site-theme] body #homeTeams :is(.league-title,.legacy-extra-title) :is(span,small){color:inherit!important;opacity:1!important}

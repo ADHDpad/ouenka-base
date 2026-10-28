@@ -71,3 +71,5 @@ html body :is(#homeMenuDialog,#sharedMenuDialog)::backdrop{background:#00182d99}
 
 /* r253: section subtitles match the home menu on every screen. */
 html body :is(#homeMenuDialog,#sharedMenuDialog) nav>p{display:block!important;margin:18px 0 4px!important;padding:0!important;font:800 12px/1.5 system-ui!important;letter-spacing:.06em;color:var(--site-muted,#587990)!important;background:transparent!important;border:0!important;min-height:0!important}
+
+button :is(.top-button-icon,.custom-titlebar-icon,.menu-item-icon,.menu-action-icon),a :is(.top-button-icon,.custom-titlebar-icon,.menu-item-icon,.menu-action-icon){filter:grayscale(1)!important}button svg{flex-shrink:0}
