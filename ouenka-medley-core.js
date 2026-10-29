@@ -1,19 +1,57 @@
 (()=>{'use strict';
 const MEDLEY_BAR_SEC=(60/170)*4;
+// All continuous playback uses the same song-local timing as the approved 1-9.
+function tempo(song){return Number(song?.tempo)===140?140:170}
+function barSecondsForSong(song){return 240/tempo(song)}
 function getSongJoinOffsetSec(song,openingExtraSec=0){
- const total=Math.max(song.melody.duration,song.accompaniment.duration);
- const body=Math.max(0,total-openingExtraSec);
- const bars=Math.max(1,Math.round(body/MEDLEY_BAR_SEC));
- const musicalBars=bars>=13?16:8;
- return openingExtraSec+musicalBars*MEDLEY_BAR_SEC;
+ const bar=barSecondsForSong(song),total=Math.max(song.melody.duration,song.accompaniment.duration),body=Math.max(0,total-openingExtraSec);
+ const bars=Math.max(1,Math.round(body/bar)),musicalBars=bars>=13?16:8;
+ return openingExtraSec+musicalBars*bar;
 }
 function buildDynamicSongStarts(songs,openingExtraSec=0){
- const starts=[];let cursor=0;
- for(let i=0;i<songs.length;i++){
-  starts.push(cursor);
-  if(i<songs.length-1)cursor+=getSongJoinOffsetSec(songs[i],i===0?openingExtraSec:0);
+ let cursor=0;return songs.map((song,i)=>{const start=cursor;if(i<songs.length-1)cursor+=getSongJoinOffsetSec(song,i===0?openingExtraSec:0);return start});
+}
+const registrationKey=(name,number)=>String(name||'').normalize('NFKC').trim()+'#'+String(number??'').trim();
+async function resolveSongs(input,options={}){
+ const timeout=AbortSignal.timeout(15000),signal=options.signal&&AbortSignal.any?AbortSignal.any([options.signal,timeout]):options.signal||timeout;
+ const response=await fetch('https://ouenka-base-data.ninzin5600.workers.dev/songs',{cache:'no-store',signal});
+ if(!response.ok)throw Error('登録テンポを確認できませんでした。通信状態を確認して再度お試しください。');
+ const data=await response.json();if(!Array.isArray(data.songs))throw Error('登録データの形式を確認できませんでした。');
+ const catalog=new Map(data.songs.map(song=>[registrationKey(song.player_name??song.name,song.production_number??song.productionNumber),song]));
+ return input.map(original=>{
+  const source=original.audioSource||original,name=source.reuseName||source.player_name||source.name,number=source.reuseProductionNumber||source.production_number||source.productionNumber;
+  const song=catalog.get(registrationKey(name,number));
+  if(!song)throw Error(`${name}（制作番号 ${number||'未設定'}）の登録データが見つかりません。`);
+  return {...original,...song,name:String(song.player_name??song.name),productionNumber:String(song.production_number??song.productionNumber),tempo:tempo(song)};
+ });
+}
+async function build(ctx,items,options={}){
+ if(!items.length)throw Error('結合する音源がありません。');
+ if(typeof options.load!=='function')throw Error('音源の読み込み処理が設定されていません。');
+ const load=options.load,opening=options.opening!==false,separated=new Array(items.length);let cursor=0,loaded=0,failed=false;
+ const cancelled=()=>{options.cancelled?.();if(failed)throw Error('音源の作成を中断しました。')};
+ async function optional(item,file){try{return await load(item,file,true)}catch(error){cancelled();return null}}
+ async function worker(){while(cursor<items.length){cancelled();const i=cursor++,item=items[i];try{
+  const first=i===0&&opening;
+  const [melody,normalAccompaniment,openingAccompaniment]=await Promise.all([
+   first?optional(item,'audio.m4a').then(buffer=>buffer||load(item,'melody.m4a',false)):load(item,'melody.m4a',false),
+   load(item,'accompaniment.m4a',false),first?optional(item,'intro_accompaniment.m4a'):Promise.resolve(null)
+  ]);
+  cancelled();separated[i]={tempo:tempo(item),melody,accompaniment:openingAccompaniment||normalAccompaniment,normalAccompaniment,hasOpeningAccompaniment:!!openingAccompaniment};
+  options.onProgress?.(++loaded,items.length);
+ }catch(error){failed=true;throw Error(`${item.name||item.player_name||'応援歌'} の音源を読み込めませんでした。\n${error.message||error}`)}}}
+ await Promise.all(Array.from({length:Math.min(Math.max(1,options.concurrency||3),items.length)},worker));cancelled();
+ let openingExtraSec=0;
+ if(separated[0].hasOpeningAccompaniment){
+  const normalMelody=await optional(items[0],'melody.m4a');cancelled();const first=separated[0],bar=barSecondsForSong(first);
+  const melodyExtra=normalMelody?Math.max(0,first.melody.duration-normalMelody.duration):0,chordExtra=Math.max(0,first.accompaniment.duration-first.normalAccompaniment.duration);
+  openingExtraSec=Math.round(Math.max(melodyExtra,chordExtra)/bar)*bar;
  }
- return starts;
+ const originalStarts=buildDynamicSongStarts(separated,openingExtraSec);
+ const callPlan=options.callsRows&&window.OuenkaCalls?await window.OuenkaCalls.plan(ctx,separated,originalStarts,options.callsRows):{starts:originalStarts,events:[]};cancelled();
+ let buffer=mixSmoothIndependent(ctx,separated,null,callPlan.starts);
+ if(options.callsRows&&window.OuenkaCalls)buffer=window.OuenkaCalls.decorate(ctx,buffer,callPlan);cancelled();
+ return {buffer,starts:callPlan.starts,originalStarts,separated,openingExtraSec,callPlan,duration:buffer.duration,rowIndices:options.rowIndices||items.map((_,i)=>i),barSeconds:barSecondsForSong(separated[0]),barSecondsBySong:separated.map(barSecondsForSong),tempos:separated.map(tempo)};
 }
 function mixSmoothIndependent(ctx,songs,intro,starts,range=null){
  const sampleRate=songs[0].melody.sampleRate;
@@ -120,7 +158,7 @@ function seamless(ctx,first,normal,decorate=(buffer)=>buffer){
  const loopStart=offset;
  buffers.push(steady);starts.push(...normal.starts.map(v=>loopStart+v));indices.push(...normal.rowIndices);
  const buffer=combine(ctx,buffers);
- return {buffer,starts,rowIndices:indices,duration:buffer.duration,loopStart,loopEnd:buffer.duration,isSeamlessLoop:true,prefixDuration:prefix.duration,normalStarts:normal.starts,normalDuration:steady.duration,normalRowIndices:normal.rowIndices,firstTimeline:first,barSeconds:MEDLEY_BAR_SEC};
+ return {buffer,starts,rowIndices:indices,duration:buffer.duration,loopStart,loopEnd:buffer.duration,isSeamlessLoop:true,prefixDuration:prefix.duration,normalStarts:normal.starts,normalDuration:steady.duration,normalRowIndices:normal.rowIndices,firstTimeline:first,barSeconds:first.barSeconds||barSecondsForSong(initial[0]),barSecondsBySong:[...(first.barSecondsBySong||initial.map(barSecondsForSong)),...(n===1?[barSecondsForSong(body[0])]:[]),...body.map(barSecondsForSong)],tempos:[...initial.map(tempo),...(n===1?[tempo(body[0])]:[]),...body.map(tempo)],normalBarSecondsBySong:body.map(barSecondsForSong)};
 }
-window.OuenkaMedleyCore={seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix:mixSmoothIndependent};
+window.OuenkaMedleyCore={build,resolveSongs,tempo,barSecondsForSong,seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix:mixSmoothIndependent};
 })();

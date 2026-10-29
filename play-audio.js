@@ -38,24 +38,19 @@ async function play(song,options={}){
 function jump(direction){if(!ctx||!timeline?.starts)return;const at=state().currentTime;let i=0;while(i+1<timeline.starts.length&&at>=timeline.starts[i+1])i++;schedule(timeline.starts[Math.max(0,Math.min(timeline.starts.length-1,i+direction))])}
 function trackPlayback(songs,starts,context,token){window.OuenkaSongbook?.watch(()=>token!==epoch||ctx!==context||context.state==='closed'?null:{playing:!paused&&context.state==='running',clock:context.currentTime,position:context.currentTime-started,entries:starts.map((start,i)=>({song:songs[i],start,end:starts[i+1]??timeline.duration}))})}
 async function playMedley(input,options={}){
- stop();const songs=input.map(s=>({...s}));if(!songs.length)return null;
+ stop();let songs=input.map(s=>({...s}));if(!songs.length)return null;
  const token=epoch;timeline=null;controller=new AbortController();const signal=controller.signal;label=options.title||'応援歌メドレー';
  window.OuenkaTransport?.mount({state:()=>({busy:true,title:'音源を検索中…'}),stop:options.onStop||stop});
  try{
   const context=await window.ouenkaAudioRecovery.create();if(token!==epoch){context.close().catch(()=>{});return null}ctx=context;
-  const separated=new Array(songs.length);let cursor=0;
   const cancelled=()=>{if(signal.aborted||token!==epoch)throw new DOMException('中止','AbortError')};
-  async function load(){while(cursor<songs.length){const i=cursor++,song=songs[i];cancelled();const [melody,normalAccompaniment,opening]=await Promise.all([
-   i===0?decode(context,song,'audio.m4a',signal).catch(()=>decode(context,song,'melody.m4a',signal)):decode(context,song,'melody.m4a',signal),
-   decode(context,song,'accompaniment.m4a',signal),i===0?decode(context,song,'intro_accompaniment.m4a',signal).catch(()=>null):Promise.resolve(null)
-  ]);cancelled();separated[i]={melody,accompaniment:opening||normalAccompaniment,normalAccompaniment,opening}}}
-  await Promise.all(Array.from({length:Math.min(3,songs.length)},load));cancelled();
-  const core=window.OuenkaMedleyCore;let openingExtra=0;
-  if(separated[0].opening){const body=await decode(context,songs[0],'melody.m4a',signal).catch(()=>null);cancelled();openingExtra=Math.round(Math.max(body?separated[0].melody.duration-body.duration:0,separated[0].accompaniment.duration-separated[0].normalAccompaniment.duration,0)/core.barSeconds)*core.barSeconds}
-  const originalStarts=core.buildDynamicSongStarts(separated,openingExtra);
-  const plan=window.OuenkaCalls?await window.OuenkaCalls.plan(context,separated,originalStarts,songs):{starts:originalStarts,events:[]};cancelled();
-  let buffer=core.mix(context,separated,null,plan.starts);if(window.OuenkaCalls)buffer=window.OuenkaCalls.decorate(context,buffer,plan);cancelled();
-  timeline={duration:buffer.duration,entries:[{buffer,start:0}],starts:plan.starts,songs};
+  songs=await window.OuenkaMedleyCore.resolveSongs(songs,{signal});cancelled();
+  const built=await window.OuenkaMedleyCore.build(context,songs,{
+   load:async(song,file,optional)=>{try{return await decode(context,song,file,signal)}catch(error){cancelled();if(optional)return null;throw error}},
+   cancelled,callsRows:songs
+  });cancelled();
+  const {buffer,callPlan:plan}=built;
+  timeline={...built,entries:[{buffer,start:0}],songs};
   replay=()=>playMedley(songs,options);endCallback=options.onEnded||null;let last=-1;
   onTick=time=>{let i=0;while(i+1<plan.starts.length&&time>=plan.starts[i+1])i++;if(i!==last){last=i;label=(options.title?options.title+' ／ ':'')+songs[i].name;options.onSong?.(songs[i],i)}};
   schedule(0);trackPlayback(songs,plan.starts,context,token);mount(options);
