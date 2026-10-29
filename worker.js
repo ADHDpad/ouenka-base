@@ -1,4 +1,4 @@
-const WORKER_BUILD = "lineup-popular-filtered-20261014-r6-favorites-share-r136-quiz-room-r164-short-share-r240";
+const WORKER_BUILD = "lineup-popular-filtered-20261014-r6-favorites-share-r136-quiz-room-r164-short-share-r240-favorites-r296";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -271,7 +271,7 @@ export default {
             400
           );
         }
-        if(body.tempo!==undefined&&![170,150].includes(body.tempo))return json({ok:false,error:"テンポは170または150を選択してください。"},400);
+        if(body.tempo!==undefined&&![170,140].includes(body.tempo))return json({ok:false,error:"テンポは170または140を選択してください。"},400);
         const playerName =
           clean(
             body.player_name
@@ -385,7 +385,7 @@ export default {
             melodyFilename,
             chordFilename,
             bassFilename,
-            body.tempo===150?150:170,
+            body.tempo===140?140:170,
             body.is_generic===true||body.is_generic===1?1:0
           )
           .run();
@@ -451,7 +451,7 @@ export default {
             400
           );
         }
-        if(body.tempo!==undefined&&![170,150].includes(body.tempo))return json({ok:false,error:"テンポは170または150を選択してください。"},400);
+        if(body.tempo!==undefined&&![170,140].includes(body.tempo))return json({ok:false,error:"テンポは170または140を選択してください。"},400);
         const playerName =
           hasOwn(
             body,
@@ -600,7 +600,7 @@ export default {
           melodyFilename,
           chordFilename,
           bassFilename,
-          hasOwn(body,"tempo")?(body.tempo===150?150:170):(current.tempo||170),
+          hasOwn(body,"tempo")?(body.tempo===140?140:170):(current.tempo||170),
           hasOwn(body,"is_generic")?(body.is_generic===true||body.is_generic===1?1:0):(current.is_generic||0),
           id
         )
@@ -1095,19 +1095,21 @@ async function handleCommunityStats(request,env){
  const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{...CORS_HEADERS,'Content-Type':'application/json','Cache-Control':'no-store'}});
  try{
  if(!env.DB)return reply({ok:false,error:'DB未設定'},503);
- await env.DB.prepare('CREATE TABLE IF NOT EXISTS community_favorites (client TEXT NOT NULL,song TEXT NOT NULL,active INTEGER NOT NULL,seq INTEGER NOT NULL,PRIMARY KEY(client,song))').run();
+ await env.DB.prepare('CREATE TABLE IF NOT EXISTS community_favorites_r296 (client TEXT NOT NULL,song TEXT NOT NULL,active INTEGER NOT NULL,seq INTEGER NOT NULL,PRIMARY KEY(client,song))').run();
  await env.DB.prepare('CREATE TABLE IF NOT EXISTS community_answers (event TEXT PRIMARY KEY,song TEXT NOT NULL,kind TEXT NOT NULL,correct INTEGER NOT NULL)').run();
  if(request.method==='GET'){
  const songs={},get=k=>songs[k]||(songs[k]={favorites:0,lyrics:{total:0,correct:0},audio:{total:0,correct:0}});
- const f=await env.DB.prepare('SELECT song,SUM(active) AS points FROM community_favorites GROUP BY song').all();for(const r of f.results)get(r.song).favorites=r.points;
- const q=await env.DB.prepare('SELECT song,kind,COUNT(*) AS total,SUM(correct) AS correct FROM community_answers GROUP BY song,kind').all();for(const r of q.results)get(r.song)[r.kind]={total:r.total,correct:r.correct};return reply({ok:true,songs});
+ const f=await env.DB.prepare('SELECT song,SUM(active) AS points FROM community_favorites_r296 GROUP BY song').all();for(const r of f.results)get(r.song).favorites=r.points;
+ const q=await env.DB.prepare('SELECT song,kind,COUNT(*) AS total,SUM(correct) AS correct FROM community_answers GROUP BY song,kind').all();for(const r of q.results)get(r.song)[r.kind]={total:r.total,correct:r.correct};return reply({ok:true,generation:"favorites-r296",songs});
  }
  if(request.method!=='POST')return reply({ok:false},405);
  if(Number(request.headers.get('content-length'))>4096)return reply({ok:false},413);
  const b=await request.json();if(typeof b.song!=='string'||b.song.length>160||!/^.+#\d{1,10}$/.test(b.song)||typeof b.client!=='string'||b.client.length>80||typeof b.event!=='string'||b.event.length>160)return reply({ok:false},400);
  if(b.type==='favorite'){
+ // A fixed generation starts all favorite points at zero once. Old pending events cannot restore them.
+ if(b.generation!=='favorites-r296')return reply({ok:true,ignored:true});
  if(typeof b.active!=='boolean'||!Number.isSafeInteger(b.seq)||b.seq<1)return reply({ok:false},400);
- await env.DB.prepare('INSERT INTO community_favorites (client,song,active,seq) VALUES (?,?,?,?) ON CONFLICT(client,song) DO UPDATE SET active=excluded.active,seq=excluded.seq WHERE excluded.seq>community_favorites.seq').bind(b.client,b.song,b.active?1:0,b.seq).run();
+ await env.DB.prepare('INSERT INTO community_favorites_r296 (client,song,active,seq) VALUES (?,?,?,?) ON CONFLICT(client,song) DO UPDATE SET active=excluded.active,seq=excluded.seq WHERE excluded.seq>community_favorites_r296.seq').bind(b.client,b.song,b.active?1:0,b.seq).run();
  }else if(b.type==='quiz'){
  if(!['lyrics','audio'].includes(b.kind)||typeof b.correct!=='boolean')return reply({ok:false},400);
  await env.DB.prepare('INSERT OR IGNORE INTO community_answers (event,song,kind,correct) VALUES (?,?,?,?)').bind(b.event,b.song,b.kind,b.correct?1:0).run();
@@ -1123,6 +1125,7 @@ async function ensureSongSettings(env){
   for(const [name,definition] of [['tempo','INTEGER NOT NULL DEFAULT 170'],['is_generic','INTEGER NOT NULL DEFAULT 0']]){
    if(!columns.some(c=>c.name===name))try{await env.DB.prepare('ALTER TABLE songs ADD COLUMN '+name+' '+definition).run()}catch(e){const now=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;if(!now.some(c=>c.name===name))throw e}
   }
+  await env.DB.prepare('UPDATE songs SET tempo = 140 WHERE tempo = 150').run();
  })().catch(e=>{songSettingsReady=null;throw e});
  return songSettingsReady;
 }

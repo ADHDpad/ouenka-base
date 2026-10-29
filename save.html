@@ -659,7 +659,7 @@ main{max-width:760px}
 input,textarea,select{scroll-margin-top:90px}
 @media(max-width:700px){input,textarea,select{font-size:16px!important}}
 </style>
-<link rel="stylesheet" href="ui-r177.css?v=20261029-r295"><link rel="stylesheet" href="site-theme.css?v=20261029-r295"><script src="site-theme.js?v=20261029-r295"></script><link rel="stylesheet" href="site-settings.css?v=20261029-r295"><script defer src="site-settings.js?v=20261029-r295"></script><link rel="stylesheet" href="shared-navigation.css?v=20261029-r295"><script defer src="shared-navigation.js?v=20261029-r295"></script><link rel="stylesheet" href="titlebar-type.css?v=20261029-r295"><link rel="stylesheet" href="npb-register-search.css?v=20261029-r295"><script src="npb-player-directory.js?v=20261029-r295"></script><script src="npb-register-search.js?v=20261029-r295"></script><script defer src="field-state.js?v=20261029-r295"></script></head>
+<link rel="stylesheet" href="ui-r177.css?v=20261029-r297"><link rel="stylesheet" href="site-theme.css?v=20261029-r297"><script src="site-theme.js?v=20261029-r297"></script><link rel="stylesheet" href="site-settings.css?v=20261029-r297"><script defer src="site-settings.js?v=20261029-r297"></script><link rel="stylesheet" href="shared-navigation.css?v=20261029-r297"><script defer src="shared-navigation.js?v=20261029-r297"></script><link rel="stylesheet" href="titlebar-type.css?v=20261029-r297"><link rel="stylesheet" href="npb-register-search.css?v=20261029-r297"><script src="npb-player-directory.js?v=20261029-r297"></script><script src="npb-register-search.js?v=20261029-r297"></script><script defer src="field-state.js?v=20261029-r297"></script></head>
 
 <body>
 
@@ -732,7 +732,7 @@ GarageBand ZIPと応援歌音源を選択して、選手情報を共通データ
 
 
 <div id="registerArea">
-<section class="card"><div class="card-title">応援歌の設定</div><label for="songTempo">テンポ</label><select id="songTempo" style="font-size:16px;min-height:44px"><option value="170" selected>170</option><option value="150">150</option></select><label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="songGeneric" style="width:20px;height:20px">汎用応援歌として使用する</label></section>
+<section class="card"><div class="card-title">応援歌の設定</div><label for="songTempo">テンポ</label><select id="songTempo" style="font-size:16px;min-height:44px"><option value="170" selected>170</option><option value="140">140</option></select><label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="songGeneric" style="width:20px;height:20px">汎用応援歌として使用する</label></section>
 
 <section class="card card-garage">
 
@@ -2429,7 +2429,7 @@ function startEditSong(song){
       .display =
       "block";
 
-    $("songTempo").value=String(song.tempo===150?150:170);
+    $("songTempo").value=String([140,150].includes(song.tempo)?140:170);
     $("songGeneric").checked=!!Number(song.is_generic||0);
     $("playerName").value =
       song.player_name || "";
@@ -2753,7 +2753,7 @@ async function updateExistingSong(){
 
       if(local){
 
-        local.tempo=updated.tempo===150?150:170;
+        local.tempo=[140,150].includes(updated.tempo)?140:170;
         local.is_generic=!!Number(updated.is_generic||0);
         local.name =
           updated.player_name;
@@ -3439,7 +3439,7 @@ function backToBase(){
 </div>
 
 <script>document.addEventListener("DOMContentLoaded",()=>{const el=document.getElementById("specialAudioFile");if(el)el.addEventListener("change",()=>{selectedSpecialAudioFile=el.files?.[0]||null;document.getElementById("selectedSpecialAudioName").textContent=selectedSpecialAudioFile?.name||"未選択（通常版で再生）";});});</script>
-<script src="team-colors.js?v=20261029-r295"></script><script src="popular-sync.js?v=20261029-r295"></script><script src="ui-r177.js?v=20261029-r295"></script>
+<script src="team-colors.js?v=20261029-r297"></script><script src="popular-sync.js?v=20261029-r297"></script><script src="ui-r177.js?v=20261029-r297"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
  const fields=[
