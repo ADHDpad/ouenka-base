@@ -92,18 +92,6 @@ async function fetchTeamSpecial(ctx,s){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),2500);
  try{const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:controller.signal});if(response.status===404){teamSpecialMissing.add(url);return null}if(!response.ok)return null;const bytes=await response.arrayBuffer();return await ctx.decodeAudioData(bytes.slice(0))}catch(_){return null}finally{clearTimeout(timer)}
 }
-function audibleEnd(buffer){
- const sr=buffer.sampleRate,block=Math.max(1,Math.floor(sr*.020));
- const threshold=Math.pow(10,-48/20);let last=0;
- for(let i=0;i<buffer.length;i+=block){const to=Math.min(buffer.length,i+block);let peak=0;for(let c=0;c<buffer.numberOfChannels;c++){const data=buffer.getChannelData(c);for(let j=i;j<to;j++)peak=Math.max(peak,Math.abs(data[j]))}if(peak>threshold)last=to}
- return last/sr;
-}
-function introJoinOffset(melody,accompaniment){
- const BAR_SEC=(60/170)*4;
- const end=Math.max(audibleEnd(melody),audibleEnd(accompaniment));
- const bars=Math.max(2,Math.ceil(Math.max(0,end-.035)/BAR_SEC));
- return Math.max(0,(bars-2)*BAR_SEC);
-}
 function armTeamEndTimer(ms){
  if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
  teamRemainingMs=Math.max(0,ms);
@@ -220,32 +208,12 @@ async function playTeamMedley(queue=visibleSongs()){
  try{
   ctx=await window.ouenkaAudioRecovery.create();
   if(token!==teamPlayToken){ctx.close().catch(()=>{});return}teamAudioContext=ctx;
-  const separated=new Array(queue.length);let cursor=0,loaded=0;
   const cancelled=()=>{if(token!==teamPlayToken)throw Error('cancelled')};
-  async function worker(){
-   while(cursor<queue.length){
-    const i=cursor++,song=queue[i];cancelled();
-    try{
-     const [melody,normalAccompaniment,opening]=await Promise.all([
-      i===0?fetchDecoded(ctx,song,'audio.m4a').catch(()=>fetchDecoded(ctx,song,'melody.m4a')):fetchDecoded(ctx,song,'melody.m4a'),
-      fetchDecoded(ctx,song,'accompaniment.m4a'),
-      i===0?fetchDecoded(ctx,song,'intro_accompaniment.m4a').catch(()=>null):Promise.resolve(null)
-     ]);
-     cancelled();separated[i]={melody,accompaniment:opening||normalAccompaniment,opening,normalAccompaniment};
-     loaded++;$('teamStatus').textContent='メドレー用音源を読み込み中… '+loaded+' / '+queue.length;
-    }catch(error){cancelled();throw Error(song.name+' の音源を読み込めませんでした。')}
-   }
-  }
-  await Promise.all(Array.from({length:Math.min(3,queue.length)},worker));cancelled();
-  const core=window.OuenkaMedleyCore;let openingExtra=0;
-  if(separated[0].opening){
-   const normal=await fetchDecoded(ctx,queue[0],'melody.m4a').catch(()=>null);cancelled();
-   const melodyExtra=normal?Math.max(0,separated[0].melody.duration-normal.duration):0;
-   const chordExtra=Math.max(0,separated[0].accompaniment.duration-separated[0].normalAccompaniment.duration);
-   openingExtra=Math.round(Math.max(melodyExtra,chordExtra)/core.barSeconds)*core.barSeconds;
-  }
-  const starts=core.buildDynamicSongStarts(separated,openingExtra);
-  const buffer=core.mix(ctx,separated,null,starts);cancelled();
+  const timeline=await window.OuenkaMedleyCore.build(ctx,queue,{
+   load:async(song,file,optional)=>{try{return await fetchDecoded(ctx,song,file)}catch(error){if(optional)return null;throw error}},
+   cancelled,onProgress:(loaded,total)=>{$('teamStatus').textContent='メドレー用音源を読み込み中… '+loaded+' / '+total}
+  });cancelled();
+  const {buffer,starts}=timeline;
   teamMedley={queue,starts,index:-1};teamBuffers=[buffer];teamTimeline=[{buffer,start:0}];teamTotalDuration=buffer.duration;teamSavedDuration=buffer.duration;teamStoppedPosition=0;paused=false;
   $('teamStatus').style.display='none';$('miniState').textContent='メドレー再生中';startSyncedBuffers();updateTeamMedley();attachTeamMedleyTransport(queue,starts);
   if(navigator.mediaSession)navigator.mediaSession.playbackState='playing';
