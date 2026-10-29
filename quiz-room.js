@@ -22,6 +22,7 @@
   if(data.stage==='lobby'||data.stage==='finished')return;
   const q=data.question,me=data.members.find(m=>m.id===data.me),revealed=data.stage==='reveal';$('roomProgress').textContent='第 '+(data.at+1)+' 問 / '+data.total+'問';$('roomPrompt').hidden=data.settings.kind!=='lyrics';$('roomPrompt').textContent=q.prompt;$('roomListen').hidden=data.settings.kind!=='audio';$('roomStop').hidden=data.settings.kind!=='audio';$('roomListen').disabled=me.answered||revealed;
   $('roomAnswers').replaceChildren(...q.choices.map((name,i)=>{const b=document.createElement('button');b.textContent=String.fromCharCode(65+i)+'　'+name;b.disabled=busy||me.answered||revealed;if(revealed&&i===q.correct)b.classList.add('correct');if(revealed&&me.choice===i&&i!==q.correct)b.classList.add('wrong');b.onclick=()=>act('answer',{choice:i});return b}));
+  if(revealed&&me.answered)window.OuenkaStats?.quiz(q.song,data.settings.kind,me.choice===q.correct,'room:'+data.code+':'+data.expires+':'+data.at+':'+data.me);
   if(revealed&&me.choice===q.correct){try{if(!window.OuenkaSongbook?.get(q.song).quizCorrect)window.OuenkaSongbook?.set(q.song,'quizCorrect',true)}catch(e){console.warn('クイズの記録を保存できませんでした',e)}}
   if(revealed)$('roomFeedback').textContent=(me.choice===q.correct?'正解！':me.choice===undefined||me.choice===-1?'未回答でした。':'今回は不正解。')+'\n正解：'+q.choices[q.correct];else if(me.answered)$('roomFeedback').textContent='回答を送信しました。ほかの参加者を待っています。';
  }

@@ -20,6 +20,9 @@ export default {
       );
     }
     try {
+      if(new URL(request.url).pathname.startsWith('/songs'))await ensureSongSettings(env);
+      const statsResponse=await handleCommunityStats(request,env);
+      if(statsResponse)return statsResponse;
       const shortShareResponse=await handleShortShare(request,env);
       if(shortShareResponse)return shortShareResponse;
       const quizRoomResponse=await handleQuizRoom(request,env);
@@ -66,6 +69,8 @@ export default {
               uniform_number,
               production_number,
               lyrics,
+              tempo,
+              is_generic,
               audio_filename,
               garageband_filename,
               melody_filename,
@@ -111,6 +116,8 @@ export default {
               uniform_number,
               production_number,
               lyrics,
+              tempo,
+              is_generic,
               audio_filename,
               garageband_filename,
               melody_filename,
@@ -170,6 +177,8 @@ export default {
               uniform_number,
               production_number,
               lyrics,
+              tempo,
+              is_generic,
               audio_filename,
               garageband_filename,
               melody_filename,
@@ -262,6 +271,7 @@ export default {
             400
           );
         }
+        if(body.tempo!==undefined&&![170,150].includes(body.tempo))return json({ok:false,error:"テンポは170または150を選択してください。"},400);
         const playerName =
           clean(
             body.player_name
@@ -354,10 +364,12 @@ export default {
               garageband_filename,
               melody_filename,
               chord_filename,
-              bass_filename
+              bass_filename,
+              tempo,
+              is_generic
             )
             VALUES (
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
           `)
           .bind(
@@ -372,7 +384,9 @@ export default {
             garageBandFilename,
             melodyFilename,
             chordFilename,
-            bassFilename
+            bassFilename,
+            body.tempo===150?150:170,
+            body.is_generic===true||body.is_generic===1?1:0
           )
           .run();
         return json(
@@ -437,6 +451,7 @@ export default {
             400
           );
         }
+        if(body.tempo!==undefined&&![170,150].includes(body.tempo))return json({ok:false,error:"テンポは170または150を選択してください。"},400);
         const playerName =
           hasOwn(
             body,
@@ -568,7 +583,9 @@ export default {
             garageband_filename = ?,
             melody_filename = ?,
             chord_filename = ?,
-            bass_filename = ?
+            bass_filename = ?,
+            tempo = ?,
+            is_generic = ?
           WHERE id = ?
         `)
         .bind(
@@ -583,6 +600,8 @@ export default {
           melodyFilename,
           chordFilename,
           bassFilename,
+          hasOwn(body,"tempo")?(body.tempo===150?150:170):(current.tempo||170),
+          hasOwn(body,"is_generic")?(body.is_generic===true||body.is_generic===1?1:0):(current.is_generic||0),
           id
         )
         .run();
@@ -597,6 +616,8 @@ export default {
               uniform_number,
               production_number,
               lyrics,
+              tempo,
+              is_generic,
               audio_filename,
               garageband_filename,
               melody_filename,
@@ -1067,4 +1088,41 @@ async function handleShortShare(request,env){
   if(legacy&&row.kind!=='favorites')fail('お気に入りの共有コードを入力してください。');
   const payload=JSON.parse(row.payload);return reply(legacy?{ok:true,...payload,expiresAt:new Date(row.expires_at).toISOString()}:{ok:true,kind:row.kind,payload,expiresAt:new Date(row.expires_at).toISOString()});
  }catch(e){return reply({ok:false,error:e.status?e.message:'共有サービスを利用できません。worker.jsの更新とDB設定を確認してください。'},e.status||503)}
+}
+
+async function handleCommunityStats(request,env){
+ const url=new URL(request.url);if(url.pathname!=='/stats')return null;
+ const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{...CORS_HEADERS,'Content-Type':'application/json','Cache-Control':'no-store'}});
+ try{
+ if(!env.DB)return reply({ok:false,error:'DB未設定'},503);
+ await env.DB.prepare('CREATE TABLE IF NOT EXISTS community_favorites (client TEXT NOT NULL,song TEXT NOT NULL,active INTEGER NOT NULL,seq INTEGER NOT NULL,PRIMARY KEY(client,song))').run();
+ await env.DB.prepare('CREATE TABLE IF NOT EXISTS community_answers (event TEXT PRIMARY KEY,song TEXT NOT NULL,kind TEXT NOT NULL,correct INTEGER NOT NULL)').run();
+ if(request.method==='GET'){
+ const songs={},get=k=>songs[k]||(songs[k]={favorites:0,lyrics:{total:0,correct:0},audio:{total:0,correct:0}});
+ const f=await env.DB.prepare('SELECT song,SUM(active) AS points FROM community_favorites GROUP BY song').all();for(const r of f.results)get(r.song).favorites=r.points;
+ const q=await env.DB.prepare('SELECT song,kind,COUNT(*) AS total,SUM(correct) AS correct FROM community_answers GROUP BY song,kind').all();for(const r of q.results)get(r.song)[r.kind]={total:r.total,correct:r.correct};return reply({ok:true,songs});
+ }
+ if(request.method!=='POST')return reply({ok:false},405);
+ if(Number(request.headers.get('content-length'))>4096)return reply({ok:false},413);
+ const b=await request.json();if(typeof b.song!=='string'||b.song.length>160||!/^.+#\d{1,10}$/.test(b.song)||typeof b.client!=='string'||b.client.length>80||typeof b.event!=='string'||b.event.length>160)return reply({ok:false},400);
+ if(b.type==='favorite'){
+ if(typeof b.active!=='boolean'||!Number.isSafeInteger(b.seq)||b.seq<1)return reply({ok:false},400);
+ await env.DB.prepare('INSERT INTO community_favorites (client,song,active,seq) VALUES (?,?,?,?) ON CONFLICT(client,song) DO UPDATE SET active=excluded.active,seq=excluded.seq WHERE excluded.seq>community_favorites.seq').bind(b.client,b.song,b.active?1:0,b.seq).run();
+ }else if(b.type==='quiz'){
+ if(!['lyrics','audio'].includes(b.kind)||typeof b.correct!=='boolean')return reply({ok:false},400);
+ await env.DB.prepare('INSERT OR IGNORE INTO community_answers (event,song,kind,correct) VALUES (?,?,?,?)').bind(b.event,b.song,b.kind,b.correct?1:0).run();
+ }else return reply({ok:false},400);
+ return reply({ok:true});
+ }catch{return reply({ok:false,error:'集計を利用できません。Worker更新とDB設定を確認してください。'},503)}
+}
+
+let songSettingsReady;
+async function ensureSongSettings(env){
+ if(!songSettingsReady)songSettingsReady=(async()=>{
+  const columns=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;
+  for(const [name,definition] of [['tempo','INTEGER NOT NULL DEFAULT 170'],['is_generic','INTEGER NOT NULL DEFAULT 0']]){
+   if(!columns.some(c=>c.name===name))try{await env.DB.prepare('ALTER TABLE songs ADD COLUMN '+name+' '+definition).run()}catch(e){const now=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;if(!now.some(c=>c.name===name))throw e}
+  }
+ })().catch(e=>{songSettingsReady=null;throw e});
+ return songSettingsReady;
 }
