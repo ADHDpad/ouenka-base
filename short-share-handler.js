@@ -27,7 +27,7 @@ async function handleShortShare(request,env){
    if(kind==='playlist'){
     if(!['lineup','medley'].includes(data.mode)||!Array.isArray(data.rows)||!data.rows.length||data.rows.length>500)fail('共有する曲順を確認してください。');
     const text=(v,n)=>String(v??'').trim().slice(0,n),rows=data.rows.map(r=>{if(!r||typeof r!=='object')fail('曲の情報を確認してください。');const name=text(r.name,120),productionNumber=text(r.productionNumber,10),reuseName=text(r.reuseName,120),reuseProductionNumber=text(r.reuseProductionNumber,10);if(name&&!/^\d{1,10}$/.test(reuseName?reuseProductionNumber:productionNumber))fail('曲の制作番号を確認してください。');return {name,productionNumber,position:text(r.position,30),team:text(r.team,120),lyrics:text(r.lyrics,10000),songId:text(r.songId,80),reuseName,reuseProductionNumber,reuseMode:reuseName?text(r.reuseMode||'reuse',30):''}});
-    if(!rows.some(r=>r.name))fail('曲を選択してから共有してください。');return {version:1,mode:data.mode,title:text(data.title,200),year:text(data.year,10),team:text(data.team,120),rows};
+    if(!rows.some(r=>r.name))fail('曲を選択してから共有してください。');return {version:1,mode:data.mode,title:text(data.title,200),color:text(data.color||'theme',120),year:text(data.year,10),team:text(data.team,120),rows};
    }
    fail('共有データの種類を確認してください。');
   }

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head><script src="short-share-client.js?v=20261028-r289"></script><script src="songbook-store.js?v=20261028-r289"></script>
+<head><script src="short-share-client.js?v=20261029-r293"></script><script src="songbook-store.js?v=20261029-r293"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#071d33">
@@ -85,10 +85,10 @@ body.row-dragging *{cursor:grabbing!important}
 @media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
-<script src="./ouenka-transport.js?v=20261028-r289"></script>
-<script src="./lineup-settings.js?v=20261028-r289"></script>
-<script src="audio-recovery.js?v=20261028-r289"></script>
-<script src="pwa-diagnostic.js?v=20261028-r289"></script>
+<script src="./ouenka-transport.js?v=20261029-r293"></script>
+<script src="./lineup-settings.js?v=20261029-r293"></script>
+<script src="audio-recovery.js?v=20261029-r293"></script>
+<script src="pwa-diagnostic.js?v=20261029-r293"></script>
 <script src="team-order.js"></script>
 <style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
 <style>
@@ -116,7 +116,7 @@ body.row-dragging *{cursor:grabbing!important}
 .top-actions>button:hover{background:#ffffff18}.top-actions>button:focus-visible{outline:2px solid #68baff;outline-offset:-3px}
 @media(max-width:600px){.top-actions>.chat,.top-actions>.back{min-height:50px;padding:7px 14px;font-size:13px}.top-actions>button::before{font-size:22px}input,textarea,select{scroll-margin-top:90px}}
 </style>
-<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row .position{min-width:0;font-size:16px;font-weight:750;text-align:center;text-align-last:center;padding:0 4px}</style><link rel="stylesheet" href="ui-r177.css?v=20261028-r289"><link rel="stylesheet" href="site-theme.css?v=20261028-r289"><script src="site-theme.js?v=20261028-r289"></script><link rel="stylesheet" href="site-settings.css?v=20261028-r289"><script defer src="site-settings.js?v=20261028-r289"></script><link rel="stylesheet" href="shared-navigation.css?v=20261028-r289"><script defer src="shared-navigation.js?v=20261028-r289"></script><link rel="stylesheet" href="titlebar-type.css?v=20261028-r289"><link rel="stylesheet" href="lineup-player-search.css?v=20261028-r289"><script src="npb-player-directory.js?v=20261028-r289"></script><script src="lineup-player-search.js?v=20261028-r289"></script><script defer src="field-state.js?v=20261028-r289"></script></head>
+<style>.title-row input,.player-row .position,.player-row .player-search{box-sizing:border-box;height:44px;min-height:44px}.player-row .order{height:44px}.broadcast-color-grid input[type=color],.broadcast-color-grid select{box-sizing:border-box;height:44px;min-height:44px}</style><style>.player-row .position{min-width:0;font-size:16px;font-weight:750;text-align:center;text-align-last:center;padding:0 4px}</style><link rel="stylesheet" href="ui-r177.css?v=20261029-r293"><link rel="stylesheet" href="site-theme.css?v=20261029-r293"><script src="site-theme.js?v=20261029-r293"></script><link rel="stylesheet" href="site-settings.css?v=20261029-r293"><script defer src="site-settings.js?v=20261029-r293"></script><link rel="stylesheet" href="shared-navigation.css?v=20261029-r293"><script defer src="shared-navigation.js?v=20261029-r293"></script><link rel="stylesheet" href="titlebar-type.css?v=20261029-r293"><link rel="stylesheet" href="lineup-player-search.css?v=20261029-r293"><script src="npb-player-directory.js?v=20261029-r293"></script><script src="lineup-player-search.js?v=20261029-r293"></script><script defer src="field-state.js?v=20261029-r293"></script></head>
 <body>
 <header class="topbar">
 
@@ -130,7 +130,7 @@ body.row-dragging *{cursor:grabbing!important}
  </nav>
 </header>
 <main class="page">
- <section class="hero"><h1>1-9作成</h1><p>選手を検索して1-9を作成できます。</p></section>
+ <section class="hero"><h1>1-9作成</h1><div id="status" class="status" role="status" aria-live="polite"></div><p>選手を検索して1-9を作成できます。</p></section>
  <section class="panel">
   <div hidden><select id="yearSelect"><option value=""></option></select><select id="teamSelect"><option value=""></option></select></div>
 <dialog id="playlistShareDialog" style="width:min(92vw,640px);max-height:85vh;overflow:auto;border:0;border-radius:16px;padding:22px;color:#143149"><h2>1-9・メドレーを共有</h2><p>コードをコピーして相手に渡すと、同じ打順・曲順を保存できます。共有コードは数字4桁で、有効期限は作成から1時間です。</p><button id="playlistShareCreate" type="button" class="chat">今の曲順からコードを作成</button><label style="display:block;margin:18px 0 6px" for="playlistShareCode">共有コードをコピー／貼り付け</label><textarea id="playlistShareCode" rows="1" inputmode="numeric" maxlength="4" spellcheck="false" style="width:100%;box-sizing:border-box;font:16px monospace;padding:12px;border:1px solid #b9cede;border-radius:8px;overflow-wrap:anywhere" placeholder="数字4桁（1時間有効）"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button id="playlistShareCopy" type="button" class="chat">コピー</button><button id="playlistShareRead" type="button" class="chat">コードを読み込む</button><button id="playlistShareApply" type="button" class="chat" hidden>保存済み一覧に追加</button></div><p id="playlistShareStatus" role="status" style="white-space:pre-line;overflow-wrap:anywhere;max-height:35vh;overflow:auto"></p><button id="playlistShareClose" type="button" class="back" style="background:#163c5a">閉じる</button></dialog>
@@ -143,14 +143,14 @@ body.row-dragging *{cursor:grabbing!important}
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
    <button id="medleyPlayButton" class="action create" type="button">▶ 1-9を作成・再生</button>
   </div>
-  <div id="status" class="status"></div>
+  
   <section id="previewCard" class="preview-card">
    <div class="preview-head">1-9 プレビュー</div><div id="previewMeta" class="preview-meta"></div><ol id="previewList" class="preview-list"></ol>
   </section>
  </section>
 </main>
 
-<script src="./ouenka-audio-transfer.js?v=20261028-r289"></script>
+<script src="./ouenka-audio-transfer.js?v=20261029-r293"></script>
 <script>
 "use strict";
 
@@ -202,6 +202,9 @@ function getReading(p){return p?.reading||""}
 function getTeam(p){return p?.team||""}
 function norm(s){return String(s||"").toLowerCase().replace(/[\s　]/g,"")}
 
+let audioLoadingMessageActive=false,audioLoadingMessageDismissed=false;
+function closeAudioLoadingMessage(){document.getElementById("audioLoadingMessage")?.close()}
+function showAudioLoadingMessage(message){if(!audioLoadingMessageActive||audioLoadingMessageDismissed)return;let d=document.getElementById("audioLoadingMessage");if(!d){d=document.createElement("dialog");d.id="audioLoadingMessage";d.style.cssText="width:min(88vw,420px);padding:24px;border:0;border-radius:16px;box-sizing:border-box;text-align:center";d.innerHTML='<h2 style="margin:0 0 16px">音源読み込み</h2><p role="status" aria-live="polite"></p><button type="button" style="min-height:44px;padding:8px 24px">閉じる</button>';document.body.append(d);d.querySelector("button").onclick=()=>{audioLoadingMessageDismissed=true;d.close()};d.addEventListener("cancel",()=>audioLoadingMessageDismissed=true)}d.querySelector("p").textContent=message;if(!d.open)d.showModal()}
 function hideStatus(){
  const st=document.getElementById("status");
  if(!st)return;
@@ -210,6 +213,8 @@ function hideStatus(){
 }
 
 function setStatus(message,type="info"){
+ if(audioLoadingMessageActive&&/音源を読み込み中/.test(message)){showAudioLoadingMessage(message);return}
+ if(type==="error")closeAudioLoadingMessage();
  const st=document.getElementById("status");
  st.textContent=message;st.style.display="block";
  st.style.background=type==="error"?"#fff0f0":type==="ok"?"#eefaf2":"#eef6ff";
@@ -884,6 +889,7 @@ function mixSmoothIndependent(ctx,songs,intro,starts){
 let preparedOneNineAudio=null;
 function oneNineAudioKey(){return (window.OuenkaCalls?.signature()||'')+JSON.stringify(currentRows().map(r=>({name:r.name,productionNumber:r.productionNumber,songId:r.songId,reuseName:r.reuseName,reuseProductionNumber:r.reuseProductionNumber,audioUrl:r.audioUrl,melodyUrl:r.melodyUrl,accompanimentUrl:r.accompanimentUrl,introAccompanimentUrl:r.introAccompanimentUrl})))}
 async function makeOneNineAudio(ctx,selected){
+ audioLoadingMessageActive=true;audioLoadingMessageDismissed=false;try{
   /* 全選手の分離音源を並列取得。
      1番だけは本編メロディーとして audio.m4a を使用する。 */
   let loaded=0;setStatus('音源を読み込み中… 0 / '+selected.length,'ok');
@@ -926,6 +932,7 @@ async function makeOneNineAudio(ctx,selected){
      メロディーとコード進行は別々に重複判定する。 */
   const mixed=window.OuenkaCalls.decorate(ctx,mixSmoothIndependent(ctx,separated,intro,starts),callPlan);
   return {buffer:mixed,starts,duration:mixed.duration,barSeconds:MEDLEY_BAR_SEC,rowIndices:currentRows().map((r,i)=>r.name?i:-1).filter(i=>i>=0)};
+ }finally{audioLoadingMessageActive=false;closeAudioLoadingMessage()}
 }
 async function prepareIllustrationAudio(){
  if(medleyBuilding)throw Error('1-9の音声を作成中です。完了してから挿絵作成を押してください。');
@@ -1041,14 +1048,14 @@ function autoTitle(){
  updateInputFieldColor(title);
 }
 function saveDraft(){
- const data={year:document.getElementById("yearSelect").value,team:document.getElementById("teamSelect").value,title:document.getElementById("lineupTitle").value,rows:currentRows()};
+ const data={color:lineupColor,year:document.getElementById("yearSelect").value,team:document.getElementById("teamSelect").value,title:document.getElementById("lineupTitle").value,rows:currentRows()};
  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
 }
 function loadDraft(){
  try{
   const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
   if(!data){renderRows();return}
-  document.getElementById("yearSelect").value=data.year||"";
+  lineupColor=data.color||"theme";document.getElementById("yearSelect").value=data.year||"";
   document.getElementById("teamSelect").value=data.team||"";
   document.getElementById("lineupTitle").value=data.title||"";
   renderRows(data.rows||[]);setStatus("前回編集中だった1-9を復元しました。");
@@ -1056,11 +1063,17 @@ function loadDraft(){
  setTimeout(updateAllInputFieldColors,0);
 }
 const SAVED_LINEUPS_KEY=IS_MEDLEY?"ouenkaBaseSavedMedleysV1":"ouenkaBaseSavedLineupsV1";
-function lineupSnapshot(){return {title:document.getElementById("lineupTitle").value.trim(),year:document.getElementById("yearSelect").value,team:document.getElementById("teamSelect").value,rows:currentRows()}}
+
+let lineupColor='theme';
+function lineupPalette(key){return key==='theme'||!window.OuenkaTeamColors?null:window.OuenkaTeamColors.get(key)}
+function showLineupColor(button,key){const c=lineupPalette(key);button.style.setProperty('background',c?`linear-gradient(135deg,${c[2]},${c[1]} 70%,${c[0]})`:'var(--site-action-background,#0b2f55)','important');button.style.setProperty('color','#fff','important')}
+function chooseLineupSave(defaultTitle){return new Promise(resolve=>{const d=document.createElement('dialog');d.style.cssText='width:min(92vw,500px);box-sizing:border-box;padding:20px;border:0;border-radius:14px';d.innerHTML='<h2>1-9を保存</h2><label>保存名<input id="saveName290" style="display:block;width:100%;box-sizing:border-box;padding:12px;font-size:16px;margin:8px 0 18px"></label><label>保存する色<select id="saveColor290" style="display:block;width:100%;padding:12px;font-size:16px;margin:8px 0 18px"></select></label><div id="saveColorPreview290" style="height:48px;border-radius:8px;margin-bottom:16px"></div><button type="button" id="saveConfirm290">保存</button> <button type="button" id="saveCancel290">キャンセル</button>';document.body.append(d);const name=d.querySelector('input'),select=d.querySelector('select');name.value=defaultTitle;for(const key of ['theme',...Object.keys(window.OuenkaTeamColors?.defaults||{})]){const o=document.createElement('option');o.value=key;o.textContent=key==='theme'?'テーマ色':key;select.append(o)}select.value=lineupColor;const paint=()=>showLineupColor(d.querySelector('#saveColorPreview290'),select.value);select.onchange=paint;paint();let done=false;const finish=value=>{if(done)return;done=true;d.close();d.remove();resolve(value)};d.querySelector('#saveConfirm290').onclick=()=>{if(!name.value.trim()){name.focus();return}finish({name:name.value.trim(),color:select.value})};d.querySelector('#saveCancel290').onclick=()=>finish(null);d.addEventListener('cancel',e=>{e.preventDefault();finish(null)});d.showModal()})}
+
+function lineupSnapshot(){return {color:lineupColor,title:document.getElementById("lineupTitle").value.trim(),year:document.getElementById("yearSelect").value,team:document.getElementById("teamSelect").value,rows:currentRows()}}
 function readSavedLineups(){const value=JSON.parse(localStorage.getItem(SAVED_LINEUPS_KEY)||"[]");if(!Array.isArray(value))throw new Error("保存形式が不正です");return value}
-function saveNamedLineup(){
+async function saveNamedLineup(){
  const data=lineupSnapshot();if(!data.rows.some(r=>r.name)){setStatus("選手を入力してから保存してください。","error");return}
- const name=prompt("保存する1-9の名前を入力してください。",data.title||"無題の1-9");if(name===null)return;if(!name.trim()){setStatus("保存名を入力してください。","error");return}
+ const choice=await chooseLineupSave(data.title||"無題の1-9");if(!choice)return;const name=choice.name;data.color=choice.color;lineupColor=choice.color;
  try{const saved=readSavedLineups();data.title=name.trim();const existing=saved.findIndex(x=>x.title===data.title);if(existing>=0&&!confirm("同じ名前の1-9を上書きしますか？"))return;
  const entry={...data,id:existing>=0?saved[existing].id:Date.now().toString(36)+Math.random().toString(36).slice(2),savedAt:new Date().toISOString()};
  if(existing>=0)saved[existing]=entry;else saved.push(entry);localStorage.setItem(SAVED_LINEUPS_KEY,JSON.stringify(saved));document.getElementById("lineupTitle").value=data.title;saveDraft();updateAllInputFieldColors();setStatus("「"+data.title+"」を保存しました。保存済を読込から呼び出せます。","ok")
@@ -1069,12 +1082,12 @@ function saveNamedLineup(){
 function normalizeSavedTitle(value){return String(value||"").normalize("NFKC").toLocaleLowerCase("ja-JP").replace(/[\s　]+/g,"")}
 function showSavedLineups(){
  const dialog=document.getElementById("savedLineupsDialog"),list=document.getElementById("savedLineupsList");list.replaceChildren();
- try{const saved=readSavedLineups();if(!saved.length){const text=document.createElement("p");text.textContent="保存済の1-9はありません。保存ボタンで追加できます。";list.append(text)}
+ try{const saved=readSavedLineups();if(!saved.length){const text=document.createElement("p");text.textContent=location.hostname.endsWith("chatgpt.site")?"この確認用URLには保存済み1-9がありません。本番URLの保存データは別の保存先にあります。本番に修正版ZIPを反映すると、これまでの保存済み1-9を利用できます。":"保存済の1-9はありません。保存ボタンで追加できます。";list.append(text)}
  const query=normalizeSavedTitle(document.getElementById("savedTitleSearch").value);
  const matches=saved.filter(entry=>normalizeSavedTitle(entry.title).includes(query));
  if(saved.length&&!matches.length){const text=document.createElement("p");text.textContent="一致する保存タイトルはありません。";list.append(text)}
- matches.slice().reverse().forEach(entry=>{const wrapper=document.createElement("div");wrapper.className="saved-entry";const load=document.createElement("button");load.type="button";load.className="saved-load";load.textContent=entry.title;const meta=document.createElement("small");meta.textContent=(entry.rows||[]).filter(r=>r.name).length+"人 · "+new Date(entry.savedAt).toLocaleString("ja-JP");load.append(meta);
- load.addEventListener("click",()=>{if(!confirm("編集中の1-9を「"+entry.title+"」に入れ替えますか？"))return;stopOneNineMedley();document.getElementById("lineupTitle").value=entry.title||"";document.getElementById("yearSelect").value=entry.year||"";document.getElementById("teamSelect").value=entry.team||"";renderRows(entry.rows||[]);document.getElementById("previewCard").style.display="none";saveDraft();updateAllInputFieldColors();dialog.close();setStatus("「"+entry.title+"」を読み込みました。","ok")});
+ matches.slice().reverse().forEach(entry=>{const wrapper=document.createElement("div");wrapper.className="saved-entry";const load=document.createElement("button");load.type="button";load.className="saved-load";load.textContent=entry.title;showLineupColor(load,entry.color||"theme");const meta=document.createElement("small");meta.textContent=(entry.rows||[]).filter(r=>r.name).length+"人 · "+new Date(entry.savedAt).toLocaleString("ja-JP");load.append(meta);const colorLabel=document.createElement("small");colorLabel.textContent="色："+(entry.color&&entry.color!=="theme"?entry.color:"テーマ色");load.append(colorLabel);
+ load.addEventListener("click",()=>{if(!confirm("編集中の1-9を「"+entry.title+"」に入れ替えますか？"))return;stopOneNineMedley();lineupColor=entry.color||"theme";document.getElementById("lineupTitle").value=entry.title||"";document.getElementById("yearSelect").value=entry.year||"";document.getElementById("teamSelect").value=entry.team||"";renderRows(entry.rows||[]);document.getElementById("previewCard").style.display="none";saveDraft();updateAllInputFieldColors();dialog.close();setStatus("「"+entry.title+"」を読み込みました。","ok")});
  const del=document.createElement("button");del.type="button";del.className="saved-delete";del.textContent="削除";del.addEventListener("click",()=>{if(!confirm("「"+entry.title+"」を削除しますか？"))return;try{localStorage.setItem(SAVED_LINEUPS_KEY,JSON.stringify(readSavedLineups().filter(x=>x.id!==entry.id)));dialog.close();showSavedLineups()}catch(e){setStatus("削除できませんでした。","error")}});wrapper.append(load,del);list.append(wrapper)});
  if(!dialog.open)dialog.showModal();
  }catch(e){setStatus("保存済の1-9を読み込めませんでした。","error")}
@@ -1296,8 +1309,8 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
-<script src="./active-roster.js?v=20261028-r289"></script>
-<script src="./lineup-controls.js?v=20261028-r289"></script>
-<script src="playlist-share.js?v=20261028-r289"></script><script src="playlist-share-ui.js?v=20261028-r289"></script>
-<script src="team-colors.js?v=20261028-r289"></script><script src="popular-sync.js?v=20261028-r289"></script><script src="ui-r177.js?v=20261028-r289"></script></body>
+<script src="./active-roster.js?v=20261029-r293"></script>
+<script src="./lineup-controls.js?v=20261029-r293"></script>
+<script src="playlist-share.js?v=20261029-r293"></script><script src="playlist-share-ui.js?v=20261029-r293"></script>
+<script src="team-colors.js?v=20261029-r293"></script><script src="popular-sync.js?v=20261029-r293"></script><script src="ui-r177.js?v=20261029-r293"></script></body>
 </html>

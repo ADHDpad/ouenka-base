@@ -129,7 +129,7 @@
    text(ctx,String(i+1).padStart(2,'0'),76,yy+33,30,light?t.color:t.line,68,{weight:900,italic:true});
    rule(ctx,163,yy+5,2,t.line,28);
    text(ctx,compactPosition(p.position)||'',184,yy+31,22,light?t.color:mix(t.accent,'#ffffff',.5),180,{weight:700});
-   text(ctx,p.name||'—',390,yy+33,33,ink,760,{weight:900});
+   text(ctx,p.name||'—',390,yy+33,33,ink,options.showStats?350:760,{weight:900});if(options.showStats){const pitching=/投|P|SP|RP/i.test(p.position||'')||p.statsType==='pitching';const fields=pitching?[['wins','勝'],['losses','敗'],['era','防御率'],['whip','WHIP'],['strikeouts','奪三振']]:[['avg','打率'],['hr','本'],['rbi','打点'],['ops','OPS']];text(ctx,fields.map(([k,l])=>l+' '+(p[k]===undefined||p[k]===''?'—':p[k])).join('  '),760,yy+31,18,ink,435,{weight:600})}
    rule(ctx,76,yy+44,1120,light?mix(t.color,'#ffffff',.83):mix(t.dark,t.accent,.3),1);
   }
   const extras=rows.slice(9).filter(p=>p.name);

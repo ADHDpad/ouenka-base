@@ -25,3 +25,23 @@ html body #teams .team-card .achievement-count{color:#7dd3fc!important;text-shad
 .song{grid-template-columns:minmax(0,1fr) auto}.song .lyric{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .song-sort-controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+
+/* r292: player card above two equal action buttons, including on iPhone. */
+html body #songs .song{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;min-width:0}
+html body #songs .song>.info{grid-column:1;min-width:0;width:100%}
+html body #songs .song .info h3{white-space:normal;word-break:normal;overflow-wrap:anywhere}
+html body #songs .song .info small{display:block;overflow-wrap:anywhere}
+html body #songs .song-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0;width:100%}
+html body #songs .song-actions>button{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-width:0;height:46px;min-height:46px;margin:0;padding:8px 12px;line-height:1.2}
+html body #songs .song-actions>.favorite-star{max-width:none;max-height:none;font-size:26px}
+html body #songs .song-actions>a{grid-column:1/-1;display:flex;justify-content:center;align-items:center;min-height:44px;white-space:normal;text-align:center}
+html body #songs .checks{grid-column:1;min-width:0}
+html body #songs .song-actions>.favorite-star{width:100%!important;min-width:0!important;height:46px!important;min-height:46px!important;padding:8px 12px!important}
+
+/* r293: square favorite and heard checkbox share the second row. */
+html body #songs .song-actions{grid-template-columns:46px minmax(70px,1fr) auto;align-items:center;gap:8px}
+html body #songs .song-actions>.favorite-star{width:46px!important;min-width:46px!important;max-width:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;padding:0!important;aspect-ratio:1}
+html body #songs .song-actions>.checks{grid-column:auto;display:flex;align-items:center;margin:0;gap:0}
+html body #songs .song-actions>.checks label{box-sizing:border-box;height:46px;min-height:46px;padding:6px;white-space:nowrap;font-size:13px}
+html body #songs .song-actions>.checks input{flex:0 0 19px}
+html body #songs .song>.quiz-correct-badge{grid-column:1}
