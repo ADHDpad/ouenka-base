@@ -4,12 +4,18 @@ const MEDLEY_BAR_SEC=(60/170)*4;
 function tempo(song){return Number(song?.tempo)===140?140:170}
 function barSecondsForSong(song){return 240/tempo(song)}
 function getSongJoinOffsetSec(song,openingExtraSec=0){
- const bar=barSecondsForSong(song),total=Math.max(song.melody.duration,song.accompaniment.duration),body=Math.max(0,total-openingExtraSec);
+ const bar=barSecondsForSong(song),total=Math.max(song.melody.duration,song.accompaniment.duration),body=Number.isFinite(song.bodyDurationSec)?song.bodyDurationSec:Math.max(0,total-openingExtraSec);
  const bars=Math.max(1,Math.round(body/bar)),musicalBars=bars>=13?16:8;
  return openingExtraSec+musicalBars*bar;
 }
+// Approved 140→140 preview: bring the next file forward by exactly one bar.
+// Use this boundary rule for normal sequences and every loop wrap alike.
+function getTransitionOffsetSec(song,next,openingExtraSec=0){
+ const offset=getSongJoinOffsetSec(song,openingExtraSec);
+ return tempo(song)===140&&tempo(next)===140?offset-barSecondsForSong(song):offset;
+}
 function buildDynamicSongStarts(songs,openingExtraSec=0){
- let cursor=0;return songs.map((song,i)=>{const start=cursor;if(i<songs.length-1)cursor+=getSongJoinOffsetSec(song,i===0?openingExtraSec:0);return start});
+ let cursor=0;return songs.map((song,i)=>{const start=cursor;if(i<songs.length-1)cursor+=getTransitionOffsetSec(song,songs[i+1],i===0?openingExtraSec:0);return start});
 }
 const registrationKey=(name,number)=>String(name||'').normalize('NFKC').trim()+'#'+String(number??'').trim();
 async function resolveSongs(input,options={}){
@@ -33,19 +39,28 @@ async function build(ctx,items,options={}){
  async function optional(item,file){try{return await load(item,file,true)}catch(error){cancelled();return null}}
  async function worker(){while(cursor<items.length){cancelled();const i=cursor++,item=items[i];try{
   const first=i===0&&opening;
+  let usedOpeningMelody=false;
   const [melody,normalAccompaniment,openingAccompaniment]=await Promise.all([
-   first?optional(item,'audio.m4a').then(buffer=>buffer||load(item,'melody.m4a',false)):load(item,'melody.m4a',false),
+   first?optional(item,'audio.m4a').then(buffer=>{usedOpeningMelody=!!buffer;return buffer||load(item,'melody.m4a',false)}):load(item,'melody.m4a',false),
    load(item,'accompaniment.m4a',false),first?optional(item,'intro_accompaniment.m4a'):Promise.resolve(null)
   ]);
-  cancelled();separated[i]={tempo:tempo(item),melody,accompaniment:openingAccompaniment||normalAccompaniment,normalAccompaniment,hasOpeningAccompaniment:!!openingAccompaniment};
+  cancelled();separated[i]={tempo:tempo(item),melody,accompaniment:openingAccompaniment||normalAccompaniment,normalAccompaniment,usedOpeningMelody,hasOpeningAccompaniment:!!openingAccompaniment};
   options.onProgress?.(++loaded,items.length);
  }catch(error){failed=true;throw Error(`${item.name||item.player_name||'応援歌'} の音源を読み込めませんでした。\n${error.message||error}`)}}}
  await Promise.all(Array.from({length:Math.min(Math.max(1,options.concurrency||3),items.length)},worker));cancelled();
  let openingExtraSec=0;
- if(separated[0].hasOpeningAccompaniment){
-  const normalMelody=await optional(items[0],'melody.m4a');cancelled();const first=separated[0],bar=barSecondsForSong(first);
-  const melodyExtra=normalMelody?Math.max(0,first.melody.duration-normalMelody.duration):0,chordExtra=Math.max(0,first.accompaniment.duration-first.normalAccompaniment.duration);
+ // audio.m4a may include an introduction even when intro_accompaniment.m4a
+ // was never exported. Always compare with the body melody in that case.
+ // Both the introduction and the next song's first bar use this song's BPM.
+ if(opening&&(separated[0].usedOpeningMelody||separated[0].hasOpeningAccompaniment)){
+  const normalMelody=await optional(items[0],'melody.m4a');cancelled();
+  const first=separated[0],bar=barSecondsForSong(first);
+  const melodyExtra=normalMelody&&first.usedOpeningMelody?Math.max(0,first.melody.duration-normalMelody.duration):0;
+  const chordExtra=first.hasOpeningAccompaniment?Math.max(0,first.accompaniment.duration-first.normalAccompaniment.duration):0;
   openingExtraSec=Math.round(Math.max(melodyExtra,chordExtra)/bar)*bar;
+  // Classify the body as 8/16 bars from body files, not intro-included length.
+  // Keep the legacy classification when no separate body melody is available.
+  if(normalMelody&&openingExtraSec>0)first.bodyDurationSec=Math.max(normalMelody.duration,first.normalAccompaniment.duration);
  }
  const originalStarts=buildDynamicSongStarts(separated,openingExtraSec);
  const callPlan=options.callsRows&&window.OuenkaCalls?await window.OuenkaCalls.plan(ctx,separated,originalStarts,options.callsRows):{starts:originalStarts,events:[]};cancelled();
@@ -143,11 +158,11 @@ function combine(ctx,buffers){
 }
 function seamless(ctx,first,normal,decorate=(buffer)=>buffer){
  const initial=first.separated,body=normal.separated,n=body.length;
- const initialJoin=getSongJoinOffsetSec(initial[n-1],n===1?(first.openingExtraSec||0):0);
+ const initialJoin=getTransitionOffsetSec(initial[n-1],body[0],n===1?(first.openingExtraSec||0):0);
  const prefixDuration=first.starts[n-1]+initialJoin;
- const period=normal.starts[n-1]+getSongJoinOffsetSec(body[n-1]);
+ const period=normal.starts[n-1]+getTransitionOffsetSec(body[n-1],body[0]);
  const prefix=decorate(mixSmoothIndependent(ctx,[...initial,body[0]],null,[...first.starts,prefixDuration],[0,prefixDuration]),first.callPlan);
- const tailJoin=getSongJoinOffsetSec(body[n-1]);
+ const tailJoin=getTransitionOffsetSec(body[n-1],body[0]);
  const steady=decorate(mixSmoothIndependent(ctx,[body[n-1],...body,body[0]],null,[-tailJoin,...normal.starts,period],[0,period]),normal.callPlan);
  const buffers=[prefix],starts=[...first.starts],indices=[...first.rowIndices];let offset=prefix.duration;
  // A single-song opening can have a different tail: render the first wrap separately.
@@ -160,5 +175,5 @@ function seamless(ctx,first,normal,decorate=(buffer)=>buffer){
  const buffer=combine(ctx,buffers);
  return {buffer,starts,rowIndices:indices,duration:buffer.duration,loopStart,loopEnd:buffer.duration,isSeamlessLoop:true,prefixDuration:prefix.duration,normalStarts:normal.starts,normalDuration:steady.duration,normalRowIndices:normal.rowIndices,firstTimeline:first,barSeconds:first.barSeconds||barSecondsForSong(initial[0]),barSecondsBySong:[...(first.barSecondsBySong||initial.map(barSecondsForSong)),...(n===1?[barSecondsForSong(body[0])]:[]),...body.map(barSecondsForSong)],tempos:[...initial.map(tempo),...(n===1?[tempo(body[0])]:[]),...body.map(tempo)],normalBarSecondsBySong:body.map(barSecondsForSong)};
 }
-window.OuenkaMedleyCore={build,resolveSongs,tempo,barSecondsForSong,seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix:mixSmoothIndependent};
+window.OuenkaMedleyCore={getTransitionOffsetSec,build,resolveSongs,tempo,barSecondsForSong,seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix:mixSmoothIndependent};
 })();
