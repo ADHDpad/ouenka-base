@@ -8,11 +8,12 @@ function excerpt(duration,options={},barSeconds=(60/170)*4){
   if(available<1)throw Error('1小節分の長さがない音源です。');
   const room=options.random?available-3:available;
   if(room<1)throw Error('最初の1小節・最後の2小節を除いて出題できる区間がありません。');
-  const count=Math.min(Math.max(1,Math.floor(Number(options.bars)||1)),room);
+  let count=Math.min(Math.max(1,Math.floor(Number(options.bars)||1)),room);
   let startBar=0;
   if(options.random){
-   const last=available-count-2;
+   const last=Number.isFinite(options.start)?available-3:available-count-2;
    startBar=Number.isFinite(options.start)?Math.max(1,Math.min(last,Math.round(options.start/barSeconds))):1+Math.floor((Number.isFinite(options.randomValue)?Math.max(0,Math.min(.999999999,options.randomValue)):Math.random())*(last));
+   count=Math.min(count,available-startBar-2);
   }else if(Number.isFinite(options.start))startBar=Math.max(0,Math.round(options.start/barSeconds));
   else if(options.excerpt==='custom')startBar=Math.max(0,Math.floor(Number(options.startBar)||1)-1);
   if(startBar>=available)throw Error('指定した開始小節が音源の長さを超えています。');

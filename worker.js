@@ -1098,7 +1098,7 @@ async function handleCommunityStats(request,env){
  await env.DB.prepare('CREATE TABLE IF NOT EXISTS community_favorites_r296 (client TEXT NOT NULL,song TEXT NOT NULL,active INTEGER NOT NULL,seq INTEGER NOT NULL,PRIMARY KEY(client,song))').run();
  await env.DB.prepare('CREATE TABLE IF NOT EXISTS community_answers (event TEXT PRIMARY KEY,song TEXT NOT NULL,kind TEXT NOT NULL,correct INTEGER NOT NULL)').run();
  if(request.method==='GET'){
- const songs={},get=k=>songs[k]||(songs[k]={favorites:0,lyrics:{total:0,correct:0},audio:{total:0,correct:0}});
+ const songs={},get=k=>songs[k]||(songs[k]={favorites:0,lyrics:{total:0,correct:0},audio:{total:0,correct:0},chord:{total:0,correct:0}});
  const f=await env.DB.prepare('SELECT song,SUM(active) AS points FROM community_favorites_r296 GROUP BY song').all();for(const r of f.results)get(r.song).favorites=r.points;
  const q=await env.DB.prepare('SELECT song,kind,COUNT(*) AS total,SUM(correct) AS correct FROM community_answers GROUP BY song,kind').all();for(const r of q.results)get(r.song)[r.kind]={total:r.total,correct:r.correct};return reply({ok:true,generation:"favorites-r296",songs});
  }
@@ -1111,7 +1111,7 @@ async function handleCommunityStats(request,env){
  if(typeof b.active!=='boolean'||!Number.isSafeInteger(b.seq)||b.seq<1)return reply({ok:false},400);
  await env.DB.prepare('INSERT INTO community_favorites_r296 (client,song,active,seq) VALUES (?,?,?,?) ON CONFLICT(client,song) DO UPDATE SET active=excluded.active,seq=excluded.seq WHERE excluded.seq>community_favorites_r296.seq').bind(b.client,b.song,b.active?1:0,b.seq).run();
  }else if(b.type==='quiz'){
- if(!['lyrics','audio'].includes(b.kind)||typeof b.correct!=='boolean')return reply({ok:false},400);
+ if(!['lyrics','audio','chord'].includes(b.kind)||typeof b.correct!=='boolean')return reply({ok:false},400);
  await env.DB.prepare('INSERT OR IGNORE INTO community_answers (event,song,kind,correct) VALUES (?,?,?,?)').bind(b.event,b.song,b.kind,b.correct?1:0).run();
  }else return reply({ok:false},400);
  return reply({ok:true});

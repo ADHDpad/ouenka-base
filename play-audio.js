@@ -21,14 +21,18 @@ async function play(song,options={}){
  stop();const token=epoch;timeline=null;controller=new AbortController();const signal=controller.signal;label=options.mask?'応援歌クイズ':song.name;let context;if(!options.mask)window.OuenkaTransport?.mount({state:()=>({busy:true,title:'音源を検索中…'}),stop:options.onStop||stop},{host:document.getElementById('playTransport')});
  try{
   context=await window.ouenkaAudioRecovery.create();if(token!==epoch){context.close().catch(()=>{});return null}ctx=context;
-  song=window.OuenkaQuizMetadata?.merge(song)||song;const normal=!!options.mask;const [melody,accompaniment]=await Promise.all([
+  song=window.OuenkaQuizMetadata?.merge(song)||song;const normal=!!options.mask;
+  const buffers=options.chordOnly?[await decode(context,song,'accompaniment.m4a',signal)]:await Promise.all([
    decode(context,song,normal?'melody.m4a':'audio.m4a',signal),
    normal?decode(context,song,'accompaniment.m4a',signal):decode(context,song,'intro_accompaniment.m4a',signal).catch(()=>decode(context,song,'accompaniment.m4a',signal))
   ]);
   if(token!==epoch)return null;
-  const bodyOffset=normal?Math.max(0,(Number(song.mainStartBar||song.main_start_bar||1)-1)*window.OuenkaMedleyCore.barSeconds):0;const duration=Math.max(melody.duration,accompaniment.duration)-bodyOffset,excerpt=window.OuenkaQuizRules.excerpt(duration,options,window.OuenkaMedleyCore.barSeconds),clip=excerpt.duration,start=excerpt.start+bodyOffset;excerpt.bodyOffset=bodyOffset;
-  // Clip each source against the same audio clock; no wall-clock timeout reveals an answer.
-  timeline={duration:clip,entries:[melody,accompaniment].filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}))};
+  const barSeconds=60/(Number(song.tempo||song.bpm)||170)*4;
+  const bodyOffset=normal&&!options.chordOnly?Math.max(0,(Number(song.mainStartBar||song.main_start_bar||1)-1)*barSeconds):0;
+  const duration=Math.max(...buffers.map(b=>b.duration))-bodyOffset;
+  const excerpt=options.full?{start:0,duration}:window.OuenkaQuizRules.excerpt(duration,options,barSeconds),clip=excerpt.duration,start=excerpt.start+bodyOffset;excerpt.bodyOffset=bodyOffset;
+  if(!options.full){const available=Math.floor((duration+.001)/barSeconds),end=options.random?available-2:available;excerpt.maxBars=Math.max(1,end-Math.round(excerpt.start/barSeconds))}
+  timeline={duration:clip,entries:buffers.filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}))};
   label=options.mask?'応援歌クイズ':song.name;replay=()=>play(song,options);endCallback=options.onEnded||null;schedule(0);trackPlayback([song],[0],context,token);if(!options.mask)mount(options);
   if(navigator.mediaSession){navigator.mediaSession.metadata=new MediaMetadata({title:label,artist:options.mask?'応援歌BASE':song.team||'応援歌BASE'});navigator.mediaSession.playbackState='playing'}
   return excerpt;
@@ -61,5 +65,14 @@ async function playMedley(input,options={}){
 
 function melodyNotes(buffer){const data=buffer.getChannelData(0),step=.14,rate=8000,notes=[];for(let t=0;t<buffer.duration;t+=step){let energy=0;const samples=new Float32Array(560);for(let i=0;i<samples.length;i++){samples[i]=data[Math.min(data.length-1,Math.floor((t+i/rate)*buffer.sampleRate))]||0;energy+=samples[i]*samples[i]}if(energy/samples.length<.000025){notes.push(null);continue}let best=0,note=null;for(let midi=43;midi<=90;midi++){const omega=2*Math.PI*440*Math.pow(2,(midi-69)/12)/rate,coeff=2*Math.cos(omega);let a=0,b=0;for(const sample of samples){const c=sample+coeff*a-b;b=a;a=c}const score=a*a+b*b-coeff*a*b;if(score>best){best=score;note=midi}}notes.push(note)}return notes}
 async function sameMelodyPart(a,b,excerpt){let analysis;try{a=window.OuenkaQuizMetadata?.merge(a)||a;b=window.OuenkaQuizMetadata?.merge(b)||b;analysis=new (window.AudioContext||window.webkitAudioContext)();const control=new AbortController(),timeout=setTimeout(()=>control.abort(),20000);let buffers;try{buffers=await Promise.all([decode(analysis,a,'melody.m4a',control.signal),decode(analysis,b,'melody.m4a',control.signal)])}finally{clearTimeout(timeout)}const left=melodyNotes(buffers[0]),right=melodyNotes(buffers[1]),start=Math.round((excerpt.start+(excerpt.bodyOffset||0))/.14),length=Math.floor(excerpt.duration/.14),part=left.slice(start,start+length);if(part.length<8||part.filter(n=>n!==null).length<6)return null;const from=Math.max(0,Math.round(((Number(b.mainStartBar||b.main_start_bar||1)-1)*window.OuenkaMedleyCore.barSeconds)/.14));for(let at=from;at+part.length<=right.length;at++){const offsets=new Map();let valid=0,voiced=0;for(let i=0;i<part.length;i++){const x=part[i],y=right[at+i];if(x===null&&y===null){valid++;continue}if(x!==null&&y!==null){voiced++;const delta=y-x;offsets.set(delta,(offsets.get(delta)||0)+1)}}const best=Math.max(0,...offsets.values());if(voiced>=6&&best>=voiced*.96&&(best+valid)/part.length>=.94)return true}return false}catch{return null}finally{analysis?.close().catch(()=>{})}}
-window.OuenkaPlayAudio={play,playMedley,stop,state,sameMelodyPart};window.addEventListener('pagehide',stop);
+async function sameAccompaniment(a,b){let analysis;try{
+ a=window.OuenkaQuizMetadata?.merge(a)||a;b=window.OuenkaQuizMetadata?.merge(b)||b;
+ if(window.OuenkaQuizRules.sameBody(a,b)){
+  const source=s=>String(s.reuseName||s.reuse_name||s.audioSource?.name||s.name)+'#'+String(s.reuseProductionNumber||s.reuse_production_number||s.audioSource?.productionNumber||s.productionNumber||1);
+  if(source(a)===source(b))return true;
+ }
+ analysis=new (window.AudioContext||window.webkitAudioContext)();const control=new AbortController(),timeout=setTimeout(()=>control.abort(),20000);let buffers;try{buffers=await Promise.all([decode(analysis,a,'accompaniment.m4a',control.signal),decode(analysis,b,'accompaniment.m4a',control.signal)])}finally{clearTimeout(timeout)}
+ const [x,y]=buffers;if(Math.abs(x.duration-y.duration)>.08)return false;const left=x.getChannelData(0),right=y.getChannelData(0);let energy=0,error=0;for(let t=0;t<Math.min(x.duration,y.duration);t+=.007){const l=left[Math.floor(t*x.sampleRate)]||0,r=right[Math.floor(t*y.sampleRate)]||0;energy+=l*l+r*r;error+=(l-r)**2}return energy>.0001&&error/energy<.002;
+ }catch{return null}finally{analysis?.close().catch(()=>{})}}
+window.OuenkaPlayAudio={play,playMedley,stop,state,sameMelodyPart,sameAccompaniment};window.addEventListener('pagehide',stop);
 })();
