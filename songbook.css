@@ -49,3 +49,9 @@ html body #songs .song>.quiz-correct-badge{grid-column:1}
 /* r294 community statistics */
 html body #songs .info{position:relative;padding-right:65px}html body #songs .info>.favorite-star{position:absolute;right:10px;top:9px;width:40px!important;height:40px!important}html body #songs .favorite-points{display:block;font-size:12px;color:white}
 html body #songs .record-line{display:flex;align-items:center;gap:12px;grid-column:1}html body #songs .record-line label{padding:2px 6px;min-height:30px;background:transparent}html body #songs .song-actions{display:grid;grid-template-columns:85px minmax(0,1fr);align-items:center}html body #songs .community-bars{display:grid;gap:4px;min-width:0}html body #songs .community-bars label{display:grid;grid-template-columns:115px minmax(30px,1fr);align-items:center;gap:6px;font-size:12px}html body #songs .community-bars progress{height:10px;accent-color:#7dd3fc;margin:0}html body #songs .song-actions>button{padding:5px}
+
+/* Keep each quiz rate on one line, including unanswered songs. */
+html body #songs .community-bars label{grid-template-columns:max-content minmax(0,1fr);min-width:0;gap:6px}
+html body #songs .community-bars label>span{white-space:nowrap;line-height:1.4;font-size:clamp(10px,2.8vw,12px)}
+html body #songs .community-bars progress{min-width:0;width:100%}
+@media(max-width:380px){html body #songs .song-actions{grid-template-columns:64px minmax(0,1fr)}}
