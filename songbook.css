@@ -7,7 +7,7 @@
 html body .summary>button{background:var(--site-surface,#fff)!important;color:var(--site-text,#153451)!important;border:1px solid var(--site-line,#d7e3ee)!important;border-radius:12px;padding:14px 6px;min-width:0}
 html body .summary>button[aria-pressed=true]{outline:3px solid var(--site-main,#0877dc);outline-offset:-3px}
 .summary small{overflow-wrap:anywhere}
-html body #teams .team-card,html body #songs .team-player{background:linear-gradient(110deg,var(--book-team-dark),var(--book-team-light) 70%,var(--book-team-main))!important;color:#ffffff!important;border-color:var(--book-team-main)!important}
+html body #teams .team-card,html body #songs .team-player{background:linear-gradient(110deg,var(--book-team-dark) var(--team-gradient-0,0%),var(--book-team-light) var(--team-gradient-1,70%),var(--book-team-main) var(--team-gradient-2,100%))!important;color:#ffffff!important;border-color:var(--book-team-main)!important}
 html body #teams .team-card :is(strong,small),html body #songs .team-player :is(h3,small,p){color:#ffffff!important;text-shadow:0 1px 2px #0007}
 .team-player{padding:12px;border-radius:8px;align-self:start}
 .quiz-correct-badge{align-self:center;color:var(--site-text,#153451);font-weight:700;font-size:13px}
