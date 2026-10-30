@@ -55,3 +55,10 @@ html body #songs .community-bars label{grid-template-columns:max-content minmax(
 html body #songs .community-bars label>span{white-space:nowrap;line-height:1.4;font-size:clamp(10px,2.8vw,12px)}
 html body #songs .community-bars progress{min-width:0;width:100%}
 @media(max-width:380px){html body #songs .song-actions{grid-template-columns:64px minmax(0,1fr)}}
+
+/* Shared columns align names, rates and equally sized progress tracks. */
+html body #songs .community-bars label{grid-template-columns:5em 3.5em minmax(0,1fr);gap:4px;font-size:clamp(10px,2.8vw,12px)}
+html body #songs .community-bars label>span{font-size:inherit}
+html body #songs .community-bars .quiz-rate-kind{display:flex;justify-content:space-between;align-items:center;min-width:0}
+html body #songs .community-bars .quiz-rate-value{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+html body #songs .community-bars progress{display:block;width:100%;min-width:0;box-sizing:border-box}
