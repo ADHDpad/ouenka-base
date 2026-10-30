@@ -147,7 +147,7 @@ async function playSongData(player, gestureCtx=null) {
     setNowPlaying("音源を検索中…");window.OuenkaTransport?.mount({state:()=>({title:"音源を検索中…",busy:true}),stop:()=>{stopHomePlayback();window.OuenkaTransport?.hide()}});
 
     try{
-        ctx=gestureCtx || window.ouenkaAudioRecovery.create();
+        ctx=gestureCtx || window.ouenkaAudioRecovery.consumeGestureContext();
         homeAudioContext=ctx;
         homePlaybackActive=true;
         homePaused=false;
