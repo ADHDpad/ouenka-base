@@ -7,7 +7,7 @@ function render(){
  $('popularList').replaceChildren(...shown.map((s,i)=>{
   if(previous!==s.points)rank=i+1;previous=s.points;
   const li=node('li'),place=node('b',rank+'位'),info=node('span'),name=node('strong',s.name),meta=node('small',s.team+' ／ 制作番号 '+s.productionNumber),lyric=node('small',String(s.lyrics||'').replace(/<br\s*\/?\s*>/gi,' ').replace(/\s+/g,' ').trim()||'歌詞未登録'),points=node('strong',s.points+'pt'),play=node('button','▶');
-  lyric.className='popular-lyrics';lyric.title=lyric.textContent;li.style.setProperty('--team',window.OuenkaTeamColors.get(s.team)[0]);info.append(name,meta,lyric);play.type='button';play.setAttribute('aria-label',s.name+'を再生');play.onclick=()=>window.OuenkaPlayAudio.play(s).catch(()=>status('試聴できませんでした。'));li.append(place,info,points,play);return li;
+  lyric.className='popular-lyrics';lyric.title=lyric.textContent;const colors=window.OuenkaTeamColors.get(s.team);li.dataset.team=s.team;li.style.setProperty('--team',colors[0]);li.style.setProperty('--popular-background',window.OuenkaTeamColors.css(colors,window.OuenkaTeamColors.getWidth(s.team)));info.append(name,meta,lyric);play.type='button';play.setAttribute('aria-label',s.name+'を再生');play.onclick=()=>window.OuenkaPlayAudio.play(s).catch(()=>status('試聴できませんでした。'));const actions=node('div');actions.className='popular-actions';actions.append(window.OuenkaFavorites.button(s),play);li.append(place,info,points,actions);return li;
  }));
  if(!shown.length)$('popularList').append(node('li','まだポイントがありません。お気に入りを付けると集計されます。'));
 }
