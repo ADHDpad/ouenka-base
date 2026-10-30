@@ -5,13 +5,15 @@ function tempo(song){return Number(song?.tempo)===140?140:170}
 function barSecondsForSong(song){return 240/tempo(song)}
 function getSongJoinOffsetSec(song,openingExtraSec=0){
  const bar=barSecondsForSong(song),total=Math.max(song.melody.duration,song.accompaniment.duration),body=Number.isFinite(song.bodyDurationSec)?song.bodyDurationSec:Math.max(0,total-openingExtraSec);
- const bars=Math.max(1,Math.round(body/bar)),musicalBars=bars>=13?16:8;
+ // Body exports include the two-bar shared boundary. Preserve that overlap
+ // for every length instead of coercing 9/12-bar tunes into 8/16.
+ const bars=Math.max(1,Math.round(body/bar)),musicalBars=Math.max(1,bars-2);
  return openingExtraSec+musicalBars*bar;
 }
-// Cache audible bounds once per decoded buffer; keep quiet tails and introductions.
-const audibleBoundsCache=new WeakMap();
-function audibleBounds(buffer){
- if(audibleBoundsCache.has(buffer))return audibleBoundsCache.get(buffer);
+// Only a BPM change inserts a silent half-bar. Equal-BPM overlaps stay unchanged.
+const transitionBoundsCache=new WeakMap();
+function transitionBounds(buffer){
+ if(transitionBoundsCache.has(buffer))return transitionBoundsCache.get(buffer);
  const threshold=Math.pow(10,-45/20);let first=buffer.length,last=-1;
  for(let ch=0;ch<buffer.numberOfChannels;ch++){
   const data=buffer.getChannelData(ch);let a=0,b=data.length-1;
@@ -20,22 +22,18 @@ function audibleBounds(buffer){
   if(b>=a){first=Math.min(first,a);last=Math.max(last,b);}
  }
  const result=last<0?null:{start:first/buffer.sampleRate,end:(last+1)/buffer.sampleRate};
- audibleBoundsCache.set(buffer,result);return result;
+ transitionBoundsCache.set(buffer,result);return result;
 }
-function songBounds(song,melodyOnly=false){
- const bounds=(melodyOnly?[song.melody]:[song.melody,song.accompaniment]).map(audibleBounds).filter(Boolean);
+function transitionSongBounds(song){
+ const bounds=[song.melody,song.accompaniment].map(transitionBounds).filter(Boolean);
  return bounds.length?{start:Math.min(...bounds.map(b=>b.start)),end:Math.max(...bounds.map(b=>b.end))}:null;
 }
 function getTransitionOffsetSec(song,next,openingExtraSec=0){
- const offset=getSongJoinOffsetSec(song,openingExtraSec),bar=barSecondsForSong(song);
- const current=songBounds(song),following=songBounds(next);
- if(tempo(song)!==tempo(next)&&current&&following){
-  return Math.max(0,current.end+bar-following.start);
+ if(tempo(song)!==tempo(next)){
+  const current=transitionSongBounds(song),following=transitionSongBounds(next);
+  if(current&&following)return Math.max(0,current.end+barSecondsForSong(song)/2-following.start);
  }
- const approved=tempo(song)===140&&tempo(next)===140?offset-bar:offset;
- // Retain approved boundaries unless they start the next tune over unfinished melody.
- const melody=songBounds(song,true);
- return melody&&following?Math.max(approved,melody.end-following.start):approved;
+ return getSongJoinOffsetSec(song,openingExtraSec);
 }
 function buildDynamicSongStarts(songs,openingExtraSec=0){
  let cursor=0;return songs.map((song,i)=>{const start=cursor;if(i<songs.length-1)cursor+=getTransitionOffsetSec(song,songs[i+1],i===0?openingExtraSec:0);return start});
