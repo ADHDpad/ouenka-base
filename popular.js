@@ -11,14 +11,14 @@ function render(){
  }));
  if(!shown.length)$('popularList').append(node('li','まだポイントがありません。お気に入りを付けると集計されます。'));
 }
-async function refresh(){if(loading)return;loading=true;$('popularRefresh').disabled=true;status('ランキングを集計中…');try{
+async function refresh(){if(loading)return;loading=true;$('popularRefresh').disabled=true;$('popularRefresh').textContent='更新中…';$('popularRefresh').setAttribute('aria-busy','true');status('ランキングを集計中…');try{
  const [stats,r]=await Promise.all([window.OuenkaStats.load(),fetch('https://ouenka-base-data.ninzin5600.workers.dev/songs',{cache:'no-store',signal:AbortSignal.timeout(15000)})]);
  if(!stats)throw Error('集計を取得できません。通信状態と同梱worker.jsへの更新を確認してください。');if(!r.ok)throw Error('応援歌を取得できませんでした。');const data=await r.json();if(!Array.isArray(data.songs))throw Error('応援歌を取得できませんでした。');
  const unique=new Map();for(const song of data.songs){const points=Number(stats[window.OuenkaStats.key(song)]?.favorites||0);if(points<=0)continue;unique.set(window.OuenkaStats.key(song),{...song,name:song.player_name??song.name,productionNumber:String(song.production_number??song.productionNumber),team:song.team||'球団未設定',points})}
  songs=[...unique.values()].sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name,'ja')||Number(a.productionNumber)-Number(b.productionNumber));
  const selected=$('popularTeam').value;$('popularTeam').replaceChildren(new Option('すべて',''),...[...new Set(songs.map(s=>s.team))].sort((a,b)=>a.localeCompare(b,'ja')).map(t=>new Option(t,t)));if([...$('popularTeam').options].some(o=>o.value===selected))$('popularTeam').value=selected;
  render();status('全ユーザーのお気に入りポイントを反映しました。');
- }catch(e){status(e.message||'ランキングを取得できませんでした。')}finally{loading=false;$('popularRefresh').disabled=false}}
+ }catch(e){status(e.message||'ランキングを取得できませんでした。')}finally{loading=false;$('popularRefresh').disabled=false;$('popularRefresh').textContent='↻ 更新';$('popularRefresh').setAttribute('aria-busy','false')}}
 try{const limit=localStorage.getItem('ouenkaPopularLimitV1');if(['10','30','50','100','all'].includes(limit))$('popularLimit').value=limit}catch{}
 $('popularLimit').onchange=()=>{try{localStorage.setItem('ouenkaPopularLimitV1',$('popularLimit').value)}catch{}render()};$('popularTeam').onchange=render;$('popularRefresh').onclick=refresh;refresh();
 })();
