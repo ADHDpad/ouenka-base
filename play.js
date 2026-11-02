@@ -89,7 +89,7 @@ function nextQuestion(){
  audio.stop();setListening(false);quizToken++;if(quiz.at>=quiz.questions.length){finishQuiz();return}
  quiz.answered=false;quiz.hearing=false;quiz.revealedBars=1;quiz.start=null;quiz.playedExcerpt=null;$('quizChoices').hidden=!!quiz.direct;$('quizSearchAnswer').hidden=!quiz.direct;$('quizAnswerQuery').value='';$('quizAnswerQuery').disabled=false;$('quizAnswerCandidates').replaceChildren();$('quizFeedback').hidden=true;$('quizListeningScene').hidden=['lyrics','blank'].includes(quiz.kind);updateQuizProgress();$('quizAnswer').textContent='';$('quizNext').hidden=true;$('quizAnswerPlay').hidden=true;$('quizReplay').disabled=false;$('quizSkip').disabled=false;$('quizListenStatus').textContent='';$('audioStatus').textContent='';
  $('quizProgress').textContent='第 '+(quiz.at+1)+' 問 / '+quiz.questions.length;$('quizScore').textContent=quizScoreLabel();
- const correct=quiz.questions[quiz.at],wrong=correct.quizAlternatives,options=shuffled([quiz.kind==='blank'?{name:correct.quizBlankAnswer}:correct,...wrong]);
+ const correct=quiz.questions[quiz.at];$('quizBlankSong').hidden=quiz.kind!=='blank';$('quizBlankSong').textContent=quiz.kind==='blank'?correct.name+' ／ '+correct.team:'';const wrong=correct.quizAlternatives,options=shuffled([quiz.kind==='blank'?{name:correct.quizBlankAnswer}:correct,...wrong]);
  $('quizAudioControls').hidden=['lyrics','blank'].includes(quiz.kind);$('quizLyricPrompt').hidden=!['lyrics','blank'].includes(quiz.kind);$('quizLyricPrompt').textContent=['lyrics','blank'].includes(quiz.kind)?correct.quizPrompt:'';if(quiz.kind==='blank')$('quizListenStatus').textContent='【 ？ 】に入る言葉を選んでください。正解で4点。';$('quizMoreLyrics').hidden=quiz.kind!=='lyrics'||correct.quizVisibleLines>=Math.min(4,correct.quizLines?.length||0);if(quiz.kind==='lyrics')$('quizListenStatus').textContent=correct.quizVisibleLines+'フレーズ表示：正解で'+lyricPoints(correct)+'点';
  $('quizChoices').replaceChildren();for(const [optionIndex,candidate] of options.entries()){const button=node('button');button.append(node('span',String.fromCharCode(65+optionIndex),'choice-letter'),node('span',candidate.name,'choice-name'));button.onclick=()=>answer(candidate,button);button.dataset.answer=quiz.kind==='blank'?window.OuenkaQuizRules.key(candidate.name):nameKey(candidate.name);$('quizChoices').append(button)}
  syncMoreAudio();if(!['lyrics','blank'].includes(quiz.kind))hearQuestion();
@@ -103,9 +103,8 @@ async function answer(song,button){
 function finishQuiz(){
  $('quizGame').hidden=true;$('quizResult').hidden=false;$('quizHub').hidden=true;$('quizSetup').hidden=true;document.body.dataset.quizStage='result';
  const total=quiz.questions.length,max=total*4,rate=quiz.score/max;
- $('quizRank').textContent=rate===1?'応援歌マスター！':rate>=.7?'応援団のエース！':rate>=.4?'ナイスチャレンジ！':'次こそ、ヒット！';
  $('quizResultScore').replaceChildren(node('span',String(quiz.score)),node('small',' / '+max+'点'));
- $('quizResultMessage').textContent=rate===1?'満点！どの応援歌も、お見通し！':'獲得率 '+Math.round(rate*100)+'％。'+quiz.correctCount+' / '+total+'問正解。'+'もう一度挑戦してみよう。';
+ $('quizResultMessage').textContent='獲得率 '+Math.round(rate*100)+'％。'+quiz.correctCount+' / '+total+'問正解。';
  $('quizResultDots').replaceChildren(...quiz.history.map((hit,i)=>node('i',hit?'✓':String(i+1),hit?'hit':'miss')));
  try{const old=JSON.parse(localStorage.getItem(quiz.bestKey)||'null');if(!old||rate>old.score/old.total)localStorage.setItem(quiz.bestKey,JSON.stringify({score:quiz.score,total:max,correctCount:quiz.correctCount}));showBest()}catch{}
  $('quizResult').scrollIntoView?.({behavior:'smooth',block:'start'});
