@@ -71,6 +71,7 @@ export default {
               lyrics,
               tempo,
               is_generic,
+              random_excluded,
               audio_filename,
               garageband_filename,
               melody_filename,
@@ -118,6 +119,7 @@ export default {
               lyrics,
               tempo,
               is_generic,
+              random_excluded,
               audio_filename,
               garageband_filename,
               melody_filename,
@@ -179,6 +181,7 @@ export default {
               lyrics,
               tempo,
               is_generic,
+              random_excluded,
               audio_filename,
               garageband_filename,
               melody_filename,
@@ -366,10 +369,11 @@ export default {
               chord_filename,
               bass_filename,
               tempo,
-              is_generic
+              is_generic,
+              random_excluded
             )
             VALUES (
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
           `)
           .bind(
@@ -386,7 +390,8 @@ export default {
             chordFilename,
             bassFilename,
             body.tempo===140?140:170,
-            body.is_generic===true||body.is_generic===1?1:0
+            body.is_generic===true||body.is_generic===1?1:0,
+            body.random_excluded===true||body.random_excluded===1?1:0
           )
           .run();
         return json(
@@ -585,7 +590,8 @@ export default {
             chord_filename = ?,
             bass_filename = ?,
             tempo = ?,
-            is_generic = ?
+            is_generic = ?,
+            random_excluded = ?
           WHERE id = ?
         `)
         .bind(
@@ -602,6 +608,7 @@ export default {
           bassFilename,
           hasOwn(body,"tempo")?(body.tempo===140?140:170):(current.tempo||170),
           hasOwn(body,"is_generic")?(body.is_generic===true||body.is_generic===1?1:0):(current.is_generic||0),
+          hasOwn(body,"random_excluded")?(body.random_excluded===true||body.random_excluded===1?1:0):(current.random_excluded||0),
           id
         )
         .run();
@@ -618,6 +625,7 @@ export default {
               lyrics,
               tempo,
               is_generic,
+              random_excluded,
               audio_filename,
               garageband_filename,
               melody_filename,
@@ -1122,7 +1130,7 @@ let songSettingsReady;
 async function ensureSongSettings(env){
  if(!songSettingsReady)songSettingsReady=(async()=>{
   const columns=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;
-  for(const [name,definition] of [['tempo','INTEGER NOT NULL DEFAULT 170'],['is_generic','INTEGER NOT NULL DEFAULT 0']]){
+  for(const [name,definition] of [['tempo','INTEGER NOT NULL DEFAULT 170'],['is_generic','INTEGER NOT NULL DEFAULT 0'],['random_excluded','INTEGER NOT NULL DEFAULT 0']]){
    if(!columns.some(c=>c.name===name))try{await env.DB.prepare('ALTER TABLE songs ADD COLUMN '+name+' '+definition).run()}catch(e){const now=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;if(!now.some(c=>c.name===name))throw e}
   }
   await env.DB.prepare('UPDATE songs SET tempo = 140 WHERE tempo = 150').run();
