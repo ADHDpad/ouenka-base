@@ -1,0 +1,1 @@
+Cloudflare Worker のみ変更。YouTube関連度検索で pepsi O チャンネルを優先し、開幕戦・特定試合の動画の優先度を下げました。年度一致かつ説明欄に9人の打順がある動画だけを採用します。GitHub側の再アップロードは不要です。Cloudflareへworker.jsをデプロイしてください。
