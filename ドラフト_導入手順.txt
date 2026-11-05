@@ -1,0 +1,27 @@
+みんなでドラフト（ルームマッチ）追加版
+
+■ このZIPの内容
+既存のOUENKA BASE一式に以下を追加しました。
+・draft-room.html：ルーム作成、参加、待機、指名、競合結果の画面
+・draft-room.js：4人ルーム、CPU補充、ランダム50曲、人気ランキングに基づくCPU指名
+・draft-room-worker.js：Cloudflare Worker側のルーム管理API
+・draft.html：「みんなでドラフト」から新画面へ移動
+
+■ 公開手順
+1. サイト側のファイルをGitHub Pagesへ配置します。
+2. Cloudflare Workersで新しいWorkerを作り、draft-room-worker.jsをコードとして配置します。
+3. WorkerにR2バケットのバインディング「BUCKET」を設定します。
+4. Workerを公開します。
+5. draft-room.htmlの「ルーム通信設定」にWorker URLの末尾 /api/room-draft を付けて保存します。
+   例：https://your-worker.workers.dev/api/room-draft
+6. 各端末から同じ公開サイトへアクセスし、ホストの4桁コードで参加します。
+
+■ 現段階の注意
+・サーバーのデプロイと複数端末の実通信試験はまだ行っていません。
+・既存の1人用ドラフトは維持しています。
+・本版はルーム作成、参加、CPU補充、指名・競合抽選・獲得結果の基礎実装です。
+・試聴、1-9への保存・並べ替え、通信断からの詳細復旧、同時更新時の自動リトライは未実装です。
+・既存community-worker.jsは変更していません。別Workerとしての設置が必要です。
+・人気ランキング取得に失敗した場合、CPUはランダムに選びます。
+・指名は一斉方式で、同じ曲を選んだ場合はサーバーが抽選します。
+・CPUは不足分を補充でき、最大4枠です。
