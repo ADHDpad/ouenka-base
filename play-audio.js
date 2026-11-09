@@ -14,9 +14,12 @@ function state(){const time=ctx?Math.min(timeline?.duration||0,Math.max(0,ctx.cu
 function stop(){epoch++;controller?.abort();controller=null;for(const s of sources){s.onended=null;try{s.stop()}catch{}}sources=[];if(ctx)ctx.close().catch(()=>{});ctx=null;paused=false;position=0;onTick=null;endCallback=null;if(navigator.mediaSession)navigator.mediaSession.playbackState='none';window.OuenkaTransport?.hide()}
 function schedule(offset=0){
  const context=ctx,token=epoch;for(const s of sources){s.onended=null;try{s.stop()}catch{}}sources=[];const base=context.currentTime+.04;started=base-offset;position=offset;
- let pending=0;for(const item of timeline.entries){if(offset>=item.start+item.buffer.duration)continue;const source=context.createBufferSource();source.buffer=item.buffer;source.connect(context.destination);source.start(base+Math.max(0,item.start-offset),Math.max(0,offset-item.start),Math.max(0,Math.min(item.buffer.duration-Math.max(0,offset-item.start),timeline.duration-Math.max(offset,item.start))));sources.push(source);pending++;source.onended=()=>{if(token!==epoch||context!==ctx||!sources.includes(source)||--pending>0)return;position=timeline.duration;context.close().catch(()=>{});ctx=null;paused=false;onTick?.(position);const callback=endCallback;endCallback=null;callback?.();if(navigator.mediaSession)navigator.mediaSession.playbackState='none'}}
+ const scale=window.OuenkaPlaybackSpeed.bufferScale(context);
+ let pending=0;for(const item of timeline.entries){if(offset>=item.start+item.buffer.duration)continue;const source=window.OuenkaPlaybackSpeed.source(context,item.buffer);source.connect(context.destination);source.start(base+Math.max(0,item.start-offset),Math.max(0,offset-item.start)*scale,Math.max(0,Math.min(item.buffer.duration-Math.max(0,offset-item.start),timeline.duration-Math.max(offset,item.start)))*scale);sources.push(source);pending++;source.onended=()=>{if(token!==epoch||context!==ctx||!sources.includes(source)||--pending>0)return;position=timeline.duration;context.close().catch(()=>{});ctx=null;paused=false;onTick?.(position);const callback=endCallback;endCallback=null;callback?.();if(navigator.mediaSession)navigator.mediaSession.playbackState='none'}}
 }
-function mount(options={}){window.OuenkaTransport?.mount({state,pause:async()=>{if(ctx){paused=true;await ctx.suspend()}},play:async()=>{if(ctx){paused=false;await ctx.resume()}else await replay?.()},stop:options.onStop||stop,previous:timeline?.starts?.length>1?()=>jump(-1):undefined,next:timeline?.starts?.length>1?()=>jump(1):undefined,seek:value=>{if(!ctx)return;const at=Math.max(0,Math.min(timeline.duration-.001,Number(value)||0));schedule(at)}},{host:document.getElementById('playTransport')})}
+function mount(options={}){window.OuenkaTransport?.mount({
+ ...window.OuenkaPlaybackSpeed.keyControl(()=>ctx,()=>timeline,()=>schedule(state().currentTime)),
+ state,pause:async()=>{if(ctx){paused=true;await ctx.suspend()}},play:async()=>{if(ctx){paused=false;await ctx.resume()}else await replay?.()},stop:options.onStop||stop,previous:timeline?.starts?.length>1?()=>jump(-1):undefined,next:timeline?.starts?.length>1?()=>jump(1):undefined,seek:value=>{if(!ctx)return;const at=Math.max(0,Math.min(timeline.duration-.001,Number(value)||0));schedule(at)}},{host:document.getElementById('playTransport')})}
 async function play(song,options={}){
  stop();const token=epoch;timeline=null;controller=new AbortController();const signal=controller.signal;label=options.mask?'応援歌クイズ':song.name;let context;if(!options.mask)window.OuenkaTransport?.mount({state:()=>({busy:true,title:'音源を検索中…'}),stop:options.onStop||stop},{host:document.getElementById('playTransport')});
  try{
@@ -32,7 +35,8 @@ async function play(song,options={}){
   const duration=Math.max(...buffers.map(b=>b.duration))-bodyOffset;
   const excerpt=options.full?{start:0,duration}:window.OuenkaQuizRules.excerpt(duration,options,barSeconds),clip=excerpt.duration,start=excerpt.start+bodyOffset;excerpt.bodyOffset=bodyOffset;
   if(!options.full){const available=Math.floor((duration+.001)/barSeconds),end=options.random?available-2:available;excerpt.maxBars=Math.max(1,end-Math.round(excerpt.start/barSeconds))}
-  timeline={duration:clip,songs:options.mask?[]:[song],entries:buffers.filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}))};
+  const entries=buffers.filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}));
+  timeline={duration:clip,songs:options.mask?[]:[song],entries};
   label=options.mask?'応援歌クイズ':song.name;replay=()=>play(song,options);endCallback=options.onEnded||null;schedule(0);trackPlayback([song],[0],context,token);if(!options.mask)mount(options);
   if(navigator.mediaSession){navigator.mediaSession.metadata=new MediaMetadata({title:label,artist:options.mask?'応援歌BASE':song.team||'応援歌BASE'});navigator.mediaSession.playbackState='playing'}
   return excerpt;
@@ -40,7 +44,7 @@ async function play(song,options={}){
 }
 
 function jump(direction){if(!ctx||!timeline?.starts)return;const at=state().currentTime;let i=0;while(i+1<timeline.starts.length&&at>=timeline.starts[i+1])i++;schedule(timeline.starts[Math.max(0,Math.min(timeline.starts.length-1,i+direction))])}
-function trackPlayback(songs,starts,context,token){window.OuenkaSongbook?.watch(()=>token!==epoch||ctx!==context||context.state==='closed'?null:{playing:!paused&&context.state==='running',clock:context.currentTime,position:context.currentTime-started,entries:starts.map((start,i)=>({song:songs[i],start,end:starts[i+1]??timeline.duration}))})}
+function trackPlayback(songs,starts,context,token){window.OuenkaSongbook?.watch(()=>token!==epoch||ctx!==context||context.state==='closed'?null:{playing:!paused&&context.state==='running',clock:context.currentTime,position:(context.currentTime-started),entries:starts.map((start,i)=>({song:songs[i],start,end:starts[i+1]??timeline.duration}))})}
 async function playMedley(input,options={}){
  stop();let songs=input.map(s=>({...s}));if(!songs.length)return null;
  const token=epoch;timeline=null;controller=new AbortController();const signal=controller.signal;label=options.title||'応援歌メドレー';

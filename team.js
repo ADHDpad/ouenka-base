@@ -92,6 +92,9 @@ async function fetchTeamSpecial(ctx,s){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),2500);
  try{const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:controller.signal});if(response.status===404){teamSpecialMissing.add(url);return null}if(!response.ok)return null;const bytes=await response.arrayBuffer();return await ctx.decodeAudioData(bytes.slice(0))}catch(_){return null}finally{clearTimeout(timer)}
 }
+function teamElapsed(){
+ return teamAudioContext.currentTime-teamStartedAt;
+}
 function armTeamEndTimer(ms){
  if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
  teamRemainingMs=Math.max(0,ms);
@@ -100,7 +103,7 @@ function armTeamEndTimer(ms){
  teamEndTimer=setTimeout(()=>{
   teamEndTimer=null;
   if(token===teamPlayToken&&!paused){
-   if(teamAudioContext&&teamAudioContext.currentTime-teamStartedAt<teamTotalDuration-.01){armTeamEndTimer(Math.max(100,(teamTotalDuration-(teamAudioContext.currentTime-teamStartedAt))*1000));return}
+   if(teamAudioContext&&teamElapsed()<teamTotalDuration-.01){armTeamEndTimer(Math.max(100,(teamTotalDuration-teamElapsed())*1000));return}
    teamSavedDuration=teamTotalDuration;teamStoppedPosition=teamTotalDuration;stopAudio(true,true);
    clearAllQueue();
   }
@@ -114,17 +117,17 @@ function startSyncedBuffers(offset=0){
   const end=item.start+item.buffer.duration;if(offset>=end-.005)continue;
   const seek=Math.max(0,offset-item.start);
   const delay=Math.max(0,item.start-offset);
-  const src=teamAudioContext.createBufferSource();src.buffer=item.buffer;src.connect(teamAudioContext.destination);
-  src.start(when+delay,Math.min(seek,Math.max(0,item.buffer.duration-.01)));teamSources.push(src);
+  const src=window.OuenkaPlaybackSpeed.source(teamAudioContext,item.buffer);src.connect(teamAudioContext.destination);
+  src.start(when+delay,Math.min(seek,Math.max(0,item.buffer.duration-.01))*window.OuenkaPlaybackSpeed.bufferScale(teamAudioContext));teamSources.push(src);
  }
  teamStartedAt=when-offset;
  if(!teamMedley){const song=current;window.OuenkaSongbook?.track(teamAudioContext,song,()=>current===song&&!paused&&teamSources.length>0,when)}
- else{const context=teamAudioContext,medley=teamMedley,base=when-offset;window.OuenkaSongbook?.watch(()=>teamAudioContext!==context||teamMedley!==medley||teamStartedAt!==base||context.state==='closed'?null:{playing:context.state==='running'&&!paused,clock:context.currentTime,position:context.currentTime-base,entries:medley.starts.map((start,i)=>({song:medley.queue[i],start,end:medley.starts[i+1]??teamTotalDuration}))})}
+ else{const context=teamAudioContext,medley=teamMedley,base=teamStartedAt;window.OuenkaSongbook?.watch(()=>teamAudioContext!==context||teamMedley!==medley||teamStartedAt!==base||context.state==='closed'?null:{playing:context.state==='running'&&!paused,clock:context.currentTime,position:teamElapsed(),entries:medley.starts.map((start,i)=>({song:medley.queue[i],start,end:medley.starts[i+1]??teamTotalDuration}))})}
  if(teamMedley){
   if(teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
   const source=teamSources[0],token=teamPlayToken;
   if(source)source.addEventListener('ended',()=>{if(token!==teamPlayToken||!teamSources.includes(source))return;teamSavedDuration=teamTotalDuration;teamStoppedPosition=teamTotalDuration;stopAudio()},{once:true});
- }else armTeamEndTimer(Math.max(0,(teamTotalDuration-offset+.2)*1000));
+ }else armTeamEndTimer(Math.max(0,((teamTotalDuration-offset)+.2)*1000));
 }
 async function playSong(s,fromQueue=false){
  const wasMedley=!!teamMedley;
@@ -159,13 +162,13 @@ async function togglePause(){
   try{
    await teamAudioContext.resume();
    paused=false;
-   if(!teamMedley)armTeamEndTimer(teamRemainingMs||Math.max(0,(teamTotalDuration-teamPauseOffset+.2)*1000));
+   if(!teamMedley)armTeamEndTimer(teamRemainingMs||Math.max(0,((teamTotalDuration-teamPauseOffset)+.2)*1000));
    $("miniState").textContent="再生中";
    if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";
   }catch(e){console.warn(e)}
  }else{
   try{
-   teamPauseOffset=Math.max(0,teamAudioContext.currentTime-teamStartedAt);
+   teamPauseOffset=Math.max(0,teamElapsed());
    if(teamEndTimer){
     clearTimeout(teamEndTimer);teamEndTimer=null;
     teamRemainingMs=Math.max(0,teamRemainingMs-(performance.now()-teamTimerStartedAt));
@@ -194,7 +197,18 @@ $("teamFavoritesButton").addEventListener("click",()=>{favoritesOnly=!favoritesO
 window.addEventListener("ouenka-favorites-change",render);
 loadSongs();
 
-function attachTeamTransport(song){const queue=()=>visibleSongs(),index=()=>queue().findIndex(s=>s.name===song.name&&s.productionNumber===song.productionNumber);window.OuenkaTransport?.mount({state:()=>({song:current||song,title:current?.name||song.name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamAudioContext.currentTime-teamStartedAt)):teamStoppedPosition,playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:index()>0,hasNext:index()>=0&&index()<queue().length-1}),pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playSong(song);if(at>0){teamPauseOffset=at;startSyncedBuffers(at)}return}if(paused)return togglePause()},stop:()=>{const duration=teamTotalDuration;stopAudio();teamTotalDuration=duration;teamStoppedPosition=0},previous:()=>{const i=index();if(i>0)return playSong(queue()[i-1])},next:()=>{const i=index();if(i>=0&&i+1<queue().length)return playSong(queue()[i+1])},seek:position=>{if(!teamAudioContext){teamStoppedPosition=Math.min(teamTotalDuration||teamSavedDuration,Math.max(0,position));return}const time=Math.min(teamTotalDuration,Math.max(0,position));teamPauseOffset=time;startSyncedBuffers(time);if(paused&&teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}}})}
+function seekTeamPlayback(time){
+ teamPauseOffset=time;startSyncedBuffers(time);
+ if(paused&&teamEndTimer){clearTimeout(teamEndTimer);teamEndTimer=null}
+}
+function teamKeyControl(){
+ return window.OuenkaPlaybackSpeed.keyControl(
+  ()=>teamAudioContext,
+  ()=>({entries:teamTimeline}),
+  ()=>{seekTeamPlayback(teamMedleyPosition());updateTeamMedley()}
+ );
+}
+function attachTeamTransport(song){const queue=()=>visibleSongs(),index=()=>queue().findIndex(s=>s.name===song.name&&s.productionNumber===song.productionNumber);window.OuenkaTransport?.mount({...teamKeyControl(),state:()=>({song:current||song,title:current?.name||song.name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamElapsed())):teamStoppedPosition,playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:index()>0,hasNext:index()>=0&&index()<queue().length-1}),pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playSong(song);if(at>0){teamPauseOffset=at;startSyncedBuffers(at)}return}if(paused)return togglePause()},stop:()=>{const duration=teamTotalDuration;stopAudio();teamTotalDuration=duration;teamStoppedPosition=0},previous:()=>{const i=index();if(i>0)return playSong(queue()[i-1])},next:()=>{const i=index();if(i>=0&&i+1<queue().length)return playSong(queue()[i+1])},seek:position=>{if(!teamAudioContext){teamStoppedPosition=Math.min(teamTotalDuration||teamSavedDuration,Math.max(0,position));return}const time=Math.min(teamTotalDuration,Math.max(0,position));seekTeamPlayback(time)}})}
 
 $("teamPlayAll").addEventListener("click",()=>playTeamMedley());
 
@@ -222,7 +236,7 @@ async function playTeamMedley(queue=visibleSongs()){
   stopAudio();window.OuenkaTransport?.hide();$('teamStatus').style.display='block';$('teamStatus').textContent=error.message||'メドレーを再生できませんでした。';
  }
 }
-function teamMedleyPosition(){return teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamAudioContext.currentTime-teamStartedAt)):teamStoppedPosition}
+function teamMedleyPosition(){return teamAudioContext?Math.min(teamTotalDuration,Math.max(0,teamElapsed())):teamStoppedPosition}
 function updateTeamMedley(){
  if(!teamMedley?.starts.length)return;
  const at=teamMedleyPosition();let index=0;while(index+1<teamMedley.starts.length&&at>=teamMedley.starts[index+1])index++;
@@ -238,5 +252,5 @@ function attachTeamMedleyTransport(queue,starts){
   if(teamPauseOffset>=teamTotalDuration){teamStoppedPosition=teamTotalDuration;stopAudio();return}
   startSyncedBuffers(teamPauseOffset);updateTeamMedley();
  }
- window.OuenkaTransport?.mount({state:()=>{updateTeamMedley();const i=index();return {song:queue[i],title:queue[i].name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamMedleyPosition(),playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:i>0,hasNext:i<queue.length-1}},pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playTeamMedley(queue);if(at>0)seek(at);return}if(paused)return togglePause()},stop:()=>{stopAudio();teamStoppedPosition=0},previous:()=>seek(starts[Math.max(0,index()-1)]),next:()=>seek(starts[Math.min(starts.length-1,index()+1)]),seek});
+ window.OuenkaTransport?.mount({...teamKeyControl(),state:()=>{updateTeamMedley();const i=index();return {song:queue[i],title:queue[i].name,duration:teamTotalDuration||teamSavedDuration,currentTime:teamMedleyPosition(),playing:!!teamAudioContext&&!paused&&teamAudioContext.state==='running',paused,hasPrevious:i>0,hasNext:i<queue.length-1}},pause:()=>{if(!paused)return togglePause()},play:async()=>{if(!teamAudioContext){const at=teamStoppedPosition;await playTeamMedley(queue);if(at>0)seek(at);return}if(paused)return togglePause()},stop:()=>{stopAudio();teamStoppedPosition=0},previous:()=>seek(starts[Math.max(0,index()-1)]),next:()=>seek(starts[Math.min(starts.length-1,index()+1)]),seek});
 }

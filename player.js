@@ -235,7 +235,7 @@ async function playSongData(player, gestureCtx=null) {
         })();
         if(special){
             if(attemptId!==playAttemptId){try{await ctx.close()}catch(_){}return;}
-            const src=ctx.createBufferSource();src.buffer=special;src.connect(ctx.destination);
+            const src=window.OuenkaPlaybackSpeed.source(ctx,special);src.connect(ctx.destination);
             homeAudioSources.push(src);const specialStart=ctx.currentTime+.04;src.start(specialStart);
             attachHomeTransport(ctx,[{buffer:special,start:0}],specialStart,player);
             if(ctx.state==="running") setNowPlaying("♪ 特別版再生中："+label);
@@ -256,10 +256,11 @@ async function playSongData(player, gestureCtx=null) {
             return;
         }
 
+        const timeline=[{buffer:audio,start:0},{buffer:accompaniment,start:0}];
         const sources=[];
         function schedule(buffer,when){
-            const src=ctx.createBufferSource();
-            src.buffer=buffer;src.connect(ctx.destination);src.start(when);
+            const src=window.OuenkaPlaybackSpeed.source(ctx,buffer);
+            src.connect(ctx.destination);src.start(when);
             sources.push(src);
             homeAudioSources.push(src);
         }
@@ -274,9 +275,8 @@ async function playSongData(player, gestureCtx=null) {
             }
         }catch(e){console.warn('MediaSession',e)}
         const base=ctx.currentTime+.04;
-        schedule(audio,base);
-        schedule(accompaniment,base);
-        attachHomeTransport(ctx,[{buffer:audio,start:0},{buffer:accompaniment,start:0}],base,player);
+        for(const {buffer} of timeline)schedule(buffer,base);
+        attachHomeTransport(ctx,timeline,base,player);
         if(ctx.state==="running") setNowPlaying("♪ 再生中："+label);
         else {setNowPlaying("音声エンジンの起動待ち…");ctx.addEventListener("statechange",()=>{if(ctx.state==="running"&&attemptId===playAttemptId)setNowPlaying("♪ 再生中："+label)})}
         let unfinished=sources.length;
@@ -374,6 +374,8 @@ function homePosition(){return homeAudioContext?Math.min(homeTotalDuration,Math.
 function homeQueue(){return window.ouenkaHomeQueue||((typeof d1Players!=='undefined'&&Object.keys(d1Players).length)?Object.values(d1Players):[])}
 function homeQueueIndex(){const song=homeRecoverySong;return homeQueue().findIndex(p=>p.name===song?.name&&String(p.productionNumber)===String(song?.productionNumber))}
 function attachHomeTransport(ctx,timeline,base,player){window.OuenkaSongbook?.track(ctx,player,()=>homeAudioContext===ctx&&!homePaused&&homeAudioSources.length>0,base);homeTimeline=timeline;homeTotalDuration=Math.max(...timeline.map(x=>x.start+x.buffer.duration));homeStartedAt=base;homeTransportOffset=0;
- window.OuenkaTransport?.mount({state:()=>({song:homeRecoverySong||player,title:homeTotalDuration?(homeRecoverySong?.name||player.name):"音源を検索中…",busy:!homeTotalDuration,duration:homeTotalDuration,currentTime:homePosition(),playing:homePlaybackActive&&!homePaused&&homeAudioContext?.state==='running',paused:homePaused,hasPrevious:homeQueueIndex()>0,hasNext:homeQueueIndex()>=0&&homeQueueIndex()<homeQueue().length-1}),pause:pauseHomePlayback,play:async()=>{if(homePlaybackActive)return resumeHomePlayback();const at=homeTransportOffset;await playSongData(homeRecoverySong);if(at>0)seekHomePlayback(at)},stop:stopHomePlayback,previous:()=>{const i=homeQueueIndex();if(i>0)return playSongData(homeQueue()[i-1])},next:()=>{const i=homeQueueIndex();if(i>=0&&i+1<homeQueue().length)return playSongData(homeQueue()[i+1])},seek:seekHomePlayback});
+ window.OuenkaTransport?.mount({
+ ...window.OuenkaPlaybackSpeed.keyControl(()=>homeAudioContext,()=>({entries:homeTimeline}),()=>seekHomePlayback(homePosition())),
+ state:()=>({song:homeRecoverySong||player,title:homeTotalDuration?(homeRecoverySong?.name||player.name):"音源を検索中…",busy:!homeTotalDuration,duration:homeTotalDuration,currentTime:homePosition(),playing:homePlaybackActive&&!homePaused&&homeAudioContext?.state==='running',paused:homePaused,hasPrevious:homeQueueIndex()>0,hasNext:homeQueueIndex()>=0&&homeQueueIndex()<homeQueue().length-1}),pause:pauseHomePlayback,play:async()=>{if(homePlaybackActive)return resumeHomePlayback();const at=homeTransportOffset;await playSongData(homeRecoverySong);if(at>0)seekHomePlayback(at)},stop:stopHomePlayback,previous:()=>{const i=homeQueueIndex();if(i>0)return playSongData(homeQueue()[i-1])},next:()=>{const i=homeQueueIndex();if(i>=0&&i+1<homeQueue().length)return playSongData(homeQueue()[i+1])},seek:seekHomePlayback});
 }
-function seekHomePlayback(position){if(!homeAudioContext){homeTransportOffset=Math.min(homeTotalDuration,Math.max(0,Number(position)||0));return}if(!homeTimeline.length)return;const ctx=homeAudioContext,epoch=++homeSeekEpoch,offset=Math.max(0,Math.min(Number(position)||0,homeTotalDuration)),wasPaused=homePaused;const old=homeAudioSources;homeAudioSources=[];old.forEach(src=>{try{src.stop();src.disconnect()}catch{}});homeTransportOffset=offset;if(offset>=homeTotalDuration){homePlaybackActive=false;homePaused=false;homeAudioContext=null;ctx.close().catch(()=>{});return}const base=ctx.currentTime+.04;homeStartedAt=base-offset;homePlaybackActive=true;const entries=homeTimeline.filter(x=>x.start+x.buffer.duration>offset);let pending=entries.length;for(const item of entries){const source=ctx.createBufferSource();source.buffer=item.buffer;source.connect(ctx.destination);source.start(base+Math.max(0,item.start-offset),Math.max(0,offset-item.start));homeAudioSources.push(source);source.onended=()=>{if(epoch!==homeSeekEpoch||--pending>0)return;homeTransportOffset=homeTotalDuration;homePlaybackActive=false;homeAudioSources=[]}}if(!wasPaused&&ctx.state!=='running')window.ouenkaAudioRecovery?.unlock(ctx)}
+function seekHomePlayback(position){if(!homeAudioContext){homeTransportOffset=Math.min(homeTotalDuration,Math.max(0,Number(position)||0));return}if(!homeTimeline.length)return;const ctx=homeAudioContext,epoch=++homeSeekEpoch,offset=Math.max(0,Math.min(Number(position)||0,homeTotalDuration)),wasPaused=homePaused;const old=homeAudioSources;homeAudioSources=[];old.forEach(src=>{try{src.stop();src.disconnect()}catch{}});homeTransportOffset=offset;if(offset>=homeTotalDuration){homePlaybackActive=false;homePaused=false;homeAudioContext=null;ctx.close().catch(()=>{});return}const base=ctx.currentTime+.04;homeStartedAt=base-offset;homePlaybackActive=true;const entries=homeTimeline.filter(x=>x.start+x.buffer.duration>offset);let pending=entries.length;for(const item of entries){const source=window.OuenkaPlaybackSpeed.source(ctx,item.buffer);source.connect(ctx.destination);source.start(base+Math.max(0,item.start-offset),Math.max(0,offset-item.start)*window.OuenkaPlaybackSpeed.bufferScale(ctx));homeAudioSources.push(source);source.onended=()=>{if(epoch!==homeSeekEpoch||--pending>0)return;homeTransportOffset=homeTotalDuration;homePlaybackActive=false;homeAudioSources=[];homeAudioContext=null;ctx.close().catch(()=>{})}}if(!wasPaused&&ctx.state!=='running')window.ouenkaAudioRecovery?.unlock(ctx)}
