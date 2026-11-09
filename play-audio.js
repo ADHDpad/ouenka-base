@@ -10,7 +10,7 @@ async function decode(context,song,file,signal){
  }
  throw Error(song.name+' の '+file+' を読み込めませんでした。');
 }
-function state(){const time=ctx?Math.min(timeline?.duration||0,Math.max(0,ctx.currentTime-started)):position;if(onTick)onTick(time);return {title:label,duration:timeline?.duration||0,currentTime:time,playing:!!ctx&&!paused&&ctx.state==='running',paused,hasPrevious:!!timeline?.starts&&time>timeline.starts[0]+.1,hasNext:!!timeline?.starts&&time<timeline.starts[timeline.starts.length-1]}}
+function state(){const time=ctx?Math.min(timeline?.duration||0,Math.max(0,ctx.currentTime-started)):position;if(onTick)onTick(time);let i=0;const starts=timeline?.starts||[];while(i+1<starts.length&&time>=starts[i+1])i++;return {song:timeline?.songs?.[i],title:label,duration:timeline?.duration||0,currentTime:time,playing:!!ctx&&!paused&&ctx.state==='running',paused,hasPrevious:!!timeline?.starts&&time>timeline.starts[0]+.1,hasNext:!!timeline?.starts&&time<timeline.starts[timeline.starts.length-1]}}
 function stop(){epoch++;controller?.abort();controller=null;for(const s of sources){s.onended=null;try{s.stop()}catch{}}sources=[];if(ctx)ctx.close().catch(()=>{});ctx=null;paused=false;position=0;onTick=null;endCallback=null;if(navigator.mediaSession)navigator.mediaSession.playbackState='none';window.OuenkaTransport?.hide()}
 function schedule(offset=0){
  const context=ctx,token=epoch;for(const s of sources){s.onended=null;try{s.stop()}catch{}}sources=[];const base=context.currentTime+.04;started=base-offset;position=offset;
@@ -32,7 +32,7 @@ async function play(song,options={}){
   const duration=Math.max(...buffers.map(b=>b.duration))-bodyOffset;
   const excerpt=options.full?{start:0,duration}:window.OuenkaQuizRules.excerpt(duration,options,barSeconds),clip=excerpt.duration,start=excerpt.start+bodyOffset;excerpt.bodyOffset=bodyOffset;
   if(!options.full){const available=Math.floor((duration+.001)/barSeconds),end=options.random?available-2:available;excerpt.maxBars=Math.max(1,end-Math.round(excerpt.start/barSeconds))}
-  timeline={duration:clip,entries:buffers.filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}))};
+  timeline={duration:clip,songs:options.mask?[]:[song],entries:buffers.filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}))};
   label=options.mask?'応援歌クイズ':song.name;replay=()=>play(song,options);endCallback=options.onEnded||null;schedule(0);trackPlayback([song],[0],context,token);if(!options.mask)mount(options);
   if(navigator.mediaSession){navigator.mediaSession.metadata=new MediaMetadata({title:label,artist:options.mask?'応援歌BASE':song.team||'応援歌BASE'});navigator.mediaSession.playbackState='playing'}
   return excerpt;

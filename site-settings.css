@@ -9,7 +9,7 @@ body>header.top-menu:has(.custom-titlebar-links){flex-wrap:nowrap!important;over
 .custom-titlebar-links{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none;flex:1 1 100%}
 .custom-titlebar-links::-webkit-scrollbar{display:none}
 .custom-titlebar-link{gap:8px;color:inherit;text-decoration:none;border:1px solid currentColor;background:#ffffff0d;font:700 13px system-ui;white-space:nowrap}
-.custom-titlebar-icon{font-size:22px}
+.custom-titlebar-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;line-height:1}.custom-titlebar-icon>svg{display:block}
 .settings-tabs{display:flex;gap:8px;margin:20px 0}.settings-tabs button{flex:1;min-height:48px;height:auto;padding:10px 12px;border:1px solid #7390a8;border-radius:7px;background:var(--site-surface,#edf4fa);color:var(--site-text,#143650);font:700 15px system-ui;cursor:pointer}
 .settings-tabs button[aria-selected=true]{background:var(--site-main,#0b2f55);color:var(--site-main-ink,#fff)}
 #user-settings,#admin-settings{min-width:0}#user-settings[hidden],#admin-settings[hidden]{display:none!important}

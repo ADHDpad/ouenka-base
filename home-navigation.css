@@ -7,8 +7,3 @@
 
 /* Match the player-name search panel while retaining the lyrics filters. */
 .home-lyrics-label{display:block;margin:0 0 8px;color:#d4e6f4;font-size:12px;font-weight:700}.home-lyrics-filters{margin:18px 0 0}.home-lyrics-filters label{color:#d4e6f4}#homeLyricsQuery{box-sizing:border-box;width:100%;min-height:0;padding:19px 55px 19px 60px;border:1px solid #d4dfe9;border-radius:6px;outline:none;background:#fff;color:var(--text);font-family:inherit;font-size:18px;font-weight:bold;text-align:left;box-shadow:0 5px 15px #00000014}#homeLyricsQuery::placeholder{color:#8a98a6;font-weight:normal}#homeLyricsQuery:focus-visible{outline:2px solid #63bce8;outline-offset:2px}.home-lyrics #homeLyricsStatus{color:#d4e6f4;padding-top:18px;border-top:1px solid #486c89;margin-top:24px;text-align:center}.home-lyrics #homeLyricsPlaybackStatus{color:#d4e6f4;text-align:center}.home-lyrics-result{color:#143149}.home-lyrics-filters select{border-radius:6px;border-color:#d4dfe9;box-shadow:0 3px 10px #0000000b}@media(max-width:650px){#homeLyricsQuery{padding:16px 44px 16px 47px;font-size:16px}.home-lyrics-filters{margin-top:14px}}
-/* Home menu: one-character icon column matching the shared page menus. */
-#homeMenuDialog nav a,#homeMenuDialog nav button{display:flex;align-items:center;gap:12px;text-align:left}
-#homeMenuDialog .menu-item-icon{display:inline-flex;flex:0 0 1.6em;width:1.6em;height:1.6em;align-items:center;justify-content:center;font-size:1.1em;line-height:1;white-space:nowrap}
-#homeMenuDialog .menu-item-icon svg{width:1em;height:1em}
-#homeMenuDialog .menu-item-label{flex:1;min-width:0}
