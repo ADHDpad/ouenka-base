@@ -81,11 +81,16 @@ body.row-dragging{user-select:none;-webkit-user-select:none}
 body.row-dragging{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}
 body.row-dragging *{cursor:grabbing!important}
 .filters .chat{min-width:0;white-space:nowrap;font-size:14px;font-weight:500;background:#0B2F55;color:white;border:0;min-height:44px}
-#savedLineupsDialog{width:min(92vw,560px);max-height:80vh;border:0;border-radius:16px;padding:20px;color:#0b2b4a}#savedLineupsDialog::backdrop{background:#071d3399}#savedLineupsDialog h2{font-size:20px}#savedLineupsDialog button{border:0;border-radius:8px;padding:12px;background:#0B2F55;color:white} .saved-entry{display:flex;gap:8px;margin-bottom:10px;align-items:center}.saved-entry .saved-load{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}.saved-entry small{display:block;margin-top:5px;font-size:11px;color:#d9e6f2}.saved-entry .saved-delete{background:#e9eef3!important;color:#0b2b4a!important}
+#savedLineupsDialog{width:min(92vw,560px);max-height:80vh;border:0;border-radius:16px;padding:20px;color:#0b2b4a}#savedLineupsDialog::backdrop{background:#071d3399}#savedLineupsDialog[open]{display:flex;flex-direction:column}
+.saved-lineups-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.saved-lineups-header h2{font-size:20px;margin:0}
+#closeSavedLineups{flex-shrink:0;white-space:nowrap}
+#savedLineupsList{min-height:0;overflow-y:auto}
+#savedLineupsDialog > :not(#savedLineupsList){flex-shrink:0}#savedLineupsDialog button{border:0;border-radius:8px;padding:12px;background:#0B2F55;color:white} .saved-entry{display:flex;gap:8px;margin-bottom:10px;align-items:center}.saved-entry .saved-load{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}.saved-entry small{display:block;margin-top:5px;font-size:11px;color:#d9e6f2}.saved-entry .saved-delete{background:#e9eef3!important;color:#0b2b4a!important}
 @media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
-<script src="./ouenka-transport.js?v=20261109-r332"></script>
+<script src="./ouenka-transport.js?v=20261109-r335"></script>
 <script src="./ouenka-medley-core.js?v=20261103-r331"></script>
 <script src="audio-loading-dialog.js?v=20261103-r331"></script>
 <script src="./lineup-tempo.js?v=20261103-r331"></script>
@@ -137,7 +142,13 @@ body.row-dragging *{cursor:grabbing!important}
  <section class="panel">
   <div hidden><select id="yearSelect"><option value=""></option></select><select id="teamSelect"><option value=""></option></select></div>
 <dialog id="playlistShareDialog" style="width:min(92vw,640px);max-height:85vh;overflow:auto;border:0;border-radius:16px;padding:22px;color:#143149"><h2>1-9・メドレーを共有</h2><p>コードをコピーして相手に渡すと、同じ打順・曲順を保存できます。共有コードは数字4桁で、有効期限は作成から1時間です。</p><button id="playlistShareCreate" type="button" class="chat">今の曲順からコードを作成</button><label style="display:block;margin:18px 0 6px" for="playlistShareCode">共有コードをコピー／貼り付け</label><textarea id="playlistShareCode" rows="1" inputmode="numeric" maxlength="4" spellcheck="false" style="width:100%;box-sizing:border-box;font:16px monospace;padding:12px;border:1px solid #b9cede;border-radius:8px;overflow-wrap:anywhere" placeholder="数字4桁（1時間有効）"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button id="playlistShareCopy" type="button" class="chat">コピー</button><button id="playlistShareRead" type="button" class="chat">コードを読み込む</button><button id="playlistShareApply" type="button" class="chat" hidden>保存済み一覧に追加</button></div><p id="playlistShareStatus" role="status" style="white-space:pre-line;overflow-wrap:anywhere;max-height:35vh;overflow:auto"></p><button id="playlistShareClose" type="button" class="back" style="background:#163c5a">閉じる</button></dialog>
-  <dialog id="savedLineupsDialog"><h2>保存済の1-9</h2><label for="savedTitleSearch">保存タイトルを検索</label><input id="savedTitleSearch" type="search" placeholder="タイトルの一部を入力" autocomplete="off" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 14px;padding:12px;font-size:16px;border:1px solid #a8bdcf;border-radius:8px"><div id="savedLineupsList"></div><button id="closeSavedLineups" type="button">閉じる</button></dialog>
+  <dialog id="savedLineupsDialog" aria-labelledby="savedLineupsTitle">
+    <header class="saved-lineups-header">
+      <h2 id="savedLineupsTitle">保存済の1-9</h2>
+      <button id="closeSavedLineups" type="button">閉じる</button>
+    </header>
+    <label for="savedTitleSearch">保存タイトルを検索</label><input id="savedTitleSearch" type="search" placeholder="タイトルの一部を入力" autocomplete="off" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 14px;padding:12px;font-size:16px;border:1px solid #a8bdcf;border-radius:8px"><div id="savedLineupsList"></div>
+  </dialog>
   <div class="title-row"><label for="lineupTitle">1-9タイトル</label><input id="lineupTitle" type="text" placeholder="例：2026 開幕スタメン / ベストナイン など" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
   <div id="lineup" class="lineup"></div>
   <div class="add-row-wrap"><button id="addButton" class="add-row" type="button">＋ 枠を追加</button></div>
