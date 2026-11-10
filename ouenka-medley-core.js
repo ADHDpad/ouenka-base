@@ -85,13 +85,15 @@ async function build(ctx,items,options={}){
  }
  const originalStarts=buildDynamicSongStarts(separated,openingExtraSec);
  const callPlan=options.callsRows&&window.OuenkaCalls?await window.OuenkaCalls.plan(ctx,separated,originalStarts,options.callsRows):{starts:originalStarts,events:[]};cancelled();
+ const timeline={starts:callPlan.starts,originalStarts,separated,openingExtraSec,callPlan,rowIndices:options.rowIndices||items.map((_,i)=>i),barSeconds:barSecondsForSong(separated[0]),barSecondsBySong:separated.map(barSecondsForSong),tempos:separated.map(tempo)};
+ if(options.render===false)return timeline;
  let buffer=mixSmoothIndependent(ctx,separated,null,callPlan.starts);
  if(options.callsRows&&window.OuenkaCalls)buffer=window.OuenkaCalls.decorate(ctx,buffer,callPlan);cancelled();
- return {buffer,starts:callPlan.starts,originalStarts,separated,openingExtraSec,callPlan,duration:buffer.duration,rowIndices:options.rowIndices||items.map((_,i)=>i),barSeconds:barSecondsForSong(separated[0]),barSecondsBySong:separated.map(barSecondsForSong),tempos:separated.map(tempo)};
+ return {...timeline,buffer,duration:buffer.duration};
 }
-function mixSmoothIndependent(ctx,songs,intro,starts,range=null){
+function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null){
  const sampleRate=songs[0].melody.sampleRate;
- const channels=Math.max(
+ const channels=destination?.buffer.numberOfChannels??Math.max(
   ...songs.flatMap(s=>[s.melody.numberOfChannels,s.accompaniment.numberOfChannels]),
   ...(intro?[intro.melody.numberOfChannels,intro.accompaniment.numberOfChannels]:[])
  );
@@ -101,8 +103,8 @@ function mixSmoothIndependent(ctx,songs,intro,starts,range=null){
   ...songs.map((song,i)=>startFrames[i]+Math.max(song.melody.length,song.accompaniment.length)),
   ...(intro?[Math.max(intro.melody.length,intro.accompaniment.length)]:[0])
  );
- const melodyBus=ctx.createBuffer(channels,totalFrames,sampleRate);
- const accompanimentBus=ctx.createBuffer(channels,totalFrames,sampleRate);
+ const output=destination?.buffer??ctx.createBuffer(channels,totalFrames,sampleRate);
+ const accompaniment=new Float32Array(totalFrames);
 
  const blockSize=Math.max(64,Math.round(sampleRate*0.006));
  const threshold=Math.pow(10,-42/20);
@@ -127,7 +129,7 @@ function mixSmoothIndependent(ctx,songs,intro,starts,range=null){
  }
 
  function addIndependentTrack(target,cur,curStart,next,nextStart,ch){
-  const out=target.getChannelData(ch);
+  const out=target;
   const src=cur.getChannelData(Math.min(ch,cur.numberOfChannels-1));
   const curActivity=getActivity(cur,ch);
   const nextActivity=next?getActivity(next,ch):null;
@@ -153,21 +155,23 @@ function mixSmoothIndependent(ctx,songs,intro,starts,range=null){
  }
 
  for(let ch=0;ch<channels;ch++){
+  const offset=destination?.offset??0;
+  const melody=output.getChannelData(ch).subarray(offset,offset+totalFrames);
+  accompaniment.fill(0);
   if(intro){
-   addIndependentTrack(melodyBus,intro.melody,0,songs[0].melody,startFrames[0],ch);
-   addIndependentTrack(accompanimentBus,intro.accompaniment,0,songs[0].accompaniment,startFrames[0],ch);
+   addIndependentTrack(melody,intro.melody,0,songs[0].melody,startFrames[0],ch);
+   addIndependentTrack(accompaniment,intro.accompaniment,0,songs[0].accompaniment,startFrames[0],ch);
   }
   for(let i=0;i<songs.length;i++){
    const next=i<songs.length-1?songs[i+1]:null;
    const nextStart=next?startFrames[i+1]:0;
-   addIndependentTrack(melodyBus,songs[i].melody,startFrames[i],next?next.melody:null,nextStart,ch);
-   addIndependentTrack(accompanimentBus,songs[i].accompaniment,startFrames[i],next?next.accompaniment:null,nextStart,ch);
+   addIndependentTrack(melody,songs[i].melody,startFrames[i],next?next.melody:null,nextStart,ch);
+   addIndependentTrack(accompaniment,songs[i].accompaniment,startFrames[i],next?next.accompaniment:null,nextStart,ch);
   }
- }
- const output=ctx.createBuffer(channels,totalFrames,sampleRate);
- for(let ch=0;ch<channels;ch++){
-  const dst=output.getChannelData(ch),mel=melodyBus.getChannelData(ch),acc=accompanimentBus.getChannelData(ch);
-  for(let i=0;i<totalFrames;i++){const x=mel[i]+acc[i];dst[i]=Math.max(-1,Math.min(1,x*0.75));}
+  for(let i=0;i<totalFrames;i++){
+   const sample=melody[i]+accompaniment[i];
+   melody[i]=Math.max(-1,Math.min(1,sample*0.75));
+  }
  }
  return output;
 }
@@ -182,19 +186,36 @@ function seamless(ctx,first,normal,decorate=(buffer)=>buffer){
  const initialJoin=getTransitionOffsetSec(initial[n-1],body[0],n===1?(first.openingExtraSec||0):0);
  const prefixDuration=first.starts[n-1]+initialJoin;
  const period=normal.starts[n-1]+getTransitionOffsetSec(body[n-1],body[0]);
- const prefix=decorate(mixSmoothIndependent(ctx,[...initial,body[0]],null,[...first.starts,prefixDuration],[0,prefixDuration]),first.callPlan);
  const tailJoin=getTransitionOffsetSec(body[n-1],body[0]);
- const steady=decorate(mixSmoothIndependent(ctx,[body[n-1],...body,body[0]],null,[-tailJoin,...normal.starts,period],[0,period]),normal.callPlan);
- const buffers=[prefix],starts=[...first.starts],indices=[...first.rowIndices];let offset=prefix.duration;
- // A single-song opening can have a different tail: render the first wrap separately.
- if(n===1){
-  const transition=decorate(mixSmoothIndependent(ctx,[initial[0],body[0],body[0]],null,[-initialJoin,0,period],[0,period]),normal.callPlan);
-  buffers.push(transition);starts.push(offset);indices.push(normal.rowIndices[0]);offset+=transition.duration;
+ const prefixSongs=[...initial,body[0]],prefixStarts=[...first.starts,prefixDuration];
+ const steadySongs=[body[n-1],...body,body[0]],steadyStarts=[-tailJoin,...normal.starts,period];
+ const starts=[...first.starts],indices=[...first.rowIndices];
+ let buffer,prefixLength,normalDuration,loopStart;
+ // With no calls, render the prefix and each loop range straight into the final buffer.
+ if(!first.callPlan.events.length&&!normal.callPlan.events.length){
+  const rate=initial[0].melody.sampleRate;
+  const channels=Math.max(...[...initial,...body].flatMap(song=>[song.melody.numberOfChannels,song.accompaniment.numberOfChannels]));
+  const prefixFrames=Math.round(prefixDuration*rate),periodFrames=Math.round(period*rate);
+  const loopFrame=prefixFrames+(n===1?periodFrames:0);
+  buffer=ctx.createBuffer(channels,loopFrame+periodFrames,rate);
+  prefixLength=prefixFrames/rate;normalDuration=periodFrames/rate;loopStart=loopFrame/rate;
+  mixSmoothIndependent(ctx,prefixSongs,null,prefixStarts,[0,prefixDuration],{buffer,offset:0});
+  if(n===1)mixSmoothIndependent(ctx,[initial[0],body[0],body[0]],null,[-initialJoin,0,period],[0,period],{buffer,offset:prefixFrames});
+  mixSmoothIndependent(ctx,steadySongs,null,steadyStarts,[0,period],{buffer,offset:loopFrame});
+ }else{
+  const prefix=decorate(mixSmoothIndependent(ctx,prefixSongs,null,prefixStarts,[0,prefixDuration]),first.callPlan);
+  const steady=decorate(mixSmoothIndependent(ctx,steadySongs,null,steadyStarts,[0,period]),normal.callPlan);
+  const buffers=[prefix];
+  prefixLength=prefix.duration;normalDuration=steady.duration;loopStart=prefixLength;
+  if(n===1){
+   const transition=decorate(mixSmoothIndependent(ctx,[initial[0],body[0],body[0]],null,[-initialJoin,0,period],[0,period]),normal.callPlan);
+   buffers.push(transition);loopStart+=transition.duration;
+  }
+  buffers.push(steady);buffer=combine(ctx,buffers);
  }
- const loopStart=offset;
- buffers.push(steady);starts.push(...normal.starts.map(v=>loopStart+v));indices.push(...normal.rowIndices);
- const buffer=combine(ctx,buffers);
- return {buffer,starts,rowIndices:indices,duration:buffer.duration,loopStart,loopEnd:buffer.duration,isSeamlessLoop:true,prefixDuration:prefix.duration,normalStarts:normal.starts,normalDuration:steady.duration,normalRowIndices:normal.rowIndices,firstTimeline:first,barSeconds:first.barSeconds||barSecondsForSong(initial[0]),barSecondsBySong:[...(first.barSecondsBySong||initial.map(barSecondsForSong)),...(n===1?[barSecondsForSong(body[0])]:[]),...body.map(barSecondsForSong)],tempos:[...initial.map(tempo),...(n===1?[tempo(body[0])]:[]),...body.map(tempo)],normalBarSecondsBySong:body.map(barSecondsForSong)};
+ if(n===1){starts.push(prefixLength);indices.push(normal.rowIndices[0]);}
+ starts.push(...normal.starts.map(v=>loopStart+v));indices.push(...normal.rowIndices);
+ return {buffer,starts,rowIndices:indices,duration:buffer.duration,loopStart,loopEnd:buffer.duration,isSeamlessLoop:true,prefixDuration:prefixLength,normalStarts:normal.starts,normalDuration,normalRowIndices:normal.rowIndices,firstTimeline:{starts:first.starts,rowIndices:first.rowIndices},barSeconds:first.barSeconds||barSecondsForSong(initial[0]),barSecondsBySong:[...(first.barSecondsBySong||initial.map(barSecondsForSong)),...(n===1?[barSecondsForSong(body[0])]:[]),...body.map(barSecondsForSong)],tempos:[...initial.map(tempo),...(n===1?[tempo(body[0])]:[]),...body.map(tempo)],normalBarSecondsBySong:body.map(barSecondsForSong)};
 }
 window.OuenkaMedleyCore={getTransitionOffsetSec,build,resolveSongs,tempo,barSecondsForSong,seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix:mixSmoothIndependent};
 })();
