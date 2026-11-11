@@ -24,7 +24,7 @@ td:has(input[data-key="name"]){min-width:260px}input[data-stat][data-key="name"]
 <script src="./pwa-diagnostic.js?v=20261103-r331"></script>
 <script src="./audio-recovery.js?v=20261111-r343"></script>
 <script src="./studio-image-export.js?v=20261103-r331"></script>
-<script src="./broadcast-designs.js?v=20261111-r351"></script><script src="./white-designs.js?v=20261111-r351"></script><script src="./extra-designs.js?v=20261111-r351"></script>
+<script src="./broadcast-designs.js?v=20261111-r352"></script><script src="./white-designs.js?v=20261111-r351"></script><script src="./extra-designs.js?v=20261111-r351"></script>
 <script>
 (()=>{'use strict';const $=id=>document.getElementById(id),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const names=['奈良間 大己','選手 2','選手 3','選手 4','選手 5','選手 6','選手 7','選手 8','選手 9'];const teamColors={
  '北海道日本ハムファイターズ':['#0095ee','#01e4fa','#0087cb'],
@@ -366,6 +366,8 @@ const previous=renderingDesign;renderingDesign=design;ctx.save();try{const noPho
  if(l.showStats!==false){
  const values=statsFields(p).map(([key,label])=>[label,statValue(p,key)]),cell=width/5;let statSize=Math.min(54,fontSize('stats'));values.forEach(([label,value])=>{statSize=Math.min(statSize,fitCardText(ctx,value,'stats',statSize,cell-14),fitCardText(ctx,label,'stats',statSize*.82,cell-14)/.82)});
  values.forEach(([label,value],i)=>{const x=left+cell*(i+.5);cardText(ctx,label,x,l.statsLabelY,'stats',statSize*.82,cell-14);cardText(ctx,value,x,l.statsValueY,'stats',statSize,cell-14)});
+ const yearLabel=window.OuenkaBroadcast.careerHighYearLabel(p);
+ if(yearLabel)cardText(ctx,yearLabel,right-8,Math.min(l.statsValueY+29,l.lyricTop-13),'stats',19,155,'right');
  if(design==='reference-3'||design.includes('yellow')||design==='photo-7'){ctx.strokeStyle=design==='reference-3'?state.accent:'#ffd43b';ctx.lineWidth=2;for(let i=1;i<5;i++){ctx.beginPath();ctx.moveTo(left+cell*i,260);ctx.lineTo(left+cell*i,374);ctx.stroke()}}
  }
  const text=p.lyrics||'ここに応援歌の歌詞を表示\n歌詞に合わせて文字サイズを調整\n写真と情報を大きく見せる\n4行分のスペースを確保';

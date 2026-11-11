@@ -96,6 +96,10 @@
   if(credit)credit(ctx,p.photoCredit,rect);ctx.restore();drawPhotoBorder(ctx,rect,t.photoFrameWidth,t.frame,false,t.photoFrameShape);
  }
  function fontStyle(options,group){const font=options.fonts?.[group]||{};return {family:font.family||FAMILY,weight:group==='name'?(options.nameWeight||900):(font.weight||800),adjustable:true,italic:!!font.italic,shadow:!!options.shadows?.[group]}}
+ function careerHighYearLabel(p){
+  const year=String(p.statsYear??'').trim();
+  return p.statsCareerHigh===true&&/^[1-9][0-9]{3}$/.test(year)?'（'+year+'年）':'';
+ }
  function statsRows(ctx,p,x,y,w,color,t,options){
   const fields=options.fields||[['avg','打率'],['hr','本塁打'],['rbi','打点'],['sb','盗塁'],['ops','OPS']];
   const fs=Math.min(38,Number(options.fontSizes?.stats)||32),style=fontStyle(options,'stats');
@@ -133,7 +137,7 @@
   let left=light?52:560,right=light?744:1220;
   if(noPhoto){left=88;right=1192;if(light){poly(ctx,[[1090,0],[1170,0],[930,H],[850,H]],mix(t.color,'#ffffff',.84))}}
   else photo(ctx,p,playerPhotoRect(light?'right':'left'),t,options.image,options.credit);
-  const width=right-left;
+  const width=right-left,yearLabel=careerHighYearLabel(p);
   if(!light&&!noPhoto){
    const jersey=identity(p);const nameLeft=jersey!==''?left+208:left;
    if(jersey!=='')text(ctx,jersey,left,267,144,accentInk,185,{weight:900,italic:true});
@@ -143,6 +147,7 @@
    rule(ctx,left,312,width,t.line,2);rule(ctx,left,347,3,t.line,286);rule(ctx,left+181,347,2,t.line,286);
    const fields=options.fields||[['avg','打率'],['hr','本塁打'],['rbi','打点'],['sb','盗塁'],['ops','OPS']];
    fields.forEach(([key,label],i)=>{const y=380+i*57;text(ctx,label,left+15,y,20,'#d6e7f7',147,fontStyle(options,'stats'));text(ctx,String(p[key]??'').trim()||'—',left+160,y+1,Math.min(31,Number(options.fontSizes?.stats)||31),'#ffffff',95,{...fontStyle(options,'stats'),align:'right'})});
+   if(yearLabel)text(ctx,yearLabel,left+168,649,18,ink,160,{...fontStyle(options,'stats'),align:'right'});
    lyrics(ctx,p,[left+208,352,width-214,280],ink,options);
    ctx.restore();return;
   }
@@ -152,7 +157,8 @@
   
   rule(ctx,left,302,width,t.line,3);
   statsRows(ctx,p,left,345,width,ink,t,options);
-  rule(ctx,left,412,width,light?mix(t.color,'#ffffff',.65):t.line,1);
+  if(yearLabel)text(ctx,yearLabel,right-4,415,18,ink,160,{...fontStyle(options,'stats'),align:'right'});
+  rule(ctx,left,yearLabel?428:412,width,light?mix(t.color,'#ffffff',.65):t.line,1);
   if(!light)rule(ctx,left,448,4,t.line,198);
   lyrics(ctx,p,[left+(light?0:22),440,width-(light?4:26),210],ink,options);
   ctx.restore();
@@ -174,7 +180,7 @@
    text(ctx,order,76,yy+33,30,light?t.color:t.line,68,{weight:900,italic:true});
    rule(ctx,163,yy+5,2,t.line,28);
    text(ctx,compactPosition(p.position)||'',184,yy+31,22,light?t.color:mix(t.accent,'#ffffff',.5),180,{weight:700});
-   text(ctx,p.name||'—',390,yy+33,33,ink,options.showStats?350:760,{weight:900});if(options.showStats){const pitching=/投|P|SP|RP/i.test(p.position||'')||p.statsType==='pitching';const fields=pitching?[['wins','勝'],['losses','敗'],['era','防御率'],['whip','WHIP'],['strikeouts','奪三振']]:[['avg','打率'],['hr','本'],['rbi','打点'],['ops','OPS']];text(ctx,fields.map(([k,l])=>l+' '+(p[k]===undefined||p[k]===''?'—':p[k])).join('  '),760,yy+31,18,ink,435,{weight:600})}
+   text(ctx,p.name||'—',390,yy+33,33,ink,options.showStats?350:760,{weight:900});if(options.showStats){const pitching=/投|P|SP|RP/i.test(p.position||'')||p.statsType==='pitching';const fields=pitching?[['wins','勝'],['losses','敗'],['era','防御率'],['whip','WHIP'],['strikeouts','奪三振']]:[['avg','打率'],['hr','本'],['rbi','打点'],['ops','OPS']];const yearLabel=careerHighYearLabel(p);text(ctx,fields.map(([k,l])=>l+' '+(p[k]===undefined||p[k]===''?'—':p[k])).join('  '),760,yy+(yearLabel?23:31),18,ink,435,{weight:600});if(yearLabel)text(ctx,yearLabel,1195,yy+40,14,ink,160,{weight:600,align:'right'})}
    rule(ctx,76,yy+44,1120,light?mix(t.color,'#ffffff',.83):mix(t.dark,t.accent,.3),1);
   }
   const extras=rows.slice(slots).filter(p=>p.name);
@@ -231,5 +237,5 @@
   try{if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file]});resolve();return}}catch(e){if(e.name==='AbortError'){resolve();return}}
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);resolve();
  },'image/png'))}
- window.OuenkaBroadcast={drawCard,drawLineup,drawBoard,boardAt,drawPhotoImage,drawPhotoBorder,photoFramePath,playerPhotoRect,fitPlayerPhotoLayout,savePng,theme};
+ window.OuenkaBroadcast={drawCard,drawLineup,drawBoard,boardAt,drawPhotoImage,drawPhotoBorder,photoFramePath,playerPhotoRect,fitPlayerPhotoLayout,careerHighYearLabel,savePng,theme};
 })();
