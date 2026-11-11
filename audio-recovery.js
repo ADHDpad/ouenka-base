@@ -117,16 +117,9 @@
  function addSafariRecovery(anchor){
    if(!anchor||!isIPhoneHomeApp()||anchor.parentElement.querySelector('.menu-safari-recovery'))return;
    const url=new URL('./audio-recovery-safari.html',location.href).href;
-   const link=document.createElement('a');
-   link.className='menu-safari-recovery';
-   link.href=url;
-   link.target='_blank';
-   link.rel='noopener';
-   link.textContent='Safariで音声を確認';
-   // A native link preserves the trusted tap in the home screen app.
-   link.addEventListener('click',()=>{safariRecoveryPending=true});
    const copy=document.createElement('button');
    copy.type='button';
+   copy.className='menu-safari-recovery';
    copy.textContent='Safari用URLをコピー';
    const note=document.createElement('p');
    note.className='menu-audio-status';
@@ -149,7 +142,7 @@
        note.textContent='このURLをコピーして、Safariのアドレス欄に貼り付けてください。';
      }
    });
-   anchor.after(link,copy,note,address);
+   anchor.after(copy,note,address);
  }
  function hideRetry(){retryContext=null;recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
 

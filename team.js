@@ -19,16 +19,29 @@ function normalizeSong(song){
  const base=PUBLIC_BASE+"%E3%83%87%E3%83%BC%E3%82%BF/"+encodeURIComponent(name)+"/"+encodeURIComponent(no)+"/";
  return {...song,name,productionNumber:no,uniformNumber:song.uniform_number??song.uniformNumber??"",lyrics:song.lyrics||"",isActive:activeOf(song),audioUrl:base+"audio.m4a",accompanimentUrl:base+"accompaniment.m4a"};
 }
+async function fetchTeamSongs(){
+ // 球団別は全登録データを取得してから球団名で絞り込む。
+ for(const delay of [0,350,850]){
+   if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),8000);
+   try{
+     const response=await fetch(DATA_API+"/songs",{cache:"no-store",signal:controller.signal});
+     if(!response.ok)throw new Error("HTTP "+response.status);
+     const data=await response.json();
+     if(!data || data.ok===false || !Array.isArray(data.songs))throw new Error("登録データ形式エラー");
+     return data.songs;
+   }catch(error){
+     if(delay===850)throw error;
+   }finally{
+     clearTimeout(timeout);
+   }
+ }
+}
 async function loadSongs(){
  try{
-   // 球団ページは検索APIではなく全登録データを取得して球団で絞り込む。
-   // /songs/search は選手名・よみがな検索用なので、球団名を渡すと0件になる場合がある。
-   const r=await fetch(DATA_API+"/songs",{method:"GET",cache:"no-store"});
-   if(!r.ok)throw new Error("HTTP "+r.status);
-   const data=await r.json();
-   if(!data || data.ok===false || !Array.isArray(data.songs))throw new Error("登録データ形式エラー");
-   songs=data.songs.filter(s=>String(s.team||"").trim()===team).map(normalizeSong);
-   if(!songs.length)throw new Error("球団データなし");
+   const catalog=await fetchTeamSongs();
+   songs=catalog.filter(s=>String(s.team||"").trim()===team).map(normalizeSong);
    songs.sort((a,b)=>{
      // 現役（現在使用）を先頭にし、現役選手は背番号順。
      // 同じ背番号・同じ選手に複数曲ある場合は応援歌番号順。
@@ -45,7 +58,12 @@ async function loadSongs(){
      return a.name.localeCompare(b.name,"ja")||Number(a.productionNumber)-Number(b.productionNumber);
    });
    render(); preloadVisible();
- }catch(e){console.error(e);$("teamStatus").textContent="この球団の登録データを読み込めませんでした";}
+ }catch(e){
+   console.error(e);
+   const status=$("teamStatus");
+   status.style.display="block";
+   status.textContent="この球団の登録データを読み込めませんでした";
+ }
 }
 function visibleSongs(){return songs.filter(s=>(filter==="all"||(filter==="active"?s.isActive:!s.isActive))&&(!favoritesOnly||window.OuenkaFavorites?.has(s)))}
 function render(){
