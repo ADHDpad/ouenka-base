@@ -85,7 +85,7 @@ body.row-dragging *{cursor:grabbing!important}
 @media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
-<script src="./ouenka-transport.js?v=20261111-r343"></script>
+<script src="./ouenka-transport.js?v=20261111-r344"></script>
 <script src="./ouenka-medley-core.js?v=20261111-r343"></script>
 <script src="audio-loading-dialog.js?v=20261103-r331"></script>
 <script src="./lineup-tempo.js?v=20261103-r331"></script>
@@ -445,6 +445,8 @@ async function playSelectedRow(row){
   currentPlayingRow=row;
   button.classList.add("playing");
   const entries=[{buffer:audio,start:0},{buffer:accompaniment,start:0}];
+  await prepareLineupSpeed(ctx,{entries});
+  if(liveMedleyContext!==ctx||ctx.state==='closed')return;
   const base=ctx.currentTime+0.04;
   for(const {buffer} of entries)scheduleBuffer(ctx,buffer,base);
 
@@ -457,6 +459,7 @@ async function playSelectedRow(row){
   window.OuenkaLineupTransport?.attachRow(ctx,entries,base,[...document.querySelectorAll(".player-row")].indexOf(row));
   hideStatus();
  }catch(error){
+  if(ctx?.state==='closed'&&liveMedleyContext!==ctx)return;
   console.error("1-9 No.再生エラー:",error);
   if(ctx){try{await ctx.close()}catch(e){}}
   liveMedleyContext=null;currentPlayingRow=null;resetPlayIcons();
@@ -729,6 +732,7 @@ async function buildAndPlayOneNineMedley(){
   oneNineDecodedCache.delete(ctx);
   liveMedleyContext=ctx;
   const mixed=playbackTimeline.buffer;
+  await prepareLineupSpeed(ctx,playbackTimeline);
   const base=ctx.currentTime+0.06;
   const masterSource=scheduleBuffer(ctx,mixed,base);
   window.OuenkaMedleyLoop.configure(masterSource,playbackTimeline,window.OuenkaPlaybackSpeed.bufferScale(ctx));
@@ -1065,7 +1069,7 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
 <script src="./active-roster.js?v=20261103-r331"></script>
-<script src="playback-speed.js?v=20261111-r343"></script><script src="./lineup-controls.js?v=20261111-r343"></script>
+<script src="playback-speed.js?v=20261111-r344"></script><script src="./lineup-controls.js?v=20261111-r344"></script>
 <script src="playlist-share.js?v=20261103-r331"></script><script src="playlist-share-ui.js?v=20261103-r331"></script>
 <script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script><script src="ouenka-favorites.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="medley-random.js?v=20261103-r331"></script></body>
 </html>

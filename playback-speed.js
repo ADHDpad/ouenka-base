@@ -5,13 +5,17 @@
   const prepared = new WeakMap();
   const keys = new WeakMap();
   const speeds = new WeakMap();
-  const speedOptions = [1, 0.9, 0.8];
+  const scales = new WeakMap();
+  const speedOptions = [1, 0.9, 0.8, 0.75];
+  const speedKey = 'ouenkaLineupPlaybackSpeedV1';
+  const workerUrl = new URL('pitch-r3-worker.js?v=20261111-r344', document.currentScript.src);
+  const finerMemoryLimit = 32 * 1024 * 1024;
   const keyLimit = 6;
 
   const semitones = context => keys.get(context) ?? 0;
   const pitchRatio = steps => 2 ** (steps / 12);
   const speed = context => speeds.get(context) ?? 1;
-  const bufferScale = context => pitchRatio(semitones(context)) / speed(context);
+  const bufferScale = context => scales.get(context) ?? 1;
   const timelineEntries = timeline => timeline.entries ?? [{buffer: timeline.buffer, start: 0}];
 
   function spectrumPlan(size) {
@@ -171,74 +175,157 @@
         }
       }
     }
+    limitPeaks(channels.map(channel => channel.output));
+    return result;
+  }
+
+  function limitPeaks(channels) {
     let peak = 0;
-    for (const {output} of channels) {
+    for (const output of channels) {
       for (const sample of output) peak = Math.max(peak, Math.abs(sample));
     }
     if (peak > 1) {
-      for (const {output} of channels) {
+      for (const output of channels) {
         for (let i = 0; i < output.length; i++) output[i] *= 0.99 / peak;
       }
     }
-    return result;
+  }
+
+  function shiftInWorker(context, buffer, pitch, speed, loopStart) {
+    const worker = new Worker(workerUrl);
+    return new Promise((resolve, reject) => {
+      function finish(callback, value) {
+        context.removeEventListener('statechange', checkClosed);
+        worker.terminate();
+        callback(value);
+      }
+      function checkClosed() {
+        if (context.state === 'closed') finish(reject, new DOMException('再生を中止しました。', 'AbortError'));
+      }
+      worker.onmessage = ({data}) => {
+        if (data.error) {
+          finish(reject, Error(data.error));
+          return;
+        }
+        try {
+          const result = context.createBuffer(buffer.numberOfChannels, Math.ceil(buffer.length / speed), buffer.sampleRate);
+          data.output.forEach((channel, index) => result.copyToChannel(channel, index));
+          limitPeaks(Array.from({length: result.numberOfChannels}, (_, ch) => result.getChannelData(ch)));
+          finish(resolve, result);
+        } catch (error) {
+          finish(reject, error);
+        }
+      };
+      worker.onerror = () => finish(reject, Error('高音質キー変更を起動できませんでした。'));
+      context.addEventListener('statechange', checkClosed);
+      try {
+        const input = Array.from({length: buffer.numberOfChannels}, (_, ch) => buffer.getChannelData(ch).slice());
+        worker.postMessage({input, sampleRate: buffer.sampleRate, pitch, speed, loopStart}, input.map(channel => channel.buffer));
+      } catch (error) {
+        finish(reject, error);
+      }
+    });
   }
 
   function source(context, buffer) {
     const node = context.createBufferSource();
     node.buffer = prepared.get(context)?.get(buffer) ?? buffer;
-    node.playbackRate.value = pitchRatio(semitones(context));
+    node.playbackRate.value = bufferScale(context) * speed(context);
     return node;
   }
 
-  function keyControl(getContext, getTimeline, restart, enableSpeed = false) {
-    let processing = false;
-    const available = context => !!context && context.state !== 'closed';
-    async function apply(context, timeline, nextKey, nextSpeed) {
-      if (processing || !available(context) || !timeline) return;
-      const entries = timelineEntries(timeline).filter(entry => entry.buffer);
-      if (!entries.length) return;
-      const stretchSpeed = nextSpeed / pitchRatio(nextKey);
-      const buffers = new WeakMap();
-      processing = true;
-      const current = () => getContext() === context && available(context);
-      try {
-        if (stretchSpeed !== 1) {
-          for (const {buffer} of entries) {
-            if (!buffers.has(buffer)) buffers.set(buffer, await stretch(context, buffer, stretchSpeed, timeline.loopStart ?? 0));
-            if (!current()) return;
+  function readSpeed() {
+    try {
+      const value = Number(localStorage.getItem(speedKey));
+      return speedOptions.includes(value) ? value : 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  async function prepare(context, timeline, nextKey, nextSpeed) {
+    const entries = new Set(timelineEntries(timeline).map(entry => entry.buffer).filter(Boolean));
+    let buffers = new WeakMap();
+    const pitch = pitchRatio(nextKey);
+    const stretchSpeed = nextSpeed / pitch;
+    const loopStart = timeline.loopStart ?? 0;
+    let scale = 1 / nextSpeed;
+    if (nextKey || nextSpeed !== 1) {
+      let bytes = 0;
+      for (const buffer of entries) bytes += buffer.length * buffer.numberOfChannels * 4;
+      let useFiner = bytes / Math.min(1, nextSpeed) <= finerMemoryLimit &&
+        typeof Worker !== 'undefined' && typeof WebAssembly !== 'undefined';
+      if (useFiner) {
+        try {
+          for (const buffer of entries) {
+            buffers.set(buffer, await shiftInWorker(context, buffer, pitch, nextSpeed, loopStart));
           }
+        } catch (error) {
+          if (context.state === 'closed') throw error;
+          console.warn('Rubber Band R3:', error);
+          buffers = new WeakMap();
+          useFiner = false;
         }
-        if (!current()) return;
-        prepared.set(context, buffers);
-        keys.set(context, nextKey);
-        speeds.set(context, nextSpeed);
-        restart();
-      } catch (error) {
-        if (current()) throw error;
-      } finally {
-        processing = false;
+      }
+      if (!useFiner) {
+        scale = 1 / stretchSpeed;
+        for (const buffer of entries) {
+          buffers.set(buffer, stretchSpeed === 1 ? buffer : await stretch(context, buffer, stretchSpeed, loopStart));
+        }
       }
     }
+    if (context.state === 'closed') throw new DOMException('再生を中止しました。', 'AbortError');
+    prepared.set(context, buffers);
+    keys.set(context, nextKey);
+    speeds.set(context, nextSpeed);
+    scales.set(context, scale);
+  }
+
+  function keyControl(getContext, getTimeline, restart) {
+    let processing = false;
+    const available = context => !!context && context.state !== 'closed';
     return {
       keyState() {
         const context = getContext();
         return {steps: semitones(context), limit: keyLimit, available: available(context)};
       },
-      changeKey(direction) {
+      async changeKey(direction) {
         const context = getContext();
-        const next = Math.min(keyLimit, Math.max(-keyLimit, semitones(context) + direction));
-        return apply(context, getTimeline(), next, speed(context));
-      },
-      ...(enableSpeed ? {
-        speedState: () => ({rate: speed(getContext()), available: available(getContext())}),
-        changeSpeed() {
-          const context = getContext();
-          const next = speedOptions[(speedOptions.indexOf(speed(context)) + 1) % speedOptions.length];
-          return apply(context, getTimeline(), semitones(context), next);
+        const timeline = getTimeline();
+        if (processing || !available(context) || !timeline) return;
+        const previous = semitones(context);
+        const next = Math.min(keyLimit, Math.max(-keyLimit, previous + direction));
+        if (previous === next) return;
+        processing = true;
+        try {
+          await prepare(context, timeline, next, speed(context));
+          if (getContext() === context && available(context)) restart();
+        } catch (error) {
+          if (getContext() === context && available(context)) throw error;
+        } finally {
+          processing = false;
         }
-      } : {})
+      }
     };
   }
 
-  window.OuenkaPlaybackSpeed = { source, bufferScale, keyControl, speed };
+  const selector = document.getElementById('lineupPlaybackSpeed');
+  if (selector) {
+    const status = document.getElementById('lineupPlaybackSpeedStatus');
+    selector.value = String(readSpeed());
+    selector.onchange = () => {
+      try {
+        localStorage.setItem(speedKey, selector.value);
+        status.textContent = '保存しました。次の再生から適用します。';
+      } catch {
+        selector.value = String(readSpeed());
+        status.textContent = '設定を保存できませんでした。';
+      }
+    };
+  }
+
+  window.OuenkaPlaybackSpeed = {
+    source, bufferScale, keyControl, speed, readSpeed,
+    prepareSpeed: (context, timeline, rate) => prepare(context, timeline, 0, rate)
+  };
 })();
