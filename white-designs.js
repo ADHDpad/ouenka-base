@@ -14,7 +14,7 @@
   };
 
   const placements = Object.keys(layouts);
-  const placementLabels = ['写真左','写真右','正方形写真・左','正方形写真・右','横長・写真なし','縦長写真・左','縦長写真・右','中央・写真なし'];
+  const placementLabels = ['写真左','写真右','写真左・低めの見出し','写真右・低めの見出し','横長・写真なし','写真左・ワイド歌詞','写真右・ワイド歌詞','中央・写真なし'];
   const styles = [
     ['rules','細罫線'],['stats','成績帯'],['lyrics','歌詞パネル'],['header','見出し帯'],
     ['underline','裾ライン'],['double','二重枠'],['corners','四隅ライン'],['rail','縦ライン'],
@@ -60,7 +60,7 @@
     const {placement,showStats,align}=templates.get(id);
     const original=layouts[placement];
     const selected=noPhoto&&original.photo?layouts.wide:original;
-    return {...selected,showStats,align,nameAlign:selected===layouts.center?'center':'left',lyricTop:showStats?selected.lyricTop:selected.nameY+48};
+    return window.OuenkaBroadcast.fitPlayerPhotoLayout({...selected,showStats,align,nameAlign:selected===layouts.center?'center':'left',lyricTop:showStats?selected.lyricTop:selected.nameY+48});
   }
 
   function paint(ctx,id,state,noPhoto) {

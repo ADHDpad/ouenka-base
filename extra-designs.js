@@ -13,11 +13,11 @@ if(id==='reference-13')Object.assign(l,{left:104,right:1176,orderY:92,nameY:230,
 if(id==='reference-15')Object.assign(l,{left:78,right:1202,orderY:78,nameY:214,statsLabelY:300,statsValueY:360,lyricTop:440,lyricBottom:658,align:'center',nameAlign:'center',photo:null});
 if(id==='reference-16')Object.assign(l,{left:88,right:1192,orderY:100,nameY:248,statsLabelY:328,statsValueY:388,lyricTop:456,lyricBottom:666,photo:null});
 if(id==='reference-17')Object.assign(l,{left:90,right:1190,orderY:92,nameY:202,statsLabelY:264,statsValueY:315,lyricTop:366,lyricBottom:662,align:'center',nameAlign:'center',photo:null});
-if(noPhoto&&l.photo){l.photo=null;l.left=92;l.right=1188;l.align='center';l.nameAlign='center'}return l}
+if(noPhoto&&l.photo){l.photo=null;l.left=92;l.right=1188;l.align='center';l.nameAlign='center'}return window.OuenkaBroadcast.fitPlayerPhotoLayout(l)}
 function paint(ctx,id,s,helpers,noPhoto=false){if(added.has(id)){added.paint(ctx,id,s,noPhoto);return true}if(!ids.has(id))return false;const dark=s.teamDark||'#062e55',main=s.color||'#07549a',accent=s.accent||'#1392c6',l=layout(id,noPhoto);const rect=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h)},stroke=(x,y,w,h,c,n=2)=>{ctx.strokeStyle=c;ctx.lineWidth=n;ctx.strokeRect(x,y,w,h)};
 helpers.background();
-if(id==='reference-8'){rect(496,24,6,672,accent);stroke(20,20,1240,680,accent);rect(522,252,710,4,accent);rect(522,390,710,2,accent)}
-if(id==='reference-9'){rect(0,0,1280,720,'#ffffff');rect(30,22,766,676,'#ffffff');rect(30,22,766,12,accent);rect(62,254,708,3,main);rect(62,394,708,2,main);rect(1260,0,20,720,accent)}
+if(id==='reference-8'){if(l.photo)rect(l.left-20,24,6,672,accent);stroke(20,20,1240,680,accent);rect(l.left,252,l.right-l.left,4,accent);rect(l.left,390,l.right-l.left,2,accent)}
+if(id==='reference-9'){rect(0,0,1280,720,'#ffffff');rect(30,22,766,676,'#ffffff');rect(30,22,l.right-30,12,accent);rect(l.left,254,l.right-l.left,3,main);rect(l.left,394,l.right-l.left,2,main);rect(1260,0,20,720,accent)}
 if(id==='reference-10'){
  rect(0,0,1280,720,'#f3f6fa');rect(32,32,1216,656,'#fff');rect(32,32,1216,12,main);
  if(l.photo){const [x,y,w,h]=l.photo;rect(x-8,y-8,w+16,h+16,'#dce5ef')}

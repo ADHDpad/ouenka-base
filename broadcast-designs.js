@@ -1,6 +1,20 @@
 /* 応援歌BASE / 採用案6・7 / 20261016-broadcast-v1 */
 (()=>{'use strict';
  const W=1280,H=720;
+ // Template No. 1 is the common size for single-player illustrations.
+ function playerPhotoRect(side='left',margin=24){
+  const width=492,height=660;
+  return [side==='right'?W-margin-width:margin,(H-height)/2,width,height];
+ }
+ function fitPlayerPhotoLayout(layout){
+  if(!layout.photo)return layout;
+  const [x,,width]=layout.photo;
+  const onRight=x>=W/2,margin=Math.max(24,Math.min(56,onRight?W-x-width:x));
+  const photo=playerPhotoRect(onRight?'right':'left',margin);
+  return {...layout,photo,
+   left:onRight?layout.left:Math.max(layout.left,photo[0]+photo[2]+32),
+   right:onRight?Math.min(layout.right,photo[0]-32):layout.right};
+ }
  const FAMILY='"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif';
  const validColor=(value,fallback)=>/^#[0-9a-f]{6}$/i.test(value||'')?value:fallback;
  const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
@@ -118,7 +132,7 @@
   }
   let left=light?52:560,right=light?744:1220;
   if(noPhoto){left=88;right=1192;if(light){poly(ctx,[[1090,0],[1170,0],[930,H],[850,H]],mix(t.color,'#ffffff',.84))}}
-  else photo(ctx,p,light?[810,36,434,648]:[40,72,466,592],t,options.image,options.credit);
+  else photo(ctx,p,playerPhotoRect(light?'right':'left'),t,options.image,options.credit);
   const width=right-left;
   if(!light&&!noPhoto){
    const jersey=identity(p);const nameLeft=jersey!==''?left+208:left;
@@ -217,5 +231,5 @@
   try{if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file]});resolve();return}}catch(e){if(e.name==='AbortError'){resolve();return}}
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);resolve();
  },'image/png'))}
- window.OuenkaBroadcast={drawCard,drawLineup,drawBoard,boardAt,drawPhotoImage,drawPhotoBorder,photoFramePath,savePng,theme};
+ window.OuenkaBroadcast={drawCard,drawLineup,drawBoard,boardAt,drawPhotoImage,drawPhotoBorder,photoFramePath,playerPhotoRect,fitPlayerPhotoLayout,savePng,theme};
 })();

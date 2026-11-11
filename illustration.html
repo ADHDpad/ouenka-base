@@ -24,7 +24,7 @@ td:has(input[data-key="name"]){min-width:260px}input[data-stat][data-key="name"]
 <script src="./pwa-diagnostic.js?v=20261103-r331"></script>
 <script src="./audio-recovery.js?v=20261111-r343"></script>
 <script src="./studio-image-export.js?v=20261103-r331"></script>
-<script src="./broadcast-designs.js?v=20261111-r347"></script><script src="./white-designs.js?v=20261111-r349"></script><script src="./extra-designs.js?v=20261111-r349"></script>
+<script src="./broadcast-designs.js?v=20261111-r351"></script><script src="./white-designs.js?v=20261111-r351"></script><script src="./extra-designs.js?v=20261111-r351"></script>
 <script>
 (()=>{'use strict';const $=id=>document.getElementById(id),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const names=['奈良間 大己','選手 2','選手 3','選手 4','選手 5','選手 6','選手 7','選手 8','選手 9'];const teamColors={
  '北海道日本ハムファイターズ':['#0095ee','#01e4fa','#0087cb'],
@@ -326,11 +326,11 @@ function fitLyricsBox(ctx,text,maxSize,width,height){
  }
  return {size,lines,lineHeight:height/Math.max(1,lines.length)};
 }
-function cardLayout(design,noPhoto){const extra=window.OuenkaExtraDesigns?.layout(design,noPhoto);if(extra)return extra;const common={left:548,right:1244,orderY:92,nameY:232,statsLabelY:302,statsValueY:365,lyricTop:430,lyricBottom:682,align:'right',photo:[24,30,492,660],nameAlign:'center'};
+function cardLayout(design,noPhoto){const extra=window.OuenkaExtraDesigns?.layout(design,noPhoto);if(extra)return extra;const common={left:548,right:1244,orderY:92,nameY:232,statsLabelY:302,statsValueY:365,lyricTop:430,lyricBottom:682,align:'right',photo:window.OuenkaBroadcast.playerPhotoRect(),nameAlign:'center'};
  if(design==='reference-2')Object.assign(common,{left:40,right:794,orderY:80,nameY:216,statsLabelY:294,statsValueY:352,lyricTop:422,lyricBottom:666,align:'left',photo:[828,24,428,672],nameAlign:'left'});
  if(design==='reference-3')Object.assign(common,{left:444,right:1236,orderY:68,nameY:216,statsLabelY:290,statsValueY:350,lyricTop:420,lyricBottom:674,align:'left',photo:[24,126,380,570]});
  if(design==='reference-4')Object.assign(common,{left:592,right:1240,orderY:80,nameY:216,statsLabelY:290,statsValueY:352,lyricTop:420,lyricBottom:678,align:'left',photo:[20,20,562,680]});
- if(noPhoto){common.left=64;common.right=1216;common.photo=null;common.align=design==='reference-2'?'left':'center';common.nameAlign=design==='reference-2'?'left':'center'}return common}
+ if(noPhoto){common.left=64;common.right=1216;common.photo=null;common.align=design==='reference-2'?'left':'center';common.nameAlign=design==='reference-2'?'left':'center'}return window.OuenkaBroadcast.fitPlayerPhotoLayout(common)}
 function polygon(ctx,points,color){ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();if(color){ctx.fillStyle=color;ctx.fill()}}
 function paintCardPhoto(ctx,p,rect,diagonal=false){if(!rect)return;const [x,y,pw,ph]=rect;const shape=state.photoFrameShape,slanted=shape==='template'&&diagonal;ctx.save();window.OuenkaBroadcast.photoFramePath(ctx,rect,shape,diagonal);ctx.clip();ctx.fillStyle=state.teamDark||'#143a5b';ctx.fillRect(x,y,pw,ph);const im=movieImage(photoSource(p));if(im?.complete&&im.naturalWidth){window.OuenkaBroadcast.drawPhotoImage(ctx,im,rect,p)}else{ctx.fillStyle='#c6daed';ctx.font='28px sans-serif';ctx.textAlign='center';ctx.fillText('写真を選択',x+(slanted?pw*.38:pw/2),y+ph/2)}drawPhotoCredit(ctx,p.photoCredit,slanted?[x,y,pw-194,ph]:rect);ctx.restore();window.OuenkaBroadcast.drawPhotoBorder(ctx,rect,state.photoFrameWidth,state.frameColor,diagonal,shape)}
 function playerPalette(p){if(!state.playerTeamColors)return null;const first=state.players[0];return findTeamPalette(p?.audioSource?.team||p?.team)||findTeamPalette(first?.audioSource?.team||first?.team)||findTeamPalette(state.team)}
@@ -358,8 +358,8 @@ const previous=renderingDesign;renderingDesign=design;ctx.save();try{const noPho
  else if(design==='reference-3'){ctx.fillStyle=state.teamDark||'#071d33';ctx.fillRect(0,0,1280,720);ctx.fillStyle=mixColor(state.teamDark||'#071d33','#000000',.4);ctx.fillRect(12,16,1256,84);ctx.fillRect(left-16,246,width+32,136);ctx.fillRect(left-16,408,width+32,286);ctx.strokeStyle=state.accent;ctx.lineWidth=3;ctx.strokeRect(12,16,1256,84);ctx.strokeRect(left-16,246,width+32,136);ctx.strokeRect(left-16,408,width+32,286);ctx.fillStyle=state.accent;ctx.fillRect(left-16,408,6,286);}
  else{paintBackground(ctx,1280,720,state.color);if(design==='reference-4'){polygon(ctx,[[620,20],[1260,20],[1260,246],[556,246]],state.teamDark||'#062e55');polygon(ctx,[[608,386],[1260,386],[1260,700],[510,700]],state.teamDark||'#062e55');polygon(ctx,[[1180,20],[1202,20],[1012,700],[990,700]],state.accent);polygon(ctx,[[1222,20],[1230,20],[1040,700],[1032,700]],state.accent)}}
  }
- paintCardPhoto(ctx,p,l.photo,design==='reference-4');
- if(design==='reference-4'&&!noPhoto){ctx.strokeStyle=state.accent;ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(650,20);ctx.lineTo(456,700);ctx.stroke()}
+ paintCardPhoto(ctx,p,l.photo);
+ if(design==='reference-4'&&!noPhoto){ctx.strokeStyle=state.accent;ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(l.left-16,20);ctx.lineTo(l.photo[0]+l.photo[2]+12,700);ctx.stroke()}
  if(design==='photo-4'){ctx.fillStyle=state.accent;ctx.fillRect(left-22,24,5,672)}
  cardText(ctx,positionLabel(p),design==='reference-3'?mid:(l.nameAlign==='left'?left+6:mid),l.orderY,'order',Math.min(60,fontSize('order')),width-24,l.nameAlign);
  cardText(ctx,p.name,l.nameAlign==='left'?left+6:mid,l.nameY,'name',fontSize('name'),width-28,l.nameAlign,[l.orderY+Math.min(60,fontSize('order'))*.3+24,l.showStats===false?l.lyricTop-17:l.statsLabelY-45]);
