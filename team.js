@@ -112,12 +112,13 @@ function armTeamEndTimer(ms){
 function startSyncedBuffers(offset=0){
  if(!teamAudioContext||!teamTimeline.length)return;
  teamSources.forEach(src=>{try{src.stop()}catch(_){}});teamSources=[];
+ const output=teamMedley?teamAudioContext.destination:window.OuenkaPlaybackSpeed.mixOutput(teamAudioContext,teamTimeline);
  const when=teamAudioContext.currentTime+.055;
  for(const item of teamTimeline){
   const end=item.start+item.buffer.duration;if(offset>=end-.005)continue;
   const seek=Math.max(0,offset-item.start);
   const delay=Math.max(0,item.start-offset);
-  const src=window.OuenkaPlaybackSpeed.source(teamAudioContext,item.buffer);src.connect(teamAudioContext.destination);
+  const src=window.OuenkaPlaybackSpeed.source(teamAudioContext,item.buffer);src.connect(output);
   src.start(when+delay,Math.min(seek,Math.max(0,item.buffer.duration-.01))*window.OuenkaPlaybackSpeed.bufferScale(teamAudioContext));teamSources.push(src);
  }
  teamStartedAt=when-offset;

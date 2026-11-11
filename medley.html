@@ -446,8 +446,9 @@ async function playSelectedRow(row){
   button.classList.add("playing");
   const entries=[{buffer:audio,start:0},{buffer:accompaniment,start:0}];
   if(liveMedleyContext!==ctx||ctx.state==='closed')return;
+  const output=window.OuenkaPlaybackSpeed.mixOutput(ctx,entries);
   const base=ctx.currentTime+0.04;
-  for(const {buffer} of entries)scheduleBuffer(ctx,buffer,base);
+  for(const {buffer} of entries)scheduleBuffer(ctx,buffer,base,output);
 
   const total=Math.max(audio.duration,accompaniment.duration);
   liveMedleyStopTimer=setTimeout(()=>{
@@ -1054,7 +1055,7 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();queueMedleyPrefetch();
 </script>
 <script src="./active-roster.js?v=20261103-r331"></script>
-<script src="playback-speed.js?v=20261111-r357"></script><script src="./lineup-controls.js?v=20261111-r357"></script>
+<script src="playback-speed.js?v=20261111-r358"></script><script src="./lineup-controls.js?v=20261111-r358"></script>
 <script src="playlist-share.js?v=20261103-r331"></script><script src="playlist-share-ui.js?v=20261103-r331"></script>
 <script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script><script src="ouenka-favorites.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="medley-random.js?v=20261103-r331"></script></body>
 </html>

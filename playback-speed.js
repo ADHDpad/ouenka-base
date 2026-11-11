@@ -223,6 +223,41 @@
     });
   }
 
+  const mixOutputs = new WeakMap();
+
+  function alignedMixPeak(buffers) {
+    let peak = 0;
+    const channels = Math.max(...buffers.map(buffer => buffer.numberOfChannels));
+    const length = Math.max(...buffers.map(buffer => buffer.length));
+    for (let ch = 0; ch < channels; ch++) {
+      const tracks = buffers.map(buffer => buffer.getChannelData(Math.min(ch, buffer.numberOfChannels - 1)));
+      for (let i = 0; i < length; i++) {
+        let sample = 0;
+        for (const track of tracks) if (i < track.length) sample += track[i];
+        const magnitude = Math.abs(sample);
+        if (magnitude > peak) peak = magnitude;
+      }
+    }
+    return peak;
+  }
+
+  function mixOutput(context, entries) {
+    if (!entries.length || entries.some(entry => entry.start !== entries[0].start)) return context.destination;
+    const revision = prepared.get(context);
+    const previous = mixOutputs.get(context);
+    if (previous?.entries === entries && previous.revision === revision) return previous.output;
+    const buffers = entries.map(({buffer}) => revision?.get(buffer) ?? buffer);
+    const peak = alignedMixPeak(buffers);
+    let output = context.destination;
+    if (peak > .98) {
+      output = context.createGain();
+      output.gain.value = .98 / peak;
+      output.connect(context.destination);
+    }
+    mixOutputs.set(context, {entries,revision,output});
+    return output;
+  }
+
   function source(context, buffer) {
     const node = context.createBufferSource();
     node.buffer = prepared.get(context)?.get(buffer) ?? buffer;
@@ -295,5 +330,5 @@
     };
   }
 
-  window.OuenkaPlaybackSpeed = {source, bufferScale, keyControl};
+  window.OuenkaPlaybackSpeed = {source, bufferScale, keyControl, mixOutput};
 })();
