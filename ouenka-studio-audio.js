@@ -1,4 +1,4 @@
-/* Audio helpers copied from the existing approved 1-9 engine. */
+/* Fetch and decode audio on demand for the medley illustration studio. */
 (()=>{'use strict';
 const OUENKA_PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
 function toPublicAudioUrl(path){
@@ -32,10 +32,7 @@ function separatedAudioCandidates(item,fileName){
 }
 
 
-/* ===== 1-9高速化：取得済みm4aをメモリキャッシュ =====
-   AudioBufferはAudioContext依存を避けるため、元ArrayBufferを保存し、
-   再生時はローカルメモリからdecodeする。 */
-const oneNineAudioDataCache=new Map();
+// Deduplicate pending transfers and decoding without retaining a second copy of every song.
 const oneNineAudioFetchPromises=new Map();
 const oneNineDecodedCache=new WeakMap();
 const oneNineResolvedPaths=new Map();
@@ -43,16 +40,14 @@ const oneNineMissingPaths=new Set();
 
 async function fetchAudioDataCached(url){
  url=toPublicAudioUrl(url);
- if(oneNineAudioDataCache.has(url))return oneNineAudioDataCache.get(url).slice(0);
  if(oneNineAudioFetchPromises.has(url)){
   const data=await oneNineAudioFetchPromises.get(url);
   return data.slice(0);
  }
  const promise=(async()=>{
-  const r=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(6500)});
+  const r=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(25000)});
   if(!r.ok)throw new Error(`HTTP ${r.status}`);
   const data=await r.arrayBuffer();
-  oneNineAudioDataCache.set(url,data);
   return data;
  })();
  oneNineAudioFetchPromises.set(url,promise);
@@ -68,7 +63,7 @@ async function fetchDecodeAudioCached(ctx,url){
  let cache=oneNineDecodedCache.get(ctx);
  if(!cache){cache=new Map();oneNineDecodedCache.set(ctx,cache)}
  if(!cache.has(url))cache.set(url,(async()=>ctx.decodeAudioData(await fetchAudioDataCached(url)))());
- try{return await cache.get(url)}catch(error){cache.delete(url);oneNineAudioDataCache.delete(url);throw error}
+ try{return await cache.get(url)}catch(error){cache.delete(url);throw error}
 }
 async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  let lastError=null;
@@ -82,7 +77,7 @@ async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
    // 先読み時の古い音源キャッシュ（force-cache）を使わない。
    if(fileName==="audio.m4a"){
     const url=toPublicAudioUrl(path);
-    const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:AbortSignal.timeout(6500)});
+    const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:AbortSignal.timeout(25000)});
     if(!response.ok){if(response.status===404)oneNineMissingPaths.add(path);throw new Error(`HTTP ${response.status}`)}
     const decoded=await ctx.decodeAudioData(await response.arrayBuffer());
     oneNineResolvedPaths.set(key,path);
@@ -97,28 +92,19 @@ async function fetchFirstExistingAudio(ctx,item,fileName,optional=false){
  throw lastError||new Error(`${fileName} が見つかりません。`);
 }
 
-const DATA_API='https://ouenka-base-data.ninzin5600.workers.dev';
-function normalizeSongName(value){return String(value||'').normalize('NFKC').replace(/[\s　・･]/g,'').toLowerCase()}
-function songNumber(song){return String(song.production_number??song.productionNumber??'').trim()}
-function songName(song){return String(song.player_name||song.playerName||song.name||'').trim()}
-function songUrls(song,item){const name=songName(song)||item.name,productionNumber=songNumber(song)||String(item.productionNumber||'');if(!name||!productionNumber)return item;const root=OUENKA_PUBLIC_BASE+'%E3%83%87%E3%83%BC%E3%82%BF/'+encodeURIComponent(name)+'/'+encodeURIComponent(productionNumber)+'/';const file=(url,filename,fallback,existing)=>url?toPublicAudioUrl(url):filename?root+encodeURIComponent(filename):existing?toPublicAudioUrl(existing):root+encodeURIComponent(fallback);return {...item,name,productionNumber,songId:song.id||item.songId,tempo:window.OuenkaMedleyCore.tempo(song),audioUrl:file(song.audio_url,song.audio_filename||song.audioFilename,'audio.m4a',item.audioUrl),medleyUrl:file(song.medley_url,song.medley_filename||song.medleyFilename,'medley.m4a',item.medleyUrl),melodyUrl:file(song.melody_url,song.melody_filename,'melody.m4a',item.melodyUrl),accompanimentUrl:file(song.accompaniment_url,song.accompaniment_filename,'accompaniment.m4a',item.accompanimentUrl),introMelodyUrl:file(song.intro_melody_url,song.intro_melody_filename,'intro_melody.m4a',item.introMelodyUrl),introAccompanimentUrl:file(song.intro_accompaniment_url,song.intro_accompaniment_filename,'intro_accompaniment.m4a',item.introAccompanimentUrl)}}
-async function resolveStudioRows(rows){
- let allSongsPromise=null;const searches=new Map();
- const load=async url=>{const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(9000)});if(!response.ok)throw Error('登録情報 HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.songs))throw Error('登録情報の形式を確認できませんでした。');return data.songs};
- const exactMatch=(songs,item)=>{if(item.songId&&!item.reused){const byId=songs.filter(song=>String(song.id)===String(item.songId));if(byId.length===1&&(!item.productionNumber||songNumber(byId[0])===String(item.productionNumber)))return byId[0]}const matches=songs.filter(song=>normalizeSongName(songName(song))===normalizeSongName(item.name)&&(!item.productionNumber||songNumber(song)===String(item.productionNumber)));return matches.length===1?matches[0]:null};
- return Promise.all(rows.map(async(r,rowIndex)=>{const source=r.audioSource&&typeof r.audioSource==='object'?r.audioSource:r;const reused=!!source.reuseName,item={name:source.reuseName||source.name,productionNumber:source.reuseProductionNumber||source.productionNumber,songId:reused?'':source.songId,audioUrl:reused?'':source.audioUrl,medleyUrl:reused?'':source.medleyUrl,melodyUrl:reused?'':source.melodyUrl,accompanimentUrl:reused?'':source.accompanimentUrl,introMelodyUrl:reused?'':source.introMelodyUrl,introAccompanimentUrl:reused?'':source.introAccompanimentUrl,rowIndex,reused,tempo:source.reuseTempo||source.tempo};if(!item.name)return null;
-  try{const key=String(item.name);if(!searches.has(key))searches.set(key,load(DATA_API+'/songs/search?q='+encodeURIComponent(key)));const candidates=await searches.get(key);let match=exactMatch(candidates,item);if(!match){if(!allSongsPromise)allSongsPromise=load(DATA_API+'/songs');match=exactMatch(await allSongsPromise,item)}if(match)return songUrls(match,item)}catch(e){/* 登録API一時障害時は、1-9から渡された保存先を使って続行。 */}
-  return item;
- })).then(items=>items.filter(Boolean));
-}
-
-async function build(ctx,rows){
+async function build(ctx,rows,{onProgress,cancelled,onSongs}={}){
  oneNineMissingPaths.clear();
- const selected=await resolveStudioRows(rows);
- return window.OuenkaMedleyCore.build(ctx,selected,{
-  load:(item,file,optional)=>fetchFirstExistingAudio(ctx,item,file,optional),
-  rowIndices:selected.map(item=>item.rowIndex),callsRows:rows.filter(row=>row.name)
- });
+ const registered=await window.OuenkaMedleyCore.resolveSongs(rows);
+ cancelled?.();
+ onSongs?.(registered);
+ const selected=registered.map(song=>({...window.OuenkaMedleyCore.registeredAudioUrls(song,song.name,song.productionNumber),name:song.name,tempo:song.tempo}));
+ try{
+  const {buffer,starts,rowIndices,barSeconds,barSecondsBySong,tempos,duration}=await window.OuenkaMedleyCore.build(ctx,selected,{
+   load:(item,file,optional)=>fetchFirstExistingAudio(ctx,item,file,optional),
+   rowIndices:selected.map((_,index)=>index),callsRows:rows,onProgress,cancelled,concurrency:4
+  });
+  return {buffer,starts,rowIndices,barSeconds,barSecondsBySong,tempos,duration};
+ }finally{oneNineDecodedCache.delete(ctx)}
 }
 window.OuenkaStudioAudio={build};
 })();

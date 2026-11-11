@@ -39,6 +39,17 @@ function buildDynamicSongStarts(songs,openingExtraSec=0){
  let cursor=0;return songs.map((song,i)=>{const start=cursor;if(i<songs.length-1)cursor+=getTransitionOffsetSec(song,songs[i+1],i===0?openingExtraSec:0);return start});
 }
 const registrationKey=(name,number)=>String(name||'').normalize('NFKC').trim()+'#'+String(number??'').trim();
+function registeredAudioUrls(song,playerName,productionNumber){
+ if(!song)return null;
+ const name=String(song.player_name||song.name||playerName||"").trim();
+ const no=String(song.production_number||song.productionNumber||productionNumber||"").trim();
+ const audioFile=String(song.audio_filename||song.audioFilename||"audio.m4a").trim();
+ const medleyFile=String(song.medley_filename||song.medleyFilename||"medley.m4a").trim();
+ if(!name||!no)return null;
+ const base="https://adhdpad.github.io/ouenka-base/"+"%E3%83%87%E3%83%BC%E3%82%BF/"+encodeURIComponent(name)+"/"+encodeURIComponent(no)+"/";
+ return{playerName:name,productionNumber:no,audioUrl:base+encodeURIComponent(audioFile),medleyUrl:base+encodeURIComponent(medleyFile),melodyUrl:base+"melody.m4a",accompanimentUrl:base+"accompaniment.m4a",introMelodyUrl:base+"intro_melody.m4a",introAccompanimentUrl:base+"intro_accompaniment.m4a"};
+}
+
 async function resolveSongs(input,options={}){
  const timeout=AbortSignal.timeout(15000),signal=options.signal&&AbortSignal.any?AbortSignal.any([options.signal,timeout]):options.signal||timeout;
  const response=await fetch('https://ouenka-base-data.ninzin5600.workers.dev/songs',{cache:'no-store',signal});
@@ -104,7 +115,8 @@ function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null
   ...(intro?[Math.max(intro.melody.length,intro.accompaniment.length)]:[0])
  );
  const output=destination?.buffer??ctx.createBuffer(channels,totalFrames,sampleRate);
- const accompaniment=new Float32Array(totalFrames);
+ const chunkFrames=Math.min(totalFrames,262144);
+ const accompaniment=new Float32Array(chunkFrames);
 
  const blockSize=Math.max(64,Math.round(sampleRate*0.006));
  const threshold=Math.pow(10,-42/20);
@@ -128,51 +140,54 @@ function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null
   return active;
  }
 
- function addIndependentTrack(target,cur,curStart,next,nextStart,ch){
-  const out=target;
+ function addIndependentTrack(out,cur,curStart,next,nextStart,ch,chunkStart){
   const src=cur.getChannelData(Math.min(ch,cur.numberOfChannels-1));
-  const curActivity=getActivity(cur,ch);
-  const nextActivity=next?getActivity(next,ch):null;
-  const overlapStart=next?Math.max(curStart,nextStart):Infinity;
-  const overlapEnd=next?Math.min(curStart+cur.length,nextStart+next.length):-Infinity;
-  // 次曲の音が存在する区間では前曲側だけを抑制。
-  // ブロック境界は3msの滑らかな遷移でクリックノイズを防ぐ。
-  const fadeFrames=Math.max(1,Math.round(sampleRate*0.003));
+  const from=Math.max(0,chunkStart-curStart),to=Math.min(src.length,chunkStart+out.length-curStart);
+  if(from>=to)return;
+  const overlapStart=next?Math.max(0,nextStart-curStart):src.length;
+  const overlapEnd=next?Math.min(src.length,nextStart+next.length-curStart):0;
+  const fadeFrames=Math.max(1,Math.round(sampleRate*0.003)),gainStep=1/fadeFrames;
+  const offset=curStart-chunkStart;
+  // Non-overlapping audio can be added without measuring activity or updating gain.
+  if(overlapEnd<=overlapStart||to<=overlapStart||from>overlapEnd+fadeFrames){
+   for(let f=from;f<to;f++)out[offset+f]+=src[f];
+   return;
+  }
+  const curActivity=getActivity(cur,ch),nextActivity=getActivity(next,ch);
+  for(let f=from;f<Math.min(to,overlapStart);f++)out[offset+f]+=src[f];
   let gain=1;
-  const gainStep=1/fadeFrames;
-  for(let f=0;f<cur.length;f++){
-   const global=curStart+f;
-   let targetGain=1;
-   if(global>=overlapStart && global<overlapEnd && nextActivity){
-    const nextLocal=global-nextStart;
-    const cb=Math.min(curActivity.length-1,Math.floor(f/blockSize));
-    const nb=Math.min(nextActivity.length-1,Math.floor(nextLocal/blockSize));
-    if(curActivity[cb]&&nextActivity[nb])targetGain=0;
+  // Reconstruct the gain when a work chunk starts partway through an overlap.
+  for(let f=overlapStart;f<to;f++){
+   const active=f<overlapEnd&&curActivity[Math.floor(f/blockSize)]&&nextActivity[Math.floor((curStart+f-nextStart)/blockSize)];
+   gain=active?Math.max(0,gain-gainStep):Math.min(1,gain+gainStep);
+   if(f>=from)out[offset+f]+=src[f]*gain;
+   if(f>=overlapEnd&&gain===1){
+    for(let tail=Math.max(f+1,from);tail<to;tail++)out[offset+tail]+=src[tail];
+    break;
    }
-   gain=targetGain===0?Math.max(0,gain-gainStep):Math.min(1,gain+gainStep);
-   const target=global-rangeStart;if(target>=0&&target<out.length)out[target]+=src[f]*gain;
   }
  }
 
  for(let ch=0;ch<channels;ch++){
-  const offset=destination?.offset??0;
-  const melody=output.getChannelData(ch).subarray(offset,offset+totalFrames);
-  accompaniment.fill(0);
-  if(intro){
-   addIndependentTrack(melody,intro.melody,0,songs[0].melody,startFrames[0],ch);
-   addIndependentTrack(accompaniment,intro.accompaniment,0,songs[0].accompaniment,startFrames[0],ch);
-  }
-  for(let i=0;i<songs.length;i++){
-   const next=i<songs.length-1?songs[i+1]:null;
-   const nextStart=next?startFrames[i+1]:0;
-   addIndependentTrack(melody,songs[i].melody,startFrames[i],next?next.melody:null,nextStart,ch);
-   addIndependentTrack(accompaniment,songs[i].accompaniment,startFrames[i],next?next.accompaniment:null,nextStart,ch);
-  }
-  for(let i=0;i<totalFrames;i++){
-   const sample=(melody[i]+accompaniment[i])*0.75;
-   const peak=Math.abs(sample);
-   // A smooth knee keeps loud overlaps below full scale without flattening peaks.
-   melody[i]=peak<=0.92?sample:Math.sign(sample)*(0.92+0.08*Math.tanh((peak-0.92)/0.08));
+  const target=output.getChannelData(ch),offset=destination?.offset??0;
+  for(let chunk=0;chunk<totalFrames;chunk+=chunkFrames){
+   const length=Math.min(chunkFrames,totalFrames-chunk),chunkStart=rangeStart+chunk;
+   const melody=target.subarray(offset+chunk,offset+chunk+length);
+   const chords=accompaniment.subarray(0,length);
+   chords.fill(0);
+   if(intro){
+    addIndependentTrack(melody,intro.melody,0,songs[0].melody,startFrames[0],ch,chunkStart);
+    addIndependentTrack(chords,intro.accompaniment,0,songs[0].accompaniment,startFrames[0],ch,chunkStart);
+   }
+   for(let i=0;i<songs.length;i++){
+    const next=songs[i+1],nextStart=startFrames[i+1]??0;
+    addIndependentTrack(melody,songs[i].melody,startFrames[i],next?.melody,nextStart,ch,chunkStart);
+    addIndependentTrack(chords,songs[i].accompaniment,startFrames[i],next?.accompaniment,nextStart,ch,chunkStart);
+   }
+   for(let i=0;i<length;i++){
+    const sample=(melody[i]+chords[i])*0.75,peak=Math.abs(sample);
+    melody[i]=peak<=0.92?sample:Math.sign(sample)*(0.92+0.08*Math.tanh((peak-0.92)/0.08));
+   }
   }
  }
  return output;
@@ -219,5 +234,5 @@ function seamless(ctx,first,normal,decorate=(buffer)=>buffer){
  starts.push(...normal.starts.map(v=>loopStart+v));indices.push(...normal.rowIndices);
  return {buffer,starts,rowIndices:indices,duration:buffer.duration,loopStart,loopEnd:buffer.duration,isSeamlessLoop:true,prefixDuration:prefixLength,normalStarts:normal.starts,normalDuration,normalRowIndices:normal.rowIndices,firstTimeline:{starts:first.starts,rowIndices:first.rowIndices},barSeconds:first.barSeconds||barSecondsForSong(initial[0]),barSecondsBySong:[...(first.barSecondsBySong||initial.map(barSecondsForSong)),...(n===1?[barSecondsForSong(body[0])]:[]),...body.map(barSecondsForSong)],tempos:[...initial.map(tempo),...(n===1?[tempo(body[0])]:[]),...body.map(tempo)],normalBarSecondsBySong:body.map(barSecondsForSong)};
 }
-window.OuenkaMedleyCore={getTransitionOffsetSec,build,resolveSongs,tempo,barSecondsForSong,seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix:mixSmoothIndependent};
+window.OuenkaMedleyCore={getTransitionOffsetSec,build,resolveSongs,registeredAudioUrls,tempo,barSecondsForSong,seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix:mixSmoothIndependent};
 })();

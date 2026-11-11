@@ -1,4 +1,4 @@
-(()=>{'use strict';const mode=()=>/medley\.html$/.test(location.pathname)?'medley':new URLSearchParams(location.search).get('mode')==='medley'?'medley':'lineup';const draftKey=()=>mode()==='medley'?'ouenkaBaseMedleyDraftV1':'ouenkaBaseOneNineDraftV1',settingsKey=()=> 'ouenkaCallSettingsV1:'+mode(),CATALOG='ouenkaCallCatalogV1';
+(()=>{'use strict';const mode=()=>/medley\.html$/.test(location.pathname)?'medley':(new URLSearchParams(location.search).get('mode')==='medley'||new URLSearchParams(location.search).get('from')==='medley')?'medley':'lineup';const draftKey=()=>mode()==='medley'?'ouenkaBaseMedleyDraftV1':'ouenkaBaseOneNineDraftV1',settingsKey=()=> 'ouenkaCallSettingsV1:'+mode(),CATALOG='ouenkaCallCatalogV1';
 function read(key,def){try{return JSON.parse(localStorage.getItem(key)||'null')??def}catch{return def}}
 function settings(){return read(settingsKey(),{defaultId:'',byGap:{}})}
 function catalog(){return read(CATALOG,[])}
