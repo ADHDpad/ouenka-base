@@ -1,6 +1,6 @@
 /* Additional 16:9 layouts use the studio's shared text, photo and export renderer. */
 (()=>{'use strict';
-const designs=[['reference-8','サイドライン','写真左・二重ライン'],['reference-9','ホワイト・エディトリアル','写真右・白い情報パネル'],['reference-10','白地の選手カード','写真左・白地に球団色の罫線'],['reference-11','ナイトゲーム','写真右・濃紺と球団色のアクセント'],['reference-12','スコアシート','写真なし・成績を横一列に配置'],['reference-13','センターフレーム','写真なし・中央揃え'],['reference-14','サイドレール','写真なし・左揃え'],['reference-15','スコアパネル','写真なし・成績と歌詞のパネル'],['reference-16','ホワイト・プレス','写真なし・白い背景'],['reference-17','ワイド歌詞','写真なし・歌詞を大きく表示']];
+const designs=[['reference-8','サイドライン','写真左・二重ライン'],['reference-9','ホワイト・エディトリアル','写真右・白い情報パネル'],['reference-10','白地の選手カード','写真左・白地に球団色の罫線'],['reference-11','ナイトゲーム','写真右・濃紺と球団色のアクセント'],['reference-12','スコアシート','写真なし・成績を横一列に配置'],['reference-13','センターフレーム','写真なし・中央揃え'],['reference-14','スタメン一覧','打順・守備位置・選手名を表示'],['reference-15','スコアパネル','写真なし・成績と歌詞のパネル'],['reference-16','ホワイト・プレス','写真なし・白い背景'],['reference-17','ワイド歌詞','写真なし・歌詞を大きく表示']];
 const ids=new Set(designs.map(d=>d[0])),light=new Set(['reference-9','reference-10','reference-12','reference-16']);
 function layout(id,noPhoto){if(!ids.has(id))return null;const l={left:530,right:1218,orderY:85,nameY:220,statsLabelY:292,statsValueY:350,lyricTop:408,lyricBottom:670,align:'left',nameAlign:'left',photo:[40,40,432,640]};
 if(id==='reference-9')Object.assign(l,{left:66,right:770,photo:[826,36,414,648],orderY:88,nameY:222});
@@ -8,7 +8,6 @@ if(id==='reference-10')Object.assign(l,{left:490,right:1212,orderY:130,nameY:245
 if(id==='reference-11')Object.assign(l,{left:64,right:794,orderY:110,nameY:239,statsLabelY:305,statsValueY:361,lyricTop:421,lyricBottom:652,photo:[852,58,362,604]});
 if(id==='reference-12')Object.assign(l,{left:84,right:1196,orderY:124,nameY:244,statsLabelY:320,statsValueY:381,lyricTop:451,lyricBottom:663,photo:null});
 if(id==='reference-13')Object.assign(l,{left:104,right:1176,orderY:92,nameY:230,statsLabelY:304,statsValueY:362,lyricTop:434,lyricBottom:648,align:'center',nameAlign:'center',photo:null});
-if(id==='reference-14')Object.assign(l,{left:208,right:1192,orderY:90,nameY:238,statsLabelY:314,statsValueY:374,lyricTop:444,lyricBottom:674,photo:null});
 if(id==='reference-15')Object.assign(l,{left:78,right:1202,orderY:78,nameY:214,statsLabelY:300,statsValueY:360,lyricTop:440,lyricBottom:658,align:'center',nameAlign:'center',photo:null});
 if(id==='reference-16')Object.assign(l,{left:88,right:1192,orderY:100,nameY:248,statsLabelY:328,statsValueY:388,lyricTop:456,lyricBottom:666,photo:null});
 if(id==='reference-17')Object.assign(l,{left:90,right:1190,orderY:92,nameY:202,statsLabelY:264,statsValueY:315,lyricTop:366,lyricBottom:662,align:'center',nameAlign:'center',photo:null});
@@ -35,7 +34,6 @@ if(id==='reference-12'){
  rect(70,434,1140,3,accent);
 }
 if(id==='reference-13'){stroke(30,30,1220,660,accent,4);stroke(44,44,1192,632,accent);rect(434,270,412,4,accent);rect(104,396,1072,2,accent)}
-if(id==='reference-14'){rect(0,0,150,720,dark);rect(150,0,14,720,accent);for(let y=48;y<700;y+=74)rect(32,y,86,5,accent);rect(208,270,984,6,accent);rect(208,410,984,2,accent)}
 if(id==='reference-15'){rect(34,28,1212,208,dark);rect(46,258,1188,140,dark);rect(46,422,1188,260,dark);stroke(46,258,1188,140,accent);rect(46,422,8,260,accent);for(let i=1;i<5;i++)rect(78+(1124/5)*i,280,2,96,accent)}
 if(id==='reference-16'){rect(0,0,1280,720,'#ffffff');rect(0,0,1280,22,main);rect(42,50,1196,6,accent);rect(88,282,1104,6,main);rect(88,420,1104,2,main);rect(0,700,1280,20,accent)}
 if(id==='reference-17'){

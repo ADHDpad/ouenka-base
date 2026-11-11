@@ -123,17 +123,19 @@
   text(ctx,'1–9',1218,90,64,light?t.color:'#ffffff',250,{weight:900,align:'right'});
   text(ctx,options.title||'1-9 応援歌',60,128,27,light?t.color:mix(t.accent,'#ffffff',.4),1140,{weight:700});rule(ctx,60,151,1160,t.line,3);
   // Nine fixed slots preserve batting-order numbers even when an input is blank.
-  const start=174,rowH=51;
-  for(let i=0;i<9;i++){
+  const slots=options.includeTenthSlot&&rows[9]?.name?10:9;
+  const start=174,rowH=slots===10?49:51;
+  for(let i=0;i<slots;i++){
    const p=rows[i]||{},yy=start+i*rowH,active=Number(options.activeIndex)===i;
    if(active){ctx.fillStyle=light?mix(t.color,'#ffffff',.84):mix(t.dark,t.color,.55);ctx.fillRect(54,yy-4,1172,rowH-2);rule(ctx,54,yy-4,5,t.line,rowH-2)}
-   text(ctx,String(i+1).padStart(2,'0'),76,yy+33,30,light?t.color:t.line,68,{weight:900,italic:true});
+   const order=i===9&&/^(P|投|投手)$/i.test(p.position||'')?'投':String(i+1).padStart(2,'0');
+   text(ctx,order,76,yy+33,30,light?t.color:t.line,68,{weight:900,italic:true});
    rule(ctx,163,yy+5,2,t.line,28);
    text(ctx,compactPosition(p.position)||'',184,yy+31,22,light?t.color:mix(t.accent,'#ffffff',.5),180,{weight:700});
    text(ctx,p.name||'—',390,yy+33,33,ink,options.showStats?350:760,{weight:900});if(options.showStats){const pitching=/投|P|SP|RP/i.test(p.position||'')||p.statsType==='pitching';const fields=pitching?[['wins','勝'],['losses','敗'],['era','防御率'],['whip','WHIP'],['strikeouts','奪三振']]:[['avg','打率'],['hr','本'],['rbi','打点'],['ops','OPS']];text(ctx,fields.map(([k,l])=>l+' '+(p[k]===undefined||p[k]===''?'—':p[k])).join('  '),760,yy+31,18,ink,435,{weight:600})}
    rule(ctx,76,yy+44,1120,light?mix(t.color,'#ffffff',.83):mix(t.dark,t.accent,.3),1);
   }
-  const extras=rows.slice(9).filter(p=>p.name);
+  const extras=rows.slice(slots).filter(p=>p.name);
   text(ctx,extras.length?'控え・追加 '+extras.map(p=>[p.position,p.name].filter(Boolean).join(' ')).join(' / '):'',60,690,17,light?t.color:'#c7dced',1160,{weight:600});ctx.restore();
  }
 

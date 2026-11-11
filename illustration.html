@@ -20,7 +20,7 @@ td:has(input[data-key="name"]){min-width:260px}input[data-stat][data-key="name"]
 <script src="./pwa-diagnostic.js?v=20261103-r331"></script>
 <script src="./audio-recovery.js?v=20261111-r343"></script>
 <script src="./studio-image-export.js?v=20261103-r331"></script>
-<script src="./broadcast-designs.js?v=20261103-r331"></script><script src="./extra-designs.js?v=20261111-r345"></script>
+<script src="./broadcast-designs.js?v=20261111-r346"></script><script src="./extra-designs.js?v=20261111-r346"></script>
 <script>
 (()=>{'use strict';const $=id=>document.getElementById(id),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const names=['奈良間 大己','選手 2','選手 3','選手 4','選手 5','選手 6','選手 7','選手 8','選手 9'];const teamColors={
  '北海道日本ハムファイターズ':['#0095ee','#01e4fa','#0087cb'],
@@ -301,7 +301,15 @@ function cardLayout(design,noPhoto){const extra=window.OuenkaExtraDesigns?.layou
 function polygon(ctx,points,color){ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();if(color){ctx.fillStyle=color;ctx.fill()}}
 function paintCardPhoto(ctx,p,rect,diagonal=false){if(!rect)return;const [x,y,pw,ph]=rect;ctx.save();if(diagonal){polygon(ctx,[[x,y],[x+pw,y],[x+pw-194,y+ph],[x,y+ph]]);ctx.clip()}ctx.fillStyle=state.teamDark||'#143a5b';ctx.fillRect(x,y,pw,ph);const im=movieImage(photoSource(p));if(im?.complete&&im.naturalWidth){window.OuenkaBroadcast.drawPhotoImage(ctx,im,rect,p)}else{ctx.fillStyle='#c6daed';ctx.font='28px sans-serif';ctx.textAlign='center';ctx.fillText('写真を選択',x+(diagonal?pw*.38:pw/2),y+ph/2)}window.OuenkaBroadcast.drawPhotoBorder(ctx,rect,state.photoFrameWidth,state.frameColor,diagonal);drawPhotoCredit(ctx,p.photoCredit,diagonal?[x,y,pw-194,ph]:rect);ctx.restore()}
 function playerPalette(p){if(!state.playerTeamColors)return null;const first=state.players[0];return findTeamPalette(p?.audioSource?.team||p?.team)||findTeamPalette(first?.audioSource?.team||first?.team)||findTeamPalette(state.team)}
-function renderPlayerCard(ctx,p,design){const palette=playerPalette(p);if(!palette)return renderPlayerCardWithPalette(ctx,p,design);const keys=['color','accent','teamDark','fadeEndColor','gradientWidth'],prior=Object.fromEntries(keys.map(k=>[k,state[k]]));state.color=palette[0];state.accent=palette[1];state.teamDark=palette[2];state.fadeEndColor=state.fadeMode==='darken'?palette[2]:state.fadeMode==='none'?palette[0]:palette[1];try{return renderPlayerCardWithPalette(ctx,p,design)}finally{Object.assign(state,prior)}}
+function renderPlayerCard(ctx,p,design){
+ if(design==='reference-14'){
+  const activeIndex=state.players.findIndex(row=>row.order===p.order);
+  window.OuenkaBroadcast.drawLineup(ctx,state.players.slice(0,10),{
+   ...state,variant:'6',includeTenthSlot:true,activeIndex,title:state.title||[state.year==='career'?'':state.year,state.team].filter(Boolean).join(' ')
+  });
+  return;
+ }
+ const palette=playerPalette(p);if(!palette)return renderPlayerCardWithPalette(ctx,p,design);const keys=['color','accent','teamDark','fadeEndColor','gradientWidth'],prior=Object.fromEntries(keys.map(k=>[k,state[k]]));state.color=palette[0];state.accent=palette[1];state.teamDark=palette[2];state.fadeEndColor=state.fadeMode==='darken'?palette[2]:state.fadeMode==='none'?palette[0]:palette[1];try{return renderPlayerCardWithPalette(ctx,p,design)}finally{Object.assign(state,prior)}}
 function renderPlayerCardWithPalette(ctx,p,design){
  if(design==='escon-board'){const index=Math.max(0,state.players.findIndex(row=>row.order===p.order));const list=state.players.map((row,i)=>i===index?{...row,...p}:row);window.OuenkaBroadcast.drawBoard(ctx,list,{...state,title:state.title,images:list.map(row=>movieImage(photoSource(row))),credit:drawPhotoCredit,activeIndex:index,revealedIndices:Array.from({length:index+1},(_,i)=>i)});return}
 
