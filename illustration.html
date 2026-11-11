@@ -20,7 +20,7 @@ td:has(input[data-key="name"]){min-width:260px}input[data-stat][data-key="name"]
 <script src="./pwa-diagnostic.js?v=20261103-r331"></script>
 <script src="./audio-recovery.js?v=20261111-r343"></script>
 <script src="./studio-image-export.js?v=20261103-r331"></script>
-<script src="./broadcast-designs.js?v=20261103-r331"></script><script src="./extra-designs.js?v=20261103-r331"></script>
+<script src="./broadcast-designs.js?v=20261103-r331"></script><script src="./extra-designs.js?v=20261111-r345"></script>
 <script>
 (()=>{'use strict';const $=id=>document.getElementById(id),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const names=['奈良間 大己','選手 2','選手 3','選手 4','選手 5','選手 6','選手 7','選手 8','選手 9'];const teamColors={
  '北海道日本ハムファイターズ':['#0095ee','#01e4fa','#0087cb'],
@@ -210,7 +210,18 @@ let animationPreviewRAF=0;
 function animationOptions(selected){return ANIMATIONS.map(([value,label])=>`<option value="${value}" ${selected===value?'selected':''}>${label}</option>`).join('')}
 function animationTab(){return `<h2>④ アニメーション</h2><div class="grid"><div class="section"><h3>切り替え演出を選択</h3><div class="animation-options">${ANIMATIONS.map(([value,label])=>`<label><input type="radio" name="animation" value="${value}" ${state.animation===value?'checked':''}> ${label}</label>`).join('')}</div><label class="field">切り替え時間（秒）<input type="number" id="duration" min="0" max="3" step="0.1" value="${state.duration}"></label><button class="btn" id="playAnimation">アニメーションを確認</button><p class="hint">選ぶと登録済みの挿絵にも適用します。⑤動画登録では挿絵ごとに変更できます。</p></div><div class="section"><h3>プレビュー</h3><div id="animationPreview"></div></div></div>`};
 function applySceneAnimation(ctx,mode,progress,w=1280,h=720){const p=Math.max(0,Math.min(1,progress)),ease=p*p*p*(p*(p*6-15)+10);if(p>=1||mode==='none')return;switch(mode){case 'cinema':{const scale=1.06-.06*ease;ctx.translate(w*(1-scale)/2,h*(1-scale)/2);ctx.scale(scale,scale);ctx.globalAlpha=Math.min(1,p*3);break}case 'diagonal-reveal':{const edge=(w+h)*(ease);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(edge,0);ctx.lineTo(edge-h,h);ctx.lineTo(0,h);ctx.closePath();ctx.clip();break}case 'curtain':ctx.beginPath();ctx.rect(w*(1-ease)/2,0,w*ease,h);ctx.clip();break;case 'float-in':ctx.translate(0,h*.055*(1-ease));ctx.globalAlpha=ease;break;case 'fadein':ctx.globalAlpha=ease;break;case 'slide':ctx.translate(w*(1-ease),0);break;case 'slide-left':ctx.translate(-w*(1-ease),0);break;case 'slide-up':ctx.translate(0,h*(1-ease));break;case 'slide-down':ctx.translate(0,-h*(1-ease));break;case 'zoom':case 'zoom-out':case 'pop':{let scale=mode==='zoom'?.78+.22*ease:mode==='zoom-out'?1.24-.24*ease:.75+.25*(1+2.70158*Math.pow(p-1,3)+1.70158*Math.pow(p-1,2));ctx.translate(w*(1-scale)/2,h*(1-scale)/2);ctx.scale(scale,scale);if(mode==='pop')ctx.globalAlpha=Math.min(1,p*4);break}case 'wipe-right':ctx.beginPath();ctx.rect(0,0,w*ease,h);ctx.clip();break;case 'wipe-left':ctx.beginPath();ctx.rect(w*(1-ease),0,w*ease,h);ctx.clip();break;case 'iris':ctx.beginPath();ctx.arc(w/2,h/2,Math.hypot(w,h)/2*ease,0,Math.PI*2);ctx.clip();break}}
-async function playAnimationPreview(){if(state.animation==='none'){const host=$('animationPreview');host.innerHTML=preview(state.players[chosen],state.design)+'<p role="status">演出なしを選択中です。動きを確認するにはフェードインなどを選択してください。</p>';return}try{await loadSelectedFonts()}catch(e){alert(e.message);return}if(animationPreviewRAF)cancelAnimationFrame(animationPreviewRAF);const host=$('animationPreview');host.innerHTML='<canvas id="animationCanvas" width="1280" height="720" style="display:block;width:100%;aspect-ratio:16/9"></canvas>';const canvas=$('animationCanvas'),ctx=canvas.getContext('2d'),started=performance.now(),duration=Math.max(0,Number(state.duration)||0)*1000,card=document.createElement('canvas');card.width=1280;card.height=720;renderPlayerCard(card.getContext('2d'),state.players[chosen],state.design);const previousCard=document.createElement('canvas');previousCard.width=1280;previousCard.height=720;if(state.players.length>1)renderPlayerCard(previousCard.getContext('2d'),state.players[chosen>0?chosen-1:state.players.length-1],state.design);else{const previousContext=previousCard.getContext('2d');previousContext.fillStyle=state.teamDark||'#071f3b';previousContext.fillRect(0,0,1280,720)}function tick(now){if(!$('animationCanvas')||$('animationCanvas')!==canvas)return;const p=duration?Math.min(1,(now-started)/duration):1;ctx.drawImage(previousCard,0,0);ctx.save();applySceneAnimation(ctx,state.animation,p);ctx.drawImage(card,0,0);ctx.restore();animationPreviewRAF=p<1?requestAnimationFrame(tick):0}tick(started)}
+function drawIllustrationTransition(ctx,previous,incoming,mode,progress,w=1280,h=720){
+ if(previous&&progress<1&&mode!=='none'){
+  ctx.drawImage(previous,0,0);
+  if(progress<=0)return;
+ }
+ ctx.save();
+ try{
+  applySceneAnimation(ctx,mode,progress,w,h);
+  incoming();
+ }finally{ctx.restore()}
+}
+async function playAnimationPreview(){if(state.animation==='none'){const host=$('animationPreview');host.innerHTML=preview(state.players[chosen],state.design)+'<p role="status">演出なしを選択中です。動きを確認するにはフェードインなどを選択してください。</p>';return}try{await loadSelectedFonts()}catch(e){alert(e.message);return}if(animationPreviewRAF)cancelAnimationFrame(animationPreviewRAF);const host=$('animationPreview');host.innerHTML='<canvas id="animationCanvas" width="1280" height="720" style="display:block;width:100%;aspect-ratio:16/9"></canvas>';const canvas=$('animationCanvas'),ctx=canvas.getContext('2d'),started=performance.now(),duration=Math.max(0,Number(state.duration)||0)*1000,card=document.createElement('canvas');card.width=1280;card.height=720;renderPlayerCard(card.getContext('2d'),state.players[chosen],state.design);const previousCard=document.createElement('canvas');previousCard.width=1280;previousCard.height=720;if(state.players.length>1)renderPlayerCard(previousCard.getContext('2d'),state.players[chosen>0?chosen-1:state.players.length-1],state.design);else{const previousContext=previousCard.getContext('2d');previousContext.fillStyle=state.teamDark||'#071f3b';previousContext.fillRect(0,0,1280,720)}function tick(now){if(!$('animationCanvas')||$('animationCanvas')!==canvas)return;const p=duration?Math.min(1,(now-started)/duration):1;drawIllustrationTransition(ctx,previousCard,()=>ctx.drawImage(card,0,0),state.animation,p);animationPreviewRAF=p<1?requestAnimationFrame(tick):0}tick(started)}
 function scenePlayer(player,scene){return {...player,...Object.fromEntries(['photoZoom','photoX','photoY','photoMode','photoCutoutKey'].map(key=>[key,scene&&Object.hasOwn(scene,key)?scene[key]:player[key]])),lyrics:scene&&Object.hasOwn(scene,'lyrics')?scene.lyrics:player.lyrics,photo:scene&&Object.hasOwn(scene,'photo')?scene.photo:player.photo,photoEnabled:scene&&Object.hasOwn(scene,'photoEnabled')?scene.photoEnabled:player.photoEnabled,photoCredit:scene&&Object.hasOwn(scene,'photo')&&scene.photo!==player.photo?(scene.photoCredit||null):(scene?.photoCredit||player.photoCredit||null)}}
 function segmentValue(el){return el.type==='checkbox'?el.checked:['bar','player'].includes(el.dataset.key)?Math.max(el.dataset.key==='bar'?1:0,Math.floor(Number(el.value)||0)):el.value}
 function scenePreview(){const scene=state.segments[chosenSegment];return scene?preview(scenePlayer(state.players[scene.player],scene),scene.design):preview(state.players[chosen],state.design)}
@@ -300,10 +311,12 @@ function renderPlayerCardWithPalette(ctx,p,design){
  }
 const previous=renderingDesign;renderingDesign=design;ctx.save();try{const noPhoto=design.startsWith('none-')||window.OuenkaExtraDesigns?.noPhoto(design)||!p.photoEnabled,l=cardLayout(design,noPhoto),{left,right}=l,width=right-left,mid=(left+right)/2;
  // Backgrounds and panel shapes belong to the selected template.
- if(window.OuenkaExtraDesigns?.paint(ctx,design,state,{background:()=>paintBackground(ctx,1280,720,state.color)})){if(design==='reference-17'||(design==='reference-10'&&!noPhoto))cardText(ctx,String(p.order||'—'),design==='reference-17'?159:230,design==='reference-17'?410:190,'order',160,220,'center')}
- else if(design==='reference-2'){ctx.fillStyle=state.teamDark||'#102e4c';ctx.fillRect(0,0,1280,720);ctx.fillStyle=state.accent;ctx.fillRect(left,24,width,5);ctx.fillRect(left,232,width,8);ctx.fillRect(left,385,width,2)}
+ const paintedExtra=window.OuenkaExtraDesigns?.paint(ctx,design,state,{background:()=>paintBackground(ctx,1280,720,state.color)},noPhoto);
+ if(!paintedExtra){
+ if(design==='reference-2'){ctx.fillStyle=state.teamDark||'#102e4c';ctx.fillRect(0,0,1280,720);ctx.fillStyle=state.accent;ctx.fillRect(left,24,width,5);ctx.fillRect(left,232,width,8);ctx.fillRect(left,385,width,2)}
  else if(design==='reference-3'){ctx.fillStyle=state.teamDark||'#071d33';ctx.fillRect(0,0,1280,720);ctx.fillStyle=mixColor(state.teamDark||'#071d33','#000000',.4);ctx.fillRect(12,16,1256,84);ctx.fillRect(left-16,246,width+32,136);ctx.fillRect(left-16,408,width+32,286);ctx.strokeStyle=state.accent;ctx.lineWidth=3;ctx.strokeRect(12,16,1256,84);ctx.strokeRect(left-16,246,width+32,136);ctx.strokeRect(left-16,408,width+32,286);ctx.fillStyle=state.accent;ctx.fillRect(left-16,408,6,286);}
  else{paintBackground(ctx,1280,720,state.color);if(design==='reference-4'){polygon(ctx,[[620,20],[1260,20],[1260,246],[556,246]],state.teamDark||'#062e55');polygon(ctx,[[608,386],[1260,386],[1260,700],[510,700]],state.teamDark||'#062e55');polygon(ctx,[[1180,20],[1202,20],[1012,700],[990,700]],state.accent);polygon(ctx,[[1222,20],[1230,20],[1040,700],[1032,700]],state.accent)}}
+ }
  paintCardPhoto(ctx,p,l.photo,design==='reference-4');
  if(design==='reference-4'&&!noPhoto){ctx.strokeStyle=state.accent;ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(650,20);ctx.lineTo(456,700);ctx.stroke()}
  if(design==='photo-4'){ctx.fillStyle=state.accent;ctx.fillRect(left-22,24,5,672)}
@@ -374,7 +387,7 @@ async function prepareMovieCards(timeline){
   const pi=timeline.rowIndices[song],length=(timeline.starts[song+1]??timeline.musicDuration)-timeline.starts[song];
   const times=[...new Set([0,...state.segments.filter(scene=>+scene.player===pi).map(scene=>(Math.max(1,+scene.bar)-1)*songBarSeconds)])].filter(time=>time>=0&&time<length).sort((a,b)=>a-b);
   for(const time of times){const bar=Math.floor((time+.00001)/songBarSeconds)+1,scene=state.segments.filter(scene=>+scene.player===pi&&+scene.bar<=bar).sort((a,b)=>+a.bar-+b.bar).at(-1),design=scene?.design||state.design,key=pi+':'+state.segments.indexOf(scene)+':'+design;
-   if(movieCardPlan.at(-1)?.key!==key)movieCardPlan.push({key,p:scenePlayer(state.players[pi],scene),design});
+   if(movieCardPlan.at(-1)?.key!==key)movieCardPlan.push({key,p:scenePlayer(state.players[pi],scene),design,start:timeline.starts[song]+time});
   }
  }
  movieCardPlan.slice(0,3).forEach(getMovieCard);
@@ -386,33 +399,35 @@ function warmFollowingMovieCards(key){
  movieWarmTimer=setTimeout(warm,150);
 }
 function drawMovie(time){
- const ctx=mctx,w=1280,h=720;ctx.clearRect(0,0,w,h);
- if(!movieTimeline)return 0;
+ const ctx=mctx,w=1280,h=720;
+ if(!movieTimeline){ctx.clearRect(0,0,w,h);return 0;}
  const {starts,rowIndices,duration:total,barSeconds:defaultSecPerBar}=movieTimeline;
  const titleSeconds=movieTimeline.titleSeconds||0;
  if(time<titleSeconds){if(state.design==='escon-board'){window.OuenkaBroadcast.drawBoard(ctx,state.players,{...state,title:state.title,activeIndex:-1,revealedIndices:[]});return total}if(movieTitleCard)ctx.drawImage(movieTitleCard,0,0);else drawCover('titleCard',movieCanvas);const label=$('moviePlayer');if(label)label.textContent='タイトル';return total}
  const sec=Math.max(0,Math.min(time-titleSeconds,total-titleSeconds-.001));let songIndex=0;
  while(songIndex+1<starts.length&&sec>=starts[songIndex+1])songIndex++;
  const secPerBar=movieTimeline.barSecondsBySong?.[songIndex]||defaultSecPerBar;
- const pi=rowIndices[songIndex],local=sec-starts[songIndex],secPerPlayer=(starts[songIndex+1]??(total-titleSeconds))-starts[songIndex],bar=Math.floor(local/secPerBar)+1;
+ const pi=rowIndices[songIndex],local=sec-starts[songIndex],bar=Math.floor((local+.00001)/secPerBar)+1;
  const originalPlayer=state.players[pi];const seq=state.segments.filter(s=>+s.player===pi&&+s.bar<=bar).sort((a,b)=>+a.bar-+b.bar);
- const seg=seq.at(-1),p=scenePlayer(originalPlayer,seg),design=seg?.design||state.design,noPhoto=design.startsWith('none-')||!p.photoEnabled;
+ const seg=seq.at(-1),p=scenePlayer(originalPlayer,seg),design=seg?.design||state.design;
  if(design==='escon-board'){const stage=window.OuenkaBroadcast.boardAt(starts,rowIndices,sec),list=state.players.map((row,i)=>{if(i===pi)return {...row,...p};const song=rowIndices.indexOf(i);if(song<0||song>=songIndex)return row;const end=(starts[song+1]??(total-titleSeconds))-starts[song],lastBar=Math.max(1,Math.ceil(end/(movieTimeline.barSecondsBySong?.[song]||defaultSecPerBar))),last=state.segments.filter(s=>+s.player===i&&+s.bar<=lastBar).sort((a,b)=>+a.bar-+b.bar).at(-1);return scenePlayer(row,last)});window.OuenkaBroadcast.drawBoard(ctx,list,{...state,...stage,title:state.title,images:list.map(row=>movieImage(photoSource(row))),credit:drawPhotoCredit});const label=$('moviePlayer');if(label)label.textContent=stage.activeIndex<0?'開始待ち':(state.players.slice(0,stage.activeIndex+1).filter(row=>String(row.name||'').trim()).length+'番 '+(state.players[stage.activeIndex]?.name||''));return total}
- const light=design.includes('5')||design.includes('10');const base=state.color;
- paintBackground(ctx,w,h,base);
- const sceneStart=seg?(Math.max(1,Number(seg.bar))-1)*secPerBar:0,elapsed=Math.max(0,local-sceneStart),duration=Math.max(0,Number(state.duration)||0),progress=duration?Math.min(1,elapsed/duration):1;
- const currentCardKey=pi+':'+state.segments.indexOf(seg)+':'+design;
- // Draw the prior complete illustration underneath the incoming animated card.
- if(progress<1&&(seg?.animation||state.animation)!=='none'){
-  const planIndex=movieCardPlan.findIndex(entry=>entry.key===currentCardKey);
-  if(planIndex>0)ctx.drawImage(getMovieCard(movieCardPlan[planIndex-1]),0,0);
-  else if(movieTitleCard)ctx.drawImage(movieTitleCard,0,0);
+ const cardKey=pi+':'+state.segments.indexOf(seg)+':'+design;
+ const planIndex=movieCardPlan.findIndex(entry=>entry.key===cardKey);
+ const entry=movieCardPlan[planIndex];
+ const fallbackStart=starts[songIndex]+(seg?(Math.max(1,Number(seg.bar))-1)*secPerBar:0);
+ const duration=Math.max(0,Number(state.duration)||0);
+ const progress=duration?Math.max(0,Math.min(1,(sec-(entry?.start??fallbackStart))/duration)):1;
+ const mode=seg?.animation||state.animation;
+ const previous=progress<1&&mode!=='none'
+  ?(planIndex>0?getMovieCard(movieCardPlan[planIndex-1]):movieTitleCard)
+  :null;
+ const card=getMovieCard({key:cardKey,p,design});
+ drawIllustrationTransition(ctx,previous,()=>ctx.drawImage(card,0,0),mode,progress,w,h);
+ if(lastMovieCardKey!==cardKey){
+  lastMovieCardKey=cardKey;
+  window.__ouenkaDiagnosticLog?.('MOVIE SCENE '+p.name+' audioTime='+time.toFixed(3));
+  warmFollowingMovieCards(cardKey);
  }
- ctx.save();
- applySceneAnimation(ctx,seg?.animation||state.animation,progress,w,h);
-
- const cardKey=pi+':'+state.segments.indexOf(seg)+':'+design;ctx.drawImage(getMovieCard({key:cardKey,p,design}),0,0);if(lastMovieCardKey!==cardKey){lastMovieCardKey=cardKey;window.__ouenkaDiagnosticLog?.('MOVIE SCENE '+p.name+' audioTime='+time.toFixed(3));warmFollowingMovieCards(cardKey)}
- ctx.restore();
  const label=$('moviePlayer');if(label)label.textContent=`${[orderLabel(p),p.name].filter(Boolean).join(' ')} · ${bar}小節目`;
  return total;
 }
