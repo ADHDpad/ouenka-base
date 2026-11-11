@@ -23,7 +23,7 @@ function mount(options={}){window.OuenkaTransport?.mount({
 async function play(song,options={}){
  stop();const token=epoch;timeline=null;controller=new AbortController();const signal=controller.signal;label=options.mask?'応援歌クイズ':song.name;let context;if(!options.mask)window.OuenkaTransport?.mount({state:()=>({busy:true,title:'音源を検索中…'}),stop:options.onStop||stop},{host:document.getElementById('playTransport')});
  try{
-  context=await window.ouenkaAudioRecovery.create();if(token!==epoch){context.close().catch(()=>{});return null}ctx=context;
+  context=await window.ouenkaAudioRecovery.consumeGestureContext();if(token!==epoch){context.close().catch(()=>{});return null}ctx=context;
   song=window.OuenkaQuizMetadata?.merge(song)||song;const normal=!!options.mask;
   const buffers=options.chordOnly?[await decode(context,song,'accompaniment.m4a',signal)]:await Promise.all([
    decode(context,song,normal?'melody.m4a':'audio.m4a',signal),
@@ -50,7 +50,7 @@ async function playMedley(input,options={}){
  const token=epoch;timeline=null;controller=new AbortController();const signal=controller.signal;label=options.title||'応援歌メドレー';
  window.OuenkaTransport?.mount({state:()=>({busy:true,title:'音源を検索中…'}),stop:options.onStop||stop});
  try{
-  const context=await window.ouenkaAudioRecovery.create();if(token!==epoch){context.close().catch(()=>{});return null}ctx=context;
+  const context=await window.ouenkaAudioRecovery.consumeGestureContext();if(token!==epoch){context.close().catch(()=>{});return null}ctx=context;
   const cancelled=()=>{if(signal.aborted||token!==epoch)throw new DOMException('中止','AbortError')};
   songs=await window.OuenkaMedleyCore.resolveSongs(songs,{signal});cancelled();
   const built=await window.OuenkaMedleyCore.build(context,songs,{

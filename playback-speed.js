@@ -4,11 +4,14 @@
   // Compensate for the duration change introduced by shifting the pitch.
   const prepared = new WeakMap();
   const keys = new WeakMap();
+  const speeds = new WeakMap();
+  const speedOptions = [1, 0.9, 0.8];
   const keyLimit = 6;
 
   const semitones = context => keys.get(context) ?? 0;
   const pitchRatio = steps => 2 ** (steps / 12);
-  const bufferScale = context => pitchRatio(semitones(context));
+  const speed = context => speeds.get(context) ?? 1;
+  const bufferScale = context => pitchRatio(semitones(context)) / speed(context);
   const timelineEntries = timeline => timeline.entries ?? [{buffer: timeline.buffer, start: 0}];
 
   function spectrumPlan(size) {
@@ -168,50 +171,74 @@
         }
       }
     }
+    let peak = 0;
+    for (const {output} of channels) {
+      for (const sample of output) peak = Math.max(peak, Math.abs(sample));
+    }
+    if (peak > 1) {
+      for (const {output} of channels) {
+        for (let i = 0; i < output.length; i++) output[i] *= 0.99 / peak;
+      }
+    }
     return result;
   }
 
   function source(context, buffer) {
     const node = context.createBufferSource();
     node.buffer = prepared.get(context)?.get(buffer) ?? buffer;
-    const steps = semitones(context);
-    if (steps) node.playbackRate.value = pitchRatio(steps);
+    node.playbackRate.value = pitchRatio(semitones(context));
     return node;
   }
 
-  function keyControl(getContext, getTimeline, restart) {
+  function keyControl(getContext, getTimeline, restart, enableSpeed = false) {
+    let processing = false;
+    const available = context => !!context && context.state !== 'closed';
+    async function apply(context, timeline, nextKey, nextSpeed) {
+      if (processing || !available(context) || !timeline) return;
+      const entries = timelineEntries(timeline).filter(entry => entry.buffer);
+      if (!entries.length) return;
+      const stretchSpeed = nextSpeed / pitchRatio(nextKey);
+      const buffers = new WeakMap();
+      processing = true;
+      const current = () => getContext() === context && available(context);
+      try {
+        if (stretchSpeed !== 1) {
+          for (const {buffer} of entries) {
+            if (!buffers.has(buffer)) buffers.set(buffer, await stretch(context, buffer, stretchSpeed, timeline.loopStart ?? 0));
+            if (!current()) return;
+          }
+        }
+        if (!current()) return;
+        prepared.set(context, buffers);
+        keys.set(context, nextKey);
+        speeds.set(context, nextSpeed);
+        restart();
+      } catch (error) {
+        if (current()) throw error;
+      } finally {
+        processing = false;
+      }
+    }
     return {
       keyState() {
         const context = getContext();
-        return { steps: semitones(context), limit: keyLimit, available: !!context && context.state !== 'closed' };
+        return {steps: semitones(context), limit: keyLimit, available: available(context)};
       },
-      async changeKey(direction) {
+      changeKey(direction) {
         const context = getContext();
-        const timeline = getTimeline();
-        if (!context || !timeline || context.state === 'closed') return;
-        const current = semitones(context);
-        const next = Math.min(keyLimit, Math.max(-keyLimit, current + direction));
-        if (next === current) return;
-        const stretchSpeed = 1 / pitchRatio(next);
-        const buffers = new WeakMap();
-        try {
-          if (stretchSpeed !== 1) {
-            for (const {buffer} of timelineEntries(timeline)) {
-              if (!buffers.has(buffer)) buffers.set(buffer, await stretch(context, buffer, stretchSpeed, timeline.loopStart ?? 0));
-              if (getContext() !== context || context.state === 'closed') return;
-            }
-          }
-        } catch (error) {
-          if (getContext() !== context || context.state === 'closed') return;
-          throw error;
+        const next = Math.min(keyLimit, Math.max(-keyLimit, semitones(context) + direction));
+        return apply(context, getTimeline(), next, speed(context));
+      },
+      ...(enableSpeed ? {
+        speedState: () => ({rate: speed(getContext()), available: available(getContext())}),
+        changeSpeed() {
+          const context = getContext();
+          const next = speedOptions[(speedOptions.indexOf(speed(context)) + 1) % speedOptions.length];
+          return apply(context, getTimeline(), semitones(context), next);
         }
-        if (getContext() !== context || context.state === 'closed') return;
-        prepared.set(context, buffers);
-        keys.set(context, next);
-        restart();
-      }
+      } : {})
     };
   }
 
-  window.OuenkaPlaybackSpeed = { source, bufferScale, keyControl };
+  window.OuenkaPlaybackSpeed = { source, bufferScale, keyControl, speed };
 })();

@@ -138,7 +138,7 @@ async function playSong(s,fromQueue=false){
  document.querySelectorAll(".song-row").forEach(x=>x.classList.toggle("playing",x.dataset.key===s.name+"#"+s.productionNumber));setMediaSession(s);
  try{
   const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error("AudioContext非対応");
-  const ctx=await window.ouenkaAudioRecovery.create();teamAudioContext=ctx;
+  const ctx=await window.ouenkaAudioRecovery.consumeGestureContext();teamAudioContext=ctx;
   // A special recording is a complete mix and must play without added accompaniment.
   const special=await fetchTeamSpecial(ctx,s);
   let timeline;
@@ -220,7 +220,7 @@ async function playTeamMedley(queue=visibleSongs()){
  $('teamStatus').style.display='block';$('teamStatus').textContent='メドレー用音源を読み込み中… 0 / '+queue.length;
  let ctx;
  try{
-  ctx=await window.ouenkaAudioRecovery.create();
+  ctx=await window.ouenkaAudioRecovery.consumeGestureContext();
   if(token!==teamPlayToken){ctx.close().catch(()=>{});return}teamAudioContext=ctx;
   const cancelled=()=>{if(token!==teamPlayToken)throw Error('cancelled')};
   const timeline=await window.OuenkaMedleyCore.build(ctx,queue,{

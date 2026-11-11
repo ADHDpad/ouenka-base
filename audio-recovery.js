@@ -16,6 +16,7 @@
  let recoveryNeeded=false;
  let retryCallback=null;
  let retryContext=null;
+ let safariRecoveryPending=false;
  // iPhone Home Screen WebKit can leave the media route inactive after another app.
  // Prime that route with a short silent WAV within the same user gesture; song PCM is untouched.
  const mediaWakes=new Map();
@@ -113,6 +114,19 @@
    const onstate=()=>{if(ctx.state==='running'||ctx.state==='closed'){if(retryContext===ctx)hideRetry();ctx.removeEventListener('statechange',onstate)}};
    ctx.addEventListener('statechange',onstate);
  }
+ function openSafariRecovery(){
+   safariRecoveryPending=true;
+   window.open(new URL('./audio-recovery-safari.html',location.href).href,'_blank','noopener');
+ }
+ function addSafariRecovery(status){
+   if(!isIPhoneHomeApp()||status.parentElement.querySelector('.menu-safari-recovery'))return;
+   const button=document.createElement('button');
+   button.type='button';
+   button.className='menu-safari-recovery';
+   button.textContent='Safariで音声を確認';
+   button.onclick=openSafariRecovery;
+   status.after(button);
+ }
  function hideRetry(){retryContext=null;recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
 
  // Include WebKit's interrupted state after another app takes the audio session.
@@ -140,8 +154,8 @@
    if(ctx.state==='running'){lastError='';return '音声エンジンが起動しました。曲の再生ボタンを押してください。'}
    return '音声エンジンはまだ起動待ちです。曲を選んで再生をお試しください。復旧しない場合はSafariで一度再生してください。';
  }
- window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,diagnostics:()=>({build:'20261022-r176',contexts:state(),lastError,visibility:document.visibilityState})};
- document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendingGestureContext){const stale=pendingGestureContext;pendingGestureContext=null;try{stale.close().catch(()=>{})}catch(_){}}else if(!document.hidden)resumeExisting()});
+ window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,addSafariRecovery,diagnostics:()=>({build:'20261022-r176',contexts:state(),lastError,visibility:document.visibilityState})};
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendingGestureContext&&!safariRecoveryPending){const stale=pendingGestureContext;pendingGestureContext=null;try{stale.close().catch(()=>{})}catch(_){}}else if(!document.hidden){safariRecoveryPending=false;resumeExisting()}});
  window.addEventListener('pageshow',()=>{resumeExisting()});
  // A fresh user tap is required by iOS after some audio interruptions.
  // Do not silently start playback; retain the existing retry control.
@@ -158,4 +172,4 @@
  document.addEventListener('keydown',prepareFromSearch,{capture:true});
 })();
 
-window.OuenkaMenuReset=async button=>{if(!window.ouenkaAudioRecovery?.reset){location.href='audio-diagnostic.html';return}let status=button.parentElement.querySelector('.menu-audio-status');if(!status){status=document.createElement('p');status.className='menu-audio-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');button.after(status)}button.disabled=true;status.textContent='音声を復旧しています…';try{window.stopCurrentSong?.();status.textContent=await window.ouenkaAudioRecovery.reset()}catch(e){status.textContent='復旧できませんでした：'+e.message}finally{button.disabled=false}};
+window.OuenkaMenuReset=async button=>{if(!window.ouenkaAudioRecovery?.reset){location.href='audio-diagnostic.html';return}let status=button.parentElement.querySelector('.menu-audio-status');if(!status){status=document.createElement('p');status.className='menu-audio-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');button.after(status)}window.ouenkaAudioRecovery.addSafariRecovery(status);button.disabled=true;status.textContent='音声を復旧しています…';try{window.stopCurrentSong?.();status.textContent=await window.ouenkaAudioRecovery.reset()}catch(e){status.textContent='復旧できませんでした：'+e.message}finally{button.disabled=false}};

@@ -169,8 +169,10 @@ function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null
    addIndependentTrack(accompaniment,songs[i].accompaniment,startFrames[i],next?next.accompaniment:null,nextStart,ch);
   }
   for(let i=0;i<totalFrames;i++){
-   const sample=melody[i]+accompaniment[i];
-   melody[i]=Math.max(-1,Math.min(1,sample*0.75));
+   const sample=(melody[i]+accompaniment[i])*0.75;
+   const peak=Math.abs(sample);
+   // A smooth knee keeps loud overlaps below full scale without flattening peaks.
+   melody[i]=peak<=0.92?sample:Math.sign(sample)*(0.92+0.08*Math.tanh((peak-0.92)/0.08));
   }
  }
  return output;

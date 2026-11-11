@@ -16,7 +16,7 @@ dialog.addEventListener('click',e=>{
  const outside=e.target===dialog&&(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom);
  if(outside||closeButton){e.preventDefault();e.stopImmediatePropagation();close();return}
  const action=e.target.closest('nav a,nav button');
- if(!action||action.matches('[data-audio-reset]')||action.disabled)return;
+ if(!action||action.matches('[data-audio-reset],.menu-safari-recovery')||action.disabled)return;
  e.preventDefault();e.stopImmediatePropagation();
  close().then(()=>{replaying=true;try{action.click()}finally{replaying=false}});
 },true);
