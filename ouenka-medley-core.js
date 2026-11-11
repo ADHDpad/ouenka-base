@@ -50,12 +50,20 @@ function registeredAudioUrls(song,playerName,productionNumber){
  return{playerName:name,productionNumber:no,audioUrl:base+encodeURIComponent(audioFile),medleyUrl:base+encodeURIComponent(medleyFile),melodyUrl:base+"melody.m4a",accompanimentUrl:base+"accompaniment.m4a",introMelodyUrl:base+"intro_melody.m4a",introAccompanimentUrl:base+"intro_accompaniment.m4a"};
 }
 
-async function resolveSongs(input,options={}){
+let recentCatalog=null;
+async function loadCatalog(options){
+ const now=Date.now();
+ if(options.reuseCatalog&&recentCatalog&&now-recentCatalog.loadedAt<60000)return recentCatalog.songs;
+
  const timeout=AbortSignal.timeout(15000),signal=options.signal&&AbortSignal.any?AbortSignal.any([options.signal,timeout]):options.signal||timeout;
  const response=await fetch('https://ouenka-base-data.ninzin5600.workers.dev/songs',{cache:'no-store',signal});
  if(!response.ok)throw Error('登録テンポを確認できませんでした。通信状態を確認して再度お試しください。');
  const data=await response.json();if(!Array.isArray(data.songs))throw Error('登録データの形式を確認できませんでした。');
- const catalog=new Map(data.songs.map(song=>[registrationKey(song.player_name??song.name,song.production_number??song.productionNumber),song]));
+ if(options.reuseCatalog)recentCatalog={loadedAt:Date.now(),songs:data.songs};
+ return data.songs;
+}
+async function resolveSongs(input,options={}){
+ const catalog=new Map((await loadCatalog(options)).map(song=>[registrationKey(song.player_name??song.name,song.production_number??song.productionNumber),song]));
  return input.map(original=>{
   const source=original.audioSource||original,name=source.reuseName||source.player_name||source.name,number=source.reuseProductionNumber||source.production_number||source.productionNumber;
   const song=catalog.get(registrationKey(name,number));
@@ -98,11 +106,13 @@ async function build(ctx,items,options={}){
  const callPlan=options.callsRows&&window.OuenkaCalls?await window.OuenkaCalls.plan(ctx,separated,originalStarts,options.callsRows):{starts:originalStarts,events:[]};cancelled();
  const timeline={starts:callPlan.starts,originalStarts,separated,openingExtraSec,callPlan,rowIndices:options.rowIndices||items.map((_,i)=>i),barSeconds:barSecondsForSong(separated[0]),barSecondsBySong:separated.map(barSecondsForSong),tempos:separated.map(tempo)};
  if(options.render===false)return timeline;
- let buffer=mixSmoothIndependent(ctx,separated,null,callPlan.starts);
+ const levels=options.linearHeadroom?{peak:0}:null;
+ let buffer=mixSmoothIndependent(ctx,separated,null,callPlan.starts,null,null,levels);
+ applyHeadroom(buffer,levels);
  if(options.callsRows&&window.OuenkaCalls)buffer=window.OuenkaCalls.decorate(ctx,buffer,callPlan);cancelled();
  return {...timeline,buffer,duration:buffer.duration};
 }
-function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null){
+function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null,levels=null){
  const sampleRate=songs[0].melody.sampleRate;
  const channels=destination?.buffer.numberOfChannels??Math.max(
   ...songs.flatMap(s=>[s.melody.numberOfChannels,s.accompaniment.numberOfChannels]),
@@ -184,13 +194,33 @@ function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null
     addIndependentTrack(melody,songs[i].melody,startFrames[i],next?.melody,nextStart,ch,chunkStart);
     addIndependentTrack(chords,songs[i].accompaniment,startFrames[i],next?.accompaniment,nextStart,ch,chunkStart);
    }
-   for(let i=0;i<length;i++){
-    const sample=(melody[i]+chords[i])*0.75,peak=Math.abs(sample);
-    melody[i]=peak<=0.92?sample:Math.sign(sample)*(0.92+0.08*Math.tanh((peak-0.92)/0.08));
+   if(levels){
+    let peak=levels.peak;
+    for(let i=0;i<length;i++){
+     const sample=(melody[i]+chords[i])*0.75;
+     melody[i]=sample;
+     const magnitude=Math.abs(sample);
+     if(magnitude>peak)peak=magnitude;
+    }
+    levels.peak=peak;
+   }else{
+    for(let i=0;i<length;i++){
+     const sample=(melody[i]+chords[i])*0.75,peak=Math.abs(sample);
+     melody[i]=peak<=0.92?sample:Math.sign(sample)*(0.92+0.08*Math.tanh((peak-0.92)/0.08));
+    }
    }
   }
  }
  return output;
+}
+function applyHeadroom(buffer,levels){
+ if(!levels||levels.peak<=.98)return;
+ // One gain for the whole mix preserves waveform shape and stereo balance.
+ const gain=.98/levels.peak;
+ for(let ch=0;ch<buffer.numberOfChannels;ch++){
+  const samples=buffer.getChannelData(ch);
+  for(let i=0;i<samples.length;i++)samples[i]*=gain;
+ }
 }
 function combine(ctx,buffers){
  const rate=buffers[0].sampleRate,channels=Math.max(...buffers.map(b=>b.numberOfChannels));
@@ -198,7 +228,8 @@ function combine(ctx,buffers){
  for(let ch=0;ch<channels;ch++){let at=0;for(const b of buffers){out.getChannelData(ch).set(b.getChannelData(Math.min(ch,b.numberOfChannels-1)),at);at+=b.length}}
  return out;
 }
-function seamless(ctx,first,normal,decorate=(buffer)=>buffer){
+function seamless(ctx,first,normal,decorate=(buffer)=>buffer,{linearHeadroom=false}={}){
+ const levels=linearHeadroom?{peak:0}:null;
  const initial=first.separated,body=normal.separated,n=body.length;
  const initialJoin=getTransitionOffsetSec(initial[n-1],body[0],n===1?(first.openingExtraSec||0):0);
  const prefixDuration=first.starts[n-1]+initialJoin;
@@ -216,20 +247,21 @@ function seamless(ctx,first,normal,decorate=(buffer)=>buffer){
   const loopFrame=prefixFrames+(n===1?periodFrames:0);
   buffer=ctx.createBuffer(channels,loopFrame+periodFrames,rate);
   prefixLength=prefixFrames/rate;normalDuration=periodFrames/rate;loopStart=loopFrame/rate;
-  mixSmoothIndependent(ctx,prefixSongs,null,prefixStarts,[0,prefixDuration],{buffer,offset:0});
-  if(n===1)mixSmoothIndependent(ctx,[initial[0],body[0],body[0]],null,[-initialJoin,0,period],[0,period],{buffer,offset:prefixFrames});
-  mixSmoothIndependent(ctx,steadySongs,null,steadyStarts,[0,period],{buffer,offset:loopFrame});
+  mixSmoothIndependent(ctx,prefixSongs,null,prefixStarts,[0,prefixDuration],{buffer,offset:0},levels);
+  if(n===1)mixSmoothIndependent(ctx,[initial[0],body[0],body[0]],null,[-initialJoin,0,period],[0,period],{buffer,offset:prefixFrames},levels);
+  mixSmoothIndependent(ctx,steadySongs,null,steadyStarts,[0,period],{buffer,offset:loopFrame},levels);
  }else{
-  const prefix=decorate(mixSmoothIndependent(ctx,prefixSongs,null,prefixStarts,[0,prefixDuration]),first.callPlan);
-  const steady=decorate(mixSmoothIndependent(ctx,steadySongs,null,steadyStarts,[0,period]),normal.callPlan);
+  const prefix=decorate(mixSmoothIndependent(ctx,prefixSongs,null,prefixStarts,[0,prefixDuration],null,levels),first.callPlan);
+  const steady=decorate(mixSmoothIndependent(ctx,steadySongs,null,steadyStarts,[0,period],null,levels),normal.callPlan);
   const buffers=[prefix];
   prefixLength=prefix.duration;normalDuration=steady.duration;loopStart=prefixLength;
   if(n===1){
-   const transition=decorate(mixSmoothIndependent(ctx,[initial[0],body[0],body[0]],null,[-initialJoin,0,period],[0,period]),normal.callPlan);
+   const transition=decorate(mixSmoothIndependent(ctx,[initial[0],body[0],body[0]],null,[-initialJoin,0,period],[0,period],null,levels),normal.callPlan);
    buffers.push(transition);loopStart+=transition.duration;
   }
   buffers.push(steady);buffer=combine(ctx,buffers);
  }
+ applyHeadroom(buffer,levels);
  if(n===1){starts.push(prefixLength);indices.push(normal.rowIndices[0]);}
  starts.push(...normal.starts.map(v=>loopStart+v));indices.push(...normal.rowIndices);
  return {buffer,starts,rowIndices:indices,duration:buffer.duration,loopStart,loopEnd:buffer.duration,isSeamlessLoop:true,prefixDuration:prefixLength,normalStarts:normal.starts,normalDuration,normalRowIndices:normal.rowIndices,firstTimeline:{starts:first.starts,rowIndices:first.rowIndices},barSeconds:first.barSeconds||barSecondsForSong(initial[0]),barSecondsBySong:[...(first.barSecondsBySong||initial.map(barSecondsForSong)),...(n===1?[barSecondsForSong(body[0])]:[]),...body.map(barSecondsForSong)],tempos:[...initial.map(tempo),...(n===1?[tempo(body[0])]:[]),...body.map(tempo)],normalBarSecondsBySong:body.map(barSecondsForSong)};

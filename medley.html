@@ -86,7 +86,7 @@ body.row-dragging *{cursor:grabbing!important}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
 <script src="./ouenka-transport.js?v=20261111-r350"></script>
-<script src="./ouenka-medley-core.js?v=20261111-r354"></script>
+<script src="./ouenka-medley-core.js?v=20261111-r357"></script>
 <script src="audio-loading-dialog.js?v=20261103-r331"></script>
 <script src="./lineup-tempo.js?v=20261103-r331"></script>
 <script src="./lineup-settings.js?v=20261111-r354"></script>
@@ -445,7 +445,6 @@ async function playSelectedRow(row){
   currentPlayingRow=row;
   button.classList.add("playing");
   const entries=[{buffer:audio,start:0},{buffer:accompaniment,start:0}];
-  await prepareLineupSpeed(ctx,{entries});
   if(liveMedleyContext!==ctx||ctx.state==='closed')return;
   const base=ctx.currentTime+0.04;
   for(const {buffer} of entries)scheduleBuffer(ctx,buffer,base);
@@ -485,7 +484,7 @@ async function getSelectedMedleyPlayers(){
   return {name,productionNumber:number,reuseName:row.dataset.reuseName,reuseProductionNumber:reuseNumber};
  });
  setStatus('♪ 登録データとテンポを確認中…','ok');
- const registered=await window.OuenkaMedleyCore.resolveSongs(input);
+ const registered=await window.OuenkaMedleyCore.resolveSongs(input,{reuseCatalog:true});
  const selected=registered.map((song,i)=>{
   const row=rows[i],urls=registeredSongUrls(song,song.name,song.productionNumber);
   if(!urls)throw Error(`${song.name} の登録音源情報を確認できませんでした。`);
@@ -548,7 +547,7 @@ function separatedAudioCandidates(item,fileName){
    AudioBufferはAudioContext依存を避けるため、元ArrayBufferを保存し、
    再生時はローカルメモリからdecodeする。 */
 const oneNineAudioDataCache=new Map();
-const oneNineAudioDataLimit=16*1024*1024;
+const oneNineAudioDataLimit=24*1024*1024;
 let oneNineAudioDataBytes=0;
 function rememberAudioData(url,data){
  if(data.byteLength>oneNineAudioDataLimit)return;
@@ -570,7 +569,11 @@ let oneNineActiveTransfers=0;const oneNineTransferQueue=[];
 async function withAudioTransferSlot(job){if(oneNineActiveTransfers>=6)await new Promise(resolve=>oneNineTransferQueue.push(resolve));else oneNineActiveTransfers++;try{return await job()}finally{const next=oneNineTransferQueue.shift();if(next)next();else oneNineActiveTransfers--}}
 async function fetchAudioDataCached(path){
  const url=toPublicAudioUrl(path);
- if(oneNineAudioDataCache.has(url))return oneNineAudioDataCache.get(url).slice(0);
+ if(oneNineAudioDataCache.has(url)){
+  const data=oneNineAudioDataCache.get(url);
+  oneNineAudioDataCache.delete(url);oneNineAudioDataCache.set(url,data);
+  return data.slice(0);
+ }
  if(!oneNineAudioFetchPromises.has(url)){
   const promise=withAudioTransferSlot(async()=>{
    for(let attempt=0;attempt<2;attempt++){
@@ -581,6 +584,30 @@ async function fetchAudioDataCached(path){
  }
  const promise=oneNineAudioFetchPromises.get(url);
  try{return (await promise).slice(0)}finally{if(oneNineAudioFetchPromises.get(url)===promise)oneNineAudioFetchPromises.delete(url)}
+}
+let medleyWarmTimer=0,medleyWarmGeneration=0;
+function queueMedleyPrefetch(){
+ clearTimeout(medleyWarmTimer);
+ const generation=++medleyWarmGeneration;
+ medleyWarmTimer=setTimeout(()=>warmMedleySources(currentRows(),generation),550);
+}
+function warmMedleySources(rows,generation=medleyWarmGeneration,starting=false){
+ if(document.hidden||navigator.connection?.saveData)return;
+ const selected=rows.filter(row=>row.name);
+ if(selected.length<2)return;
+ const urls=[...new Set(selected.slice(0,4).flatMap((row,i)=>{
+  if(row.reuseName||!row.productionNumber)return [];
+  const registered=registeredSongUrls(row,row.name,row.productionNumber);
+  return [i===0?(row.audioUrl||registered.audioUrl):(row.melodyUrl||registered.melodyUrl),row.accompanimentUrl||registered.accompanimentUrl];
+ }))];
+ let cursor=0;
+ async function worker(){
+  while(cursor<urls.length&&generation===medleyWarmGeneration&&(starting||!medleyBuilding)){
+   const path=urls[cursor++];
+   await fetchAudioDataCached(path).catch(()=>{});
+  }
+ }
+ void worker();void worker();
 }
 async function fetchDecodeAudioCached(ctx,path){
  const url=toPublicAudioUrl(path);let cache=oneNineDecodedCache.get(ctx);
@@ -662,7 +689,7 @@ function oneNineAudioKey(){return (window.OuenkaCalls?.signature()||'')+JSON.str
 async function makeOneNineAudio(ctx,selected,medleyOnly=false,render=true){
  setStatus('音源を読み込み中… 0 / '+selected.length,'ok');
  return window.OuenkaMedleyCore.build(ctx,selected,{
-  opening:!medleyOnly,render,concurrency:4,load:(item,file,optional)=>fetchFirstExistingAudio(ctx,item,file,optional),
+  opening:!medleyOnly,render,linearHeadroom:true,concurrency:4,load:(item,file,optional)=>fetchFirstExistingAudio(ctx,item,file,optional),
   callsRows:currentRows().filter(row=>row.name),rowIndices:currentRows().map((row,i)=>row.name?i:-1).filter(i=>i>=0),
   onProgress:(loaded,total)=>setStatus('音源を読み込み中… '+loaded+' / '+total,'ok')
  });
@@ -692,6 +719,7 @@ async function buildAndPlayOneNineMedley(){
  let ctx=null;
  try{
   ctx=await prepareOneNineAudioContext();
+  warmMedleySources(currentRows(),++medleyWarmGeneration,true);
   const selected=await getSelectedMedleyPlayers();
   if(!selected.length)throw Error('選手を1人以上選択してください。');
   const key=oneNineAudioKey();
@@ -700,7 +728,7 @@ async function buildAndPlayOneNineMedley(){
   let playbackTimeline;
   if(loop){
    const repeatTimeline=await makeOneNineAudio(ctx,selected,true,false);
-   playbackTimeline=window.OuenkaMedleyCore.seamless(ctx,timeline,repeatTimeline,(buffer,plan)=>window.OuenkaCalls.decorate(ctx,buffer,plan));
+   playbackTimeline=window.OuenkaMedleyCore.seamless(ctx,timeline,repeatTimeline,(buffer,plan)=>window.OuenkaCalls.decorate(ctx,buffer,plan),{linearHeadroom:true});
   }else{
    const {separated,callPlan,...playable}=timeline;
    playbackTimeline=playable;
@@ -710,7 +738,6 @@ async function buildAndPlayOneNineMedley(){
   oneNineDecodedCache.delete(ctx);
   liveMedleyContext=ctx;
   const mixed=playbackTimeline.buffer;
-  await prepareLineupSpeed(ctx,playbackTimeline);
   const base=ctx.currentTime+0.06;
   const masterSource=scheduleBuffer(ctx,mixed,base);
   window.OuenkaMedleyLoop.configure(masterSource,playbackTimeline,window.OuenkaPlaybackSpeed.bufferScale(ctx));
@@ -784,6 +811,7 @@ function autoTitle(){
 function saveDraft(){
  const data={year:document.getElementById("yearSelect").value,team:document.getElementById("teamSelect").value,title:document.getElementById("lineupTitle").value,rows:currentRows()};
  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+ queueMedleyPrefetch();
 }
 function loadDraft(){
  try{
@@ -1023,10 +1051,10 @@ document.getElementById("lineupTitle").addEventListener("input",e=>{saveDraft();
 document.addEventListener("click",e=>{if(!e.target.closest(".search-wrap"))document.querySelectorAll(".suggestions").forEach(x=>x.style.display="none")});
 window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
-fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
+fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();queueMedleyPrefetch();
 </script>
 <script src="./active-roster.js?v=20261103-r331"></script>
-<script src="playback-speed.js?v=20261111-r344"></script><script src="./lineup-controls.js?v=20261111-r344"></script>
+<script src="playback-speed.js?v=20261111-r357"></script><script src="./lineup-controls.js?v=20261111-r357"></script>
 <script src="playlist-share.js?v=20261103-r331"></script><script src="playlist-share-ui.js?v=20261103-r331"></script>
 <script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script><script src="ouenka-favorites.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="medley-random.js?v=20261103-r331"></script></body>
 </html>

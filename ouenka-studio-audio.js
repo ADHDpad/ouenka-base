@@ -101,7 +101,7 @@ async function build(ctx,rows,{onProgress,cancelled,onSongs}={}){
  try{
   const {buffer,starts,rowIndices,barSeconds,barSecondsBySong,tempos,duration}=await window.OuenkaMedleyCore.build(ctx,selected,{
    load:(item,file,optional)=>fetchFirstExistingAudio(ctx,item,file,optional),
-   rowIndices:selected.map((_,index)=>index),callsRows:rows,onProgress,cancelled,concurrency:4
+   rowIndices:selected.map((_,index)=>index),callsRows:rows,onProgress,cancelled,linearHeadroom:true,concurrency:4
   });
   return {buffer,starts,rowIndices,barSeconds,barSecondsBySong,tempos,duration};
  }finally{oneNineDecodedCache.delete(ctx)}
