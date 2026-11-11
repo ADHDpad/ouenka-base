@@ -25,7 +25,7 @@ function transitionBounds(buffer){
  transitionBoundsCache.set(buffer,result);return result;
 }
 function transitionSongBounds(song){
- const bounds=[song.melody,song.accompaniment].map(transitionBounds).filter(Boolean);
+ const bounds=[song.melody,song.timingAccompaniment??song.accompaniment].map(transitionBounds).filter(Boolean);
  return bounds.length?{start:Math.min(...bounds.map(b=>b.start)),end:Math.max(...bounds.map(b=>b.end))}:null;
 }
 function getTransitionOffsetSec(song,next,openingExtraSec=0){
@@ -84,7 +84,10 @@ async function build(ctx,items,options={}){
    first?optional(item,'audio.m4a').then(buffer=>{usedOpeningMelody=!!buffer;return buffer||load(item,'melody.m4a',false)}):load(item,'melody.m4a',false),
    load(item,'accompaniment.m4a',false),first?optional(item,'intro_accompaniment.m4a'):Promise.resolve(null)
   ]);
-  cancelled();separated[i]={tempo:tempo(item),melody,accompaniment:openingAccompaniment||normalAccompaniment,normalAccompaniment,usedOpeningMelody,hasOpeningAccompaniment:!!openingAccompaniment};
+  cancelled();
+  const source=openingAccompaniment||normalAccompaniment;
+  const accompaniment=window.OuenkaPlaybackSpeed?.tuneAccompaniment?.(ctx,item,source)??source;
+  separated[i]={tempo:tempo(item),melody,accompaniment,timingAccompaniment:accompaniment===source?undefined:source,normalAccompaniment,usedOpeningMelody,hasOpeningAccompaniment:!!openingAccompaniment};
   options.onProgress?.(++loaded,items.length);
  }catch(error){failed=true;throw Error(`${item.name||item.player_name||'応援歌'} の音源を読み込めませんでした。\n${error.message||error}`)}}}
  await Promise.all(Array.from({length:Math.min(Math.max(1,options.concurrency||3),items.length)},worker));cancelled();

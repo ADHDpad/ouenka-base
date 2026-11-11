@@ -91,7 +91,7 @@ body.row-dragging *{cursor:grabbing!important}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
 <script src="./ouenka-transport.js?v=20261111-r350"></script>
-<script src="./ouenka-medley-core.js?v=20261111-r357"></script>
+<script src="./ouenka-medley-core.js?v=20261111-r359"></script>
 <script src="audio-loading-dialog.js?v=20261103-r331"></script>
 <script src="./lineup-tempo.js?v=20261103-r331"></script>
 <script src="./lineup-settings.js?v=20261111-r354"></script>
@@ -454,7 +454,7 @@ async function playSelectedRow(row){
    fetchFirstExistingAudio(ctx,item,"accompaniment.m4a"),
    fetchFirstExistingAudio(ctx,item,"intro_accompaniment.m4a",true)
   ]);
-  const accompaniment=openingAccompaniment||normalAccompaniment;
+  const accompaniment=window.OuenkaPlaybackSpeed.tuneAccompaniment(ctx,item,openingAccompaniment||normalAccompaniment);
 
   liveMedleyContext=ctx;
   currentPlayingRow=row;
@@ -1058,7 +1058,7 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();
 </script>
 <script src="./active-roster.js?v=20261103-r331"></script>
-<script src="playback-speed.js?v=20261111-r358"></script><script src="./lineup-controls.js?v=20261111-r358"></script>
+<script src="playback-speed.js?v=20261111-r359"></script><script src="./lineup-controls.js?v=20261111-r358"></script>
 <script src="playlist-share.js?v=20261103-r331"></script><script src="playlist-share-ui.js?v=20261103-r331"></script>
 <script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script></body>
 </html>

@@ -148,7 +148,7 @@ async function playSong(s,fromQueue=false){
     fetchDecoded(ctx,s,"audio.m4a"),fetchDecoded(ctx,s,"accompaniment.m4a"),
     fetchDecoded(ctx,s,"intro_accompaniment.m4a").catch(()=>null)
    ]);
-   timeline=[{buffer:audio,start:0},{buffer:openingAccompaniment||normalAccompaniment,start:0}];
+   timeline=[{buffer:audio,start:0},{buffer:window.OuenkaPlaybackSpeed.tuneAccompaniment(ctx,s,openingAccompaniment||normalAccompaniment),start:0}];
   }
   if(token!==teamPlayToken){try{await ctx.close()}catch(_){};return}
   teamTimeline=timeline;teamBuffers=timeline.map(x=>x.buffer);

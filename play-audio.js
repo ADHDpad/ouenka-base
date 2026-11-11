@@ -30,6 +30,7 @@ async function play(song,options={}){
    normal?decode(context,song,'accompaniment.m4a',signal):decode(context,song,'intro_accompaniment.m4a',signal).catch(()=>decode(context,song,'accompaniment.m4a',signal))
   ]);
   if(token!==epoch)return null;
+  if(!options.mask&&buffers.length===2)buffers[1]=window.OuenkaPlaybackSpeed.tuneAccompaniment(context,song,buffers[1]);
   const barSeconds=60/(Number(song.tempo||song.bpm)||170)*4;
   const bodyOffset=normal&&!options.chordOnly?Math.max(0,(Number(song.mainStartBar||song.main_start_bar||1)-1)*barSeconds):0;
   const duration=Math.max(...buffers.map(b=>b.duration))-bodyOffset;

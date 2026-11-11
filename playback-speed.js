@@ -223,6 +223,34 @@
     });
   }
 
+  const adjustedAccompaniments = new WeakMap();
+
+  function tuneAccompaniment(context, song, buffer) {
+    const name = String(song?.name || song?.player_name || song?.playerName || '')
+      .normalize('NFKC').replace(/\s+/g, '');
+    if (name !== '西川龍馬(天賦)' || !buffer) return buffer;
+    const cached = adjustedAccompaniments.get(buffer);
+    if (cached) return cached;
+    // First-order high shelf: keep the bass and body, gently attenuate the upper band.
+    const cutoff = Math.min(6200, buffer.sampleRate * .4);
+    const g = Math.tan(Math.PI * cutoff / buffer.sampleRate);
+    const weight = g / (1 + g);
+    const highGain = 10 ** (-3 / 20);
+    const output = context.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+    for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+      const input = buffer.getChannelData(ch), result = output.getChannelData(ch);
+      let lowState = 0;
+      for (let i = 0; i < input.length; i++) {
+        const delta = (input[i] - lowState) * weight;
+        const low = lowState + delta;
+        lowState = low + delta;
+        result[i] = low + (input[i] - low) * highGain;
+      }
+    }
+    adjustedAccompaniments.set(buffer, output);
+    return output;
+  }
+
   const mixOutputs = new WeakMap();
 
   function alignedMixPeak(buffers) {
@@ -330,5 +358,5 @@
     };
   }
 
-  window.OuenkaPlaybackSpeed = {source, bufferScale, keyControl, mixOutput};
+  window.OuenkaPlaybackSpeed = {source, bufferScale, keyControl, mixOutput, tuneAccompaniment};
 })();

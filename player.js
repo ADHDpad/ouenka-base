@@ -250,7 +250,7 @@ async function playSongData(player, gestureCtx=null) {
             fetchFirst("accompaniment.m4a",player.accompaniment||""),
             fetchFirst("intro_accompaniment.m4a",player.introAccompaniment||"",true)
         ]);
-        const accompaniment=openingAccompaniment||normalAccompaniment;
+        const accompaniment=window.OuenkaPlaybackSpeed.tuneAccompaniment(ctx,player,openingAccompaniment||normalAccompaniment);
 
         if(attemptId!==playAttemptId){
             try{await ctx.close()}catch(e){}
