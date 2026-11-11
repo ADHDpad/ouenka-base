@@ -114,18 +114,42 @@
    const onstate=()=>{if(ctx.state==='running'||ctx.state==='closed'){if(retryContext===ctx)hideRetry();ctx.removeEventListener('statechange',onstate)}};
    ctx.addEventListener('statechange',onstate);
  }
- function openSafariRecovery(){
-   safariRecoveryPending=true;
-   window.open(new URL('./audio-recovery-safari.html',location.href).href,'_blank','noopener');
- }
- function addSafariRecovery(status){
-   if(!isIPhoneHomeApp()||status.parentElement.querySelector('.menu-safari-recovery'))return;
-   const button=document.createElement('button');
-   button.type='button';
-   button.className='menu-safari-recovery';
-   button.textContent='Safariで音声を確認';
-   button.onclick=openSafariRecovery;
-   status.after(button);
+ function addSafariRecovery(anchor){
+   if(!anchor||!isIPhoneHomeApp()||anchor.parentElement.querySelector('.menu-safari-recovery'))return;
+   const url=new URL('./audio-recovery-safari.html',location.href).href;
+   const link=document.createElement('a');
+   link.className='menu-safari-recovery';
+   link.href=url;
+   link.target='_blank';
+   link.rel='noopener';
+   link.textContent='Safariで音声を確認';
+   // A native link preserves the trusted tap in the home screen app.
+   link.addEventListener('click',()=>{safariRecoveryPending=true});
+   const copy=document.createElement('button');
+   copy.type='button';
+   copy.textContent='Safari用URLをコピー';
+   const note=document.createElement('p');
+   note.className='menu-audio-status';
+   note.setAttribute('role','status');
+   const address=document.createElement('input');
+   address.type='url';
+   address.readOnly=true;
+   address.value=url;
+   address.hidden=true;
+   address.setAttribute('aria-label','Safari用の音声復旧URL');
+   copy.addEventListener('click',async()=>{
+     safariRecoveryPending=true;
+     try{
+       await navigator.clipboard.writeText(url);
+       note.textContent='コピーしました。Safariアプリを開き、アドレス欄に貼り付けてください。';
+     }catch{
+       address.hidden=false;
+       address.focus();
+       address.select();
+       note.textContent='このURLをコピーして、Safariのアドレス欄に貼り付けてください。';
+     }
+   });
+   anchor.after(link,copy,note,address);
  }
  function hideRetry(){retryContext=null;recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
 
@@ -156,6 +180,9 @@
  }
  window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,addSafariRecovery,diagnostics:()=>({build:'20261022-r176',contexts:state(),lastError,visibility:document.visibilityState})};
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendingGestureContext&&!safariRecoveryPending){const stale=pendingGestureContext;pendingGestureContext=null;try{stale.close().catch(()=>{})}catch(_){}}else if(!document.hidden){safariRecoveryPending=false;resumeExisting()}});
+ document.addEventListener('DOMContentLoaded',()=>{
+   addSafariRecovery(document.getElementById('homeMenuAudioReset')||document.getElementById('audioResetButton'));
+ },{once:true});
  window.addEventListener('pageshow',()=>{resumeExisting()});
  // A fresh user tap is required by iOS after some audio interruptions.
  // Do not silently start playback; retain the existing retry control.
@@ -172,4 +199,4 @@
  document.addEventListener('keydown',prepareFromSearch,{capture:true});
 })();
 
-window.OuenkaMenuReset=async button=>{if(!window.ouenkaAudioRecovery?.reset){location.href='audio-diagnostic.html';return}let status=button.parentElement.querySelector('.menu-audio-status');if(!status){status=document.createElement('p');status.className='menu-audio-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');button.after(status)}window.ouenkaAudioRecovery.addSafariRecovery(status);button.disabled=true;status.textContent='音声を復旧しています…';try{window.stopCurrentSong?.();status.textContent=await window.ouenkaAudioRecovery.reset()}catch(e){status.textContent='復旧できませんでした：'+e.message}finally{button.disabled=false}};
+window.OuenkaMenuReset=async button=>{if(!window.ouenkaAudioRecovery?.reset){location.href='audio-diagnostic.html';return}let status=button.parentElement.querySelector('.menu-audio-reset-status');if(!status){status=document.createElement('p');status.className='menu-audio-status menu-audio-reset-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');button.after(status)}window.ouenkaAudioRecovery.addSafariRecovery(button);button.disabled=true;status.textContent='音声を復旧しています…';try{window.stopCurrentSong?.();status.textContent=await window.ouenkaAudioRecovery.reset()}catch(e){status.textContent='復旧できませんでした：'+e.message}finally{button.disabled=false}};

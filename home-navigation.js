@@ -9,7 +9,7 @@ function close(){
 }
 let replaying=false;
 dialog.addEventListener('click',e=>{
- if(replaying)return;
+ if(replaying||e.target.closest('.menu-safari-recovery'))return;
  const rect=dialog.getBoundingClientRect();
  const outside=e.target===dialog&&(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom);
  const action=e.target.closest('a,#homeMenuUpdate');
@@ -19,6 +19,6 @@ dialog.addEventListener('cancel',e=>{e.preventDefault();close()});
 button.addEventListener('click',()=>{if(dialog.open){close();return}dialog.showModal();button.setAttribute('aria-expanded','true');document.body.classList.add('home-menu-open')});
 dialog.addEventListener('close',()=>{button.setAttribute('aria-expanded','false');document.body.classList.remove('home-menu-open')});
 document.getElementById('homeMenuClose').addEventListener('click',close);
-dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)close();return}if(event.target.closest('a'))close()});
+dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)close();return}if(event.target.closest('a:not(.menu-safari-recovery)'))close()});
 document.getElementById('homeMenuUpdate').addEventListener('click',()=>{close();window.updateApp?.()});
 })();

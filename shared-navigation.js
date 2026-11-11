@@ -49,7 +49,9 @@ setupMenuMotion(dialog);
 trigger.onclick=()=>{dialog.showModal();trigger.setAttribute('aria-expanded','true')};dialog.addEventListener('close',()=>{trigger.setAttribute('aria-expanded','false');trigger.focus()});
 general.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>dialog.close()));
 general.querySelector('[data-site-update]').onclick=()=>{dialog.close();if(window.updateApp)window.updateApp();else location.reload()};
-general.querySelector('[data-audio-reset]').onclick=e=>window.OuenkaMenuReset(e.currentTarget);
+const audioReset=general.querySelector('[data-audio-reset]');
+audioReset.onclick=e=>window.OuenkaMenuReset(e.currentTarget);
+window.ouenkaAudioRecovery?.addSafariRecovery(audioReset);
 }
 if(document.readyState!=='complete')window.addEventListener('load',init,{once:true});else init();
 })();
