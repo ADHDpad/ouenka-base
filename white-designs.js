@@ -1,4 +1,4 @@
-/* White 16:9 illustration templates. Coordinates are shared by preview and export. */
+/* Additional 16:9 illustration templates. Coordinates are shared by preview and export. */
 (() => {
   'use strict';
 
@@ -8,66 +8,84 @@
     squareLeft: {left:480,right:1202,photo:[62,171,366,366],orderY:98,nameY:220,statsLabelY:285,statsValueY:337,lyricTop:392,lyricBottom:666},
     squareRight: {left:78,right:800,photo:[852,171,366,366],orderY:98,nameY:220,statsLabelY:285,statsValueY:337,lyricTop:392,lyricBottom:666},
     wide: {left:86,right:1194,photo:null,orderY:89,nameY:200,statsLabelY:263,statsValueY:313,lyricTop:367,lyricBottom:666},
+    slimLeft: {left:372,right:1208,photo:[62,91,264,538],orderY:104,nameY:221,statsLabelY:286,statsValueY:340,lyricTop:391,lyricBottom:664},
+    slimRight: {left:72,right:908,photo:[954,91,264,538],orderY:104,nameY:221,statsLabelY:286,statsValueY:340,lyricTop:391,lyricBottom:664},
     center: {left:145,right:1135,photo:null,orderY:116,nameY:237,statsLabelY:305,statsValueY:357,lyricTop:416,lyricBottom:648}
   };
 
-  const entries = [
-    ['白地・写真左の細罫線','left','rules'],
-    ['白地・写真右のスコア帯','right','stats'],
-    ['白地・正方形写真と歌詞ボックス','squareLeft','lyrics'],
-    ['白地・右写真と見出し帯','squareRight','header'],
-    ['白地・ワイド歌詞と下線','wide','underline'],
-    ['白地・中央の二重枠','center','double'],
-    ['白地・写真左のコーナーライン','left','corners'],
-    ['白地・写真右の縦アクセント','right','rail'],
-    ['白地・正方形写真と成績5枠','squareLeft','cells'],
-    ['白地・右写真の斜線アクセント','squareRight','angles'],
-    ['白地・ワイド歌詞ボックス','wide','lyrics'],
-    ['白地・中央の横罫線','center','rules'],
-    ['白地・写真左のスコア帯','left','stats'],
-    ['白地・写真右の二重枠','right','double'],
-    ['白地・正方形写真と下線','squareLeft','underline'],
-    ['白地・右写真と歌詞ボックス','squareRight','lyrics'],
-    ['白地・ワイド成績5枠','wide','cells'],
-    ['白地・中央の見出し帯','center','header'],
-    ['白地・写真左の見出し帯','left','header'],
-    ['白地・写真右のコーナーライン','right','corners'],
-    ['白地・正方形写真と縦アクセント','squareLeft','rail'],
-    ['白地・右写真と成績5枠','squareRight','cells'],
-    ['白地・ワイド斜線アクセント','wide','angles'],
-    ['白地・中央のスコア帯','center','stats'],
-    ['白地・写真左の斜線アクセント','left','angles'],
-    ['白地・写真右と下線','right','underline'],
-    ['白地・正方形写真の二重枠','squareLeft','double'],
-    ['白地・右写真のコーナーライン','squareRight','corners'],
-    ['白地・ワイド縦アクセント','wide','rail'],
-    ['白地・中央の歌詞ボックス','center','lyrics']
+  const placements = Object.keys(layouts);
+  const placementLabels = ['写真左','写真右','正方形写真・左','正方形写真・右','横長・写真なし','縦長写真・左','縦長写真・右','中央・写真なし'];
+  const styles = [
+    ['rules','細罫線'],['stats','成績帯'],['lyrics','歌詞パネル'],['header','見出し帯'],
+    ['underline','裾ライン'],['double','二重枠'],['corners','四隅ライン'],['rail','縦ライン'],
+    ['cells','成績5枠'],['angles','斜線アクセント']
   ];
-  const templates = new Map(entries.map(([name,placement,style],i) =>
-    ['reference-'+(18+i),{name,placement,style}]));
-  const designs = Array.from(templates, ([id,{name,placement}]) =>
-    [id,name,layouts[placement].photo?'写真あり・なし対応':'写真なし']);
+  const backgrounds = {white:'白地',team:'球団色',navy:'濃紺'};
+  const noStats = new Set([29,37,45,51,52,53,59,64,69,74,79,84,89,94,100]);
+  const retained = {
+    51:{placement:'left',style:'rules',align:'left'},
+    52:{placement:'right',style:'lyrics',align:'left'},
+    53:{placement:'center',style:'double',align:'center'}
+  };
+
+  // This permutation distributes the layout families across the gallery pages.
+  const templates = new Map(Array.from({length:80},(_,index)=>{
+    const number=index+21;
+    const slot=(index*27)%80;
+    const placementIndex=slot%placements.length;
+    const [baseStyle,baseLabel]=styles[Math.floor(slot/placements.length)];
+    const showStats=!noStats.has(number);
+    const [style,styleLabel]=!showStats&&['stats','cells'].includes(baseStyle)
+      ?styles[index%2===0?2:9]:[baseStyle,baseLabel];
+    const background=retained[number]?'white':index%7===2||index%7===6?'team':index%7===4?'navy':'white';
+    const align=['left','center','right'][(Math.imul(number,2654435761)>>>0)%3];
+    const settings={placement:placements[placementIndex],style,align,...retained[number],background,showStats};
+    const label=retained[number]
+      ?'成績なし・'+({'left':'写真左','right':'写真右','center':'写真なし'})[settings.placement]
+      :[backgrounds[background],placementLabels[placementIndex],styleLabel,...(showStats?[]:['成績なし'])].join('・');
+    return ['reference-'+(number-3),{...settings,label}];
+  }));
+  const designs=Array.from(templates,([id,{label,placement,showStats}])=>
+    [id,label,[layouts[placement].photo?'写真あり・なし対応':'写真なし',showStats?'成績あり':'成績なし'].join('・')]);
+
+  function mix(base,accent,amount){
+    if(!/^#[0-9a-f]{6}$/i.test(accent||''))return base;
+    return '#'+[1,3,5].map(i=>{
+      const from=parseInt(base.slice(i,i+2),16),to=parseInt(accent.slice(i,i+2),16);
+      return Math.round(from+(to-from)*amount).toString(16).padStart(2,'0');
+    }).join('');
+  }
 
   function layout(id,noPhoto) {
-    const {placement}=templates.get(id);
+    const {placement,showStats,align}=templates.get(id);
     const original=layouts[placement];
     const selected=noPhoto&&original.photo?layouts.wide:original;
-    const align=selected===layouts.center?'center':'left';
-    return {...selected,align,nameAlign:align};
+    return {...selected,showStats,align,nameAlign:selected===layouts.center?'center':'left',lyricTop:showStats?selected.lyricTop:selected.nameY+48};
   }
 
   function paint(ctx,id,state,noPhoto) {
-    const {style}=templates.get(id);
+    const {style,background}=templates.get(id);
     const {left,right,orderY,nameY,statsLabelY,statsValueY,lyricTop,lyricBottom,photo}=layout(id,noPhoto);
     const width=right-left, statsTop=statsLabelY-43, statsHeight=statsValueY-statsTop+22;
-    const dark=state.teamDark||'#173b60', accent=state.accent||'#168ac0';
-    const line='#cfdce8', tint='#eef4fa';
+    const light=background==='white';
+    const teamColor=state.color||'#1960a1';
+    const accent=state.accent||'#168ac0';
+    const dark=light?state.teamDark||'#173b60':mix('#67869f',accent,.3);
+    const line=light?'#cfdce8':mix('#324861',accent,.17);
+    const tint=light?'#eef4fa':mix('#172940',teamColor,.18);
     const rect=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w,h);};
     const frame=(x,y,w,h,color,weight=2)=>{
       ctx.strokeStyle=color;ctx.lineWidth=weight;ctx.strokeRect(x,y,w,h);
     };
 
-    rect(0,0,1280,720,'#ffffff');
+    if(background==='team'){
+      const gradient=ctx.createLinearGradient(0,720,1280,0);
+      gradient.addColorStop(0,mix('#091522',state.teamDark,.45));
+      gradient.addColorStop(1,mix('#101c2c',teamColor,.42));
+      rect(0,0,1280,720,gradient);
+    }else{
+      rect(0,0,1280,720,light?'#ffffff':'#0a1528');
+    }
     switch(style){
       case 'rules':
         rect(left,orderY-58,96,5,accent);
@@ -127,5 +145,5 @@
     }
   }
 
-  window.OuenkaWhiteDesigns={designs,has:id=>templates.has(id),layout,paint};
+  window.OuenkaStudioTemplates={designs,has:id=>templates.has(id),isLight:id=>templates.get(id)?.background==='white',layout,paint};
 })();
