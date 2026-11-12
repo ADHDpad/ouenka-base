@@ -1,0 +1,7 @@
+r125 更新内容
+・②デザイン登録の各フォーマットの下にあるフォーマット名を非表示。
+・選択中／このフォーマットを使用の表示は維持。
+・エスコン風スタメンボードの10枠目の打順表示を「P」に変更。
+
+更新：illustration.html / broadcast-designs.js / service-worker.js
+r124を未適用の場合はphoto-cutout.jsも追加してください。

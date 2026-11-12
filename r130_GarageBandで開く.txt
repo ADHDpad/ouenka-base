@@ -1,0 +1,20 @@
+r130 GarageBandで開く（ショートカット連携）
+
+更新するファイル（5個）
+index.html
+search.js
+garageband-open.js（新規）
+garageband-open.html（新規）
+service-worker.js
+
+従来の「GarageBandファイル出力（iPhoneのみ）」を「GarageBandで開く」に変更しました。
+メインボタンはZIPのダウンロードではなく、選択した選手のプロジェクトURLをショートカットへ渡します。
+初回設定と、次回から直接実行する設定を追加しました。
+登録済みのgarageband.zipはそのまま利用します。元プロジェクトの変換・再作成は行いません。
+再生エンジンは変更していません。
+
+重要：サイト側の連携コードと設定案内の更新です。
+iPhone/iPadには初回だけ、受け取り用ショートカットを作成する必要があります。
+そのショートカットのインストール・設定はこのZIPだけでは完了しません。
+GarageBandへ実際に渡せるかは、端末と元ZIPの構成に合わせて確認してください。
+初回設定の手順はgarageband-open.htmlまたは「GarageBand連携設定」から開けます。

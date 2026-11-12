@@ -1,0 +1,14 @@
+応援歌BASE v75 1-9 ChatGPT検索（サーバー接続版）
+
+1. GitHub PagesにはZIP内のWebファイルをアップロードしてください。
+2. 既存のCloudflare Workersには、別添 worker-lineup-handler.js の機能を「既存ルーティングを残して」追加してください。
+   ※ 既存Worker全体を上書きすると、登録データや検索APIが動かなくなります。
+3. WorkersのSecretsに OPENAI_API_KEY と YOUTUBE_API_KEY を登録してください。
+4. GET /lineup/suggest?year=2024&team=北海道日本ハムファイターズ がJSONを返すことを確認してください。
+5. 1-9の年度・球団を選び「ChatGPTで検索」を押すと、候補をフォームに反映します。
+
+注意：このZIPには既存Workerのソースコードが含まれていないため、バックエンドは未配備です。
+Workerにルートを追加するまでボタンは検索エラーになります。APIキーはGitHub PagesのJSに書かないでください。
+結果はAI推定を含みます。誤った打順を避けるため、動画や起用実績を確認してください。
+検索結果の選手名は自動入力しますが、制作番号は選手候補から選び直して確定します。
+既存の音声再生処理は変更していません。
