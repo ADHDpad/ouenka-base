@@ -358,5 +358,10 @@
     };
   }
 
-  window.OuenkaPlaybackSpeed = {source, bufferScale, keyControl, mixOutput, tuneAccompaniment};
+  function transferKey(previous,fresh) {
+    if(prepared.has(previous))prepared.set(fresh,prepared.get(previous));
+    keys.set(fresh,semitones(previous));
+    scales.set(fresh,bufferScale(previous));
+  }
+  window.OuenkaPlaybackSpeed = {transferKey,source, bufferScale, keyControl, mixOutput, tuneAccompaniment};
 })();

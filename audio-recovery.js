@@ -14,7 +14,7 @@
  let pendingGestureContext=null;
  let retryButton=null;
  let recoveryNeeded=false;
- let retryCallback=null;
+ let retryListener=null;
  let retryContext=null;
  let safariRecoveryPending=false;
  // iPhone Home Screen WebKit can leave the media route inactive after another app.
@@ -42,7 +42,7 @@
    if(suspend)ctx.suspend=function(){deliberatelyPaused.add(ctx);try{return suspend().catch(e=>{deliberatelyPaused.delete(ctx);throw e})}catch(e){deliberatelyPaused.delete(ctx);throw e}};
    ctx.resume=function(){deliberatelyPaused.delete(ctx);return resume()};
    const close=ctx.close.bind(ctx);
-   ctx.close=function(){mediaWakes.get(ctx)?.();contexts.delete(ctx);return close()};
+   ctx.close=function(){watches.get(ctx)?.();mediaWakes.get(ctx)?.();contexts.delete(ctx);if(retryContext===ctx)hideRetry();return close()};
    return ctx;
  }
  // iPhone standalone can leave resume() pending for ~60 seconds even after a tap.
@@ -86,33 +86,37 @@
    return create();
  }
  // Explicit second user gesture if standalone WebKit defers resume() indefinitely.
- function showRetry(ctx, retryPlayback){
-   if(!ctx || ctx.state==='running' || ctx.state==='closed'||deliberatelyPaused.has(ctx)||window.OuenkaTransport?.healthy?.()){hideRetry();return;}
-   retryContext=ctx;recoveryNeeded=true;retryCallback=typeof retryPlayback==='function'?retryPlayback:null;
+ function showRetry(ctx,retryPlayback,stalled=false){
+   if(!ctx||ctx.state==='closed'||deliberatelyPaused.has(ctx)||(!stalled&&ctx.state==='running'))return;
+   if(retryContext===ctx)return;
+   hideRetry();
+   retryContext=ctx;recoveryNeeded=true;
    if(!retryButton){
      retryButton=document.createElement('button');
-     retryButton.type='button';retryButton.textContent='▶ 音声を再起動';
+     retryButton.type='button';retryButton.textContent='音声を復旧する';
      retryButton.style.cssText='position:fixed;bottom:82px;left:50%;transform:translateX(-50%);z-index:2147483645;background:#0b2f55;color:white;border:2px solid white;border-radius:14px;padding:13px 24px;font-size:17px;font-weight:bold;box-shadow:0 3px 15px #0006';
      document.body.appendChild(retryButton);
    }
    retryButton.hidden=false;
    retryButton.onclick=()=>{
+     if(retryContext!==ctx||!recoveryNeeded)return;
      // An iOS audio interruption can leave the old context permanently suspended.
      // Retry with a NEW context inside this exact user gesture (not after await).
      if(typeof retryPlayback==='function'){
        try{
+         const clock=ctx.currentTime;
          const fresh=recreate(ctx);
          retryButton.hidden=true;recoveryNeeded=false;
-         Promise.resolve(retryPlayback(fresh)).catch(e=>{lastError=String(e);showRetry(fresh,retryPlayback)});
-       }catch(e){lastError=String(e);retryButton.hidden=false}
+         Promise.resolve(retryPlayback(fresh,clock)).catch(e=>{lastError=String(e);showRetry(fresh,(_next)=>retryPlayback(_next,clock),true)});
+       }catch(e){lastError=String(e);if(ctx.state!=='closed')retryButton.hidden=false;else{retryButton.hidden=true;const notice=document.createElement('p');notice.setAttribute('role','status');notice.style.cssText=retryButton.style.cssText;notice.textContent='音声を復旧できませんでした。再生ボタンからもう一度お試しください。';retryButton.after(notice);setTimeout(()=>notice.remove(),4500)}}
      }else{
        try{unlock(ctx)}catch(e){console.warn('再起動',e)}
        const p=ctx.resume();if(p&&p.catch)p.catch(e=>console.warn('再開失敗',e));
-       if(ctx.state==='running')retryButton.hidden=true;
+       if(ctx.state==='running')hideRetry();
      }
    };
-   const onstate=()=>{if(ctx.state==='running'||ctx.state==='closed'){if(retryContext===ctx)hideRetry();ctx.removeEventListener('statechange',onstate)}};
-   ctx.addEventListener('statechange',onstate);
+   retryListener=()=>{if(ctx.state==='closed'||!stalled&&ctx.state==='running')hideRetry()};
+   ctx.addEventListener('statechange',retryListener);
  }
  function addSafariRecovery(anchor){
    if(!anchor||!isIPhoneHomeApp()||anchor.parentElement.querySelector('.menu-safari-recovery'))return;
@@ -144,7 +148,36 @@
    });
    anchor.after(copy,note,address);
  }
- function hideRetry(){retryContext=null;recoveryNeeded=false;retryCallback=null;if(retryButton)retryButton.hidden=true}
+ function hideRetry(){
+   if(retryListener)retryContext?.removeEventListener('statechange',retryListener);
+   retryContext=null;retryListener=null;recoveryNeeded=false;
+   if(retryButton){retryButton.hidden=true;retryButton.onclick=null}
+ }
+
+ // Detect interruptions and frozen playback clocks on the iPhone Home Screen.
+ // One automatic attempt per interruption, then a fresh context on the next tap.
+ const watches=new WeakMap();
+ function watchPlayback(ctx,isPlaying,restart){
+   if(!isIPhoneHomeApp()||ctx.state==='closed')return;
+   watches.get(ctx)?.();
+   let timer,clock=ctx.currentTime,lastAdvance=performance.now(),attempted=false;
+   function dispose(){clearTimeout(timer);ctx.removeEventListener('statechange',check);watches.delete(ctx)}
+   function check(){
+     clearTimeout(timer);
+     if(ctx.state==='closed'||!contexts.has(ctx)){dispose();return}
+     const now=performance.now(),running=ctx.state==='running',advanced=ctx.currentTime>clock;
+     clock=ctx.currentTime;
+     if(document.hidden||deliberatelyPaused.has(ctx)||!isPlaying()||running&&advanced){
+       lastAdvance=now;attempted=false;
+       if(retryContext===ctx)hideRetry();
+     }else if(!attempted&&now-lastAdvance>=1000){
+       attempted=true;lastAdvance=now;
+       try{unlock(ctx);ctx.resume().catch(error=>{lastError=String(error)})}catch(error){lastError=String(error)}
+     }else if(attempted&&now-lastAdvance>=1300)showRetry(ctx,restart,true);
+     timer=setTimeout(check,400);
+   }
+   watches.set(ctx,dispose);ctx.addEventListener('statechange',check);timer=setTimeout(check,400);
+ }
 
  // Include WebKit's interrupted state after another app takes the audio session.
  async function resumeExisting(){
@@ -171,7 +204,7 @@
    if(ctx.state==='running'){lastError='';return '音声エンジンが起動しました。曲の再生ボタンを押してください。'}
    return '音声エンジンはまだ起動待ちです。曲を選んで再生をお試しください。復旧しない場合はSafariで一度再生してください。';
  }
- window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,showRetry,hideRetry,resumeExisting,reset,addSafariRecovery,diagnostics:()=>({build:'20261022-r176',contexts:state(),lastError,visibility:document.visibilityState})};
+ window.ouenkaAudioRecovery={create,unlock,gesturePrepare,consumeGestureContext,watchPlayback,showRetry,hideRetry,resumeExisting,reset,addSafariRecovery,diagnostics:()=>({build:'20261113-r366',contexts:state(),lastError,visibility:document.visibilityState})};
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendingGestureContext&&!safariRecoveryPending){const stale=pendingGestureContext;pendingGestureContext=null;try{stale.close().catch(()=>{})}catch(_){}}else if(!document.hidden){safariRecoveryPending=false;resumeExisting()}});
  document.addEventListener('DOMContentLoaded',()=>{
    addSafariRecovery(document.getElementById('homeMenuAudioReset')||document.getElementById('audioResetButton'));

@@ -70,7 +70,7 @@ function render(){
  const list=$("songList"), arr=visibleSongs();const favoriteCount=songs.filter(s=>window.OuenkaFavorites?.has(s)).length;$("teamFavoritesButton").textContent="★ お気に入り（"+favoriteCount+"）";$("teamFavoritesButton").setAttribute("aria-pressed",String(favoritesOnly)); list.innerHTML=""; $("teamStatus").style.display=arr.length?"none":"block"; if(!arr.length){$("teamStatus").textContent=favoritesOnly?"この条件のお気に入りはありません。各曲の☆から登録できます。":"該当する応援歌はありません";return}
  arr.forEach((s,i)=>{const row=document.createElement("article");row.className="song-row";row.dataset.key=s.name+"#"+s.productionNumber;
    const num=s.uniformNumber!==""?s.uniformNumber:"—";
-   row.innerHTML=`<div class="number"></div><div class="name"></div><span class="tag ${s.isActive?'active':'ob'}">${s.isActive?'現役':'現在未使用'}</span><div class="lyrics"></div>`;
+   row.innerHTML=`<div class="number"></div><div class="name"></div><span class="tag ${s.isActive?'active':'ob'}">${s.isActive?'使用中':'現在未使用'}</span><div class="lyrics"></div>`;
    row.querySelector(".number").textContent=num;row.querySelector(".name").textContent=s.name;row.querySelector(".lyrics").textContent=String(s.lyrics).replace(/\n/g," ").replace(/\s+/g," ").trim();
    row.tabIndex=0;row.setAttribute("role","group");row.setAttribute("aria-label",s.name+"の応援歌、タップすると再生します");row.addEventListener("keydown",e=>{if(e.target===row&&(e.key==="Enter"||e.key===" ")){e.preventDefault();playSong(s)}});row.classList.toggle("playing",current?.name===s.name&&current?.productionNumber===s.productionNumber);row.addEventListener("click",()=>playSong(s));if(window.OuenkaFavorites)row.appendChild(window.OuenkaFavorites.button(s));list.appendChild(row);
  });
@@ -140,6 +140,12 @@ function startSyncedBuffers(offset=0){
   src.start(when+delay,Math.min(seek,Math.max(0,item.buffer.duration-.01))*window.OuenkaPlaybackSpeed.bufferScale(teamAudioContext));teamSources.push(src);
  }
  teamStartedAt=when-offset;
+ const playbackContext=teamAudioContext;
+ window.ouenkaAudioRecovery?.watchPlayback(playbackContext,()=>teamAudioContext===playbackContext&&!paused&&teamSources.length>0,(fresh,clock)=>{
+  const at=Math.min(teamTotalDuration,Math.max(0,clock-teamStartedAt));
+  window.OuenkaPlaybackSpeed.transferKey(playbackContext,fresh);
+  teamAudioContext=fresh;seekTeamPlayback(at);updateTeamMedley();
+ });
  if(!teamMedley){const song=current;window.OuenkaSongbook?.track(teamAudioContext,song,()=>current===song&&!paused&&teamSources.length>0,when)}
  else{const context=teamAudioContext,medley=teamMedley,base=teamStartedAt;window.OuenkaSongbook?.watch(()=>teamAudioContext!==context||teamMedley!==medley||teamStartedAt!==base||context.state==='closed'?null:{playing:context.state==='running'&&!paused,clock:context.currentTime,position:teamElapsed(),entries:medley.starts.map((start,i)=>({song:medley.queue[i],start,end:medley.starts[i+1]??teamTotalDuration}))})}
  if(teamMedley){

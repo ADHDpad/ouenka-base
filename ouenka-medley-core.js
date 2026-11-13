@@ -109,13 +109,16 @@ async function build(ctx,items,options={}){
  const callPlan=options.callsRows&&window.OuenkaCalls?await window.OuenkaCalls.plan(ctx,separated,originalStarts,options.callsRows):{starts:originalStarts,events:[]};cancelled();
  const timeline={starts:callPlan.starts,originalStarts,separated,openingExtraSec,callPlan,rowIndices:options.rowIndices||items.map((_,i)=>i),barSeconds:barSecondsForSong(separated[0]),barSecondsBySong:separated.map(barSecondsForSong),tempos:separated.map(tempo)};
  if(options.render===false)return timeline;
- const levels=options.linearHeadroom?{peak:0}:null;
+ const levels={peak:0};
  let buffer=mixSmoothIndependent(ctx,separated,null,callPlan.starts,null,null,levels);
- applyHeadroom(buffer,levels);
- if(options.callsRows&&window.OuenkaCalls)buffer=window.OuenkaCalls.decorate(ctx,buffer,callPlan);cancelled();
+ if(callPlan.events.length&&window.OuenkaCalls){
+  buffer=window.OuenkaCalls.decorate(ctx,buffer,callPlan);
+  applyHeadroom(buffer);
+ }else applyHeadroom(buffer,levels.peak);
+ cancelled();
  return {...timeline,buffer,duration:buffer.duration};
 }
-function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null,levels=null){
+function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null,levels={peak:0}){
  const sampleRate=songs[0].melody.sampleRate;
  const channels=destination?.buffer.numberOfChannels??Math.max(
   ...songs.flatMap(s=>[s.melody.numberOfChannels,s.accompaniment.numberOfChannels]),
@@ -197,29 +200,28 @@ function mixSmoothIndependent(ctx,songs,intro,starts,range=null,destination=null
     addIndependentTrack(melody,songs[i].melody,startFrames[i],next?.melody,nextStart,ch,chunkStart);
     addIndependentTrack(chords,songs[i].accompaniment,startFrames[i],next?.accompaniment,nextStart,ch,chunkStart);
    }
-   if(levels){
-    let peak=levels.peak;
-    for(let i=0;i<length;i++){
-     const sample=(melody[i]+chords[i])*0.75;
-     melody[i]=sample;
-     const magnitude=Math.abs(sample);
-     if(magnitude>peak)peak=magnitude;
-    }
-    levels.peak=peak;
-   }else{
-    for(let i=0;i<length;i++){
-     const sample=(melody[i]+chords[i])*0.75,peak=Math.abs(sample);
-     melody[i]=peak<=0.92?sample:Math.sign(sample)*(0.92+0.08*Math.tanh((peak-0.92)/0.08));
-    }
+   let peak=levels.peak;
+   for(let i=0;i<length;i++){
+    const sample=(melody[i]+chords[i])*0.75;
+    melody[i]=sample;
+    const magnitude=Math.abs(sample);
+    if(magnitude>peak)peak=magnitude;
    }
+   levels.peak=peak;
   }
  }
  return output;
 }
-function applyHeadroom(buffer,levels){
- if(!levels||levels.peak<=.98)return;
+function applyHeadroom(buffer,peak){
+ if(peak===undefined){
+  peak=0;
+  for(let ch=0;ch<buffer.numberOfChannels;ch++){
+   for(const sample of buffer.getChannelData(ch))peak=Math.max(peak,Math.abs(sample));
+  }
+ }
+ if(peak<=.98)return;
  // One gain for the whole mix preserves waveform shape and stereo balance.
- const gain=.98/levels.peak;
+ const gain=.98/peak;
  for(let ch=0;ch<buffer.numberOfChannels;ch++){
   const samples=buffer.getChannelData(ch);
   for(let i=0;i<samples.length;i++)samples[i]*=gain;
@@ -231,8 +233,8 @@ function combine(ctx,buffers){
  for(let ch=0;ch<channels;ch++){let at=0;for(const b of buffers){out.getChannelData(ch).set(b.getChannelData(Math.min(ch,b.numberOfChannels-1)),at);at+=b.length}}
  return out;
 }
-function seamless(ctx,first,normal,decorate=(buffer)=>buffer,{linearHeadroom=false}={}){
- const levels=linearHeadroom?{peak:0}:null;
+function seamless(ctx,first,normal,decorate=(buffer)=>buffer){
+ const levels={peak:0};
  const initial=first.separated,body=normal.separated,n=body.length;
  const initialJoin=getTransitionOffsetSec(initial[n-1],body[0],n===1?(first.openingExtraSec||0):0);
  const prefixDuration=first.starts[n-1]+initialJoin;
@@ -253,6 +255,7 @@ function seamless(ctx,first,normal,decorate=(buffer)=>buffer,{linearHeadroom=fal
   mixSmoothIndependent(ctx,prefixSongs,null,prefixStarts,[0,prefixDuration],{buffer,offset:0},levels);
   if(n===1)mixSmoothIndependent(ctx,[initial[0],body[0],body[0]],null,[-initialJoin,0,period],[0,period],{buffer,offset:prefixFrames},levels);
   mixSmoothIndependent(ctx,steadySongs,null,steadyStarts,[0,period],{buffer,offset:loopFrame},levels);
+  applyHeadroom(buffer,levels.peak);
  }else{
   const prefix=decorate(mixSmoothIndependent(ctx,prefixSongs,null,prefixStarts,[0,prefixDuration],null,levels),first.callPlan);
   const steady=decorate(mixSmoothIndependent(ctx,steadySongs,null,steadyStarts,[0,period],null,levels),normal.callPlan);
@@ -263,11 +266,16 @@ function seamless(ctx,first,normal,decorate=(buffer)=>buffer,{linearHeadroom=fal
    buffers.push(transition);loopStart+=transition.duration;
   }
   buffers.push(steady);buffer=combine(ctx,buffers);
+  applyHeadroom(buffer);
  }
- applyHeadroom(buffer,levels);
  if(n===1){starts.push(prefixLength);indices.push(normal.rowIndices[0]);}
  starts.push(...normal.starts.map(v=>loopStart+v));indices.push(...normal.rowIndices);
  return {buffer,starts,rowIndices:indices,duration:buffer.duration,loopStart,loopEnd:buffer.duration,isSeamlessLoop:true,prefixDuration:prefixLength,normalStarts:normal.starts,normalDuration,normalRowIndices:normal.rowIndices,firstTimeline:{starts:first.starts,rowIndices:first.rowIndices},barSeconds:first.barSeconds||barSecondsForSong(initial[0]),barSecondsBySong:[...(first.barSecondsBySong||initial.map(barSecondsForSong)),...(n===1?[barSecondsForSong(body[0])]:[]),...body.map(barSecondsForSong)],tempos:[...initial.map(tempo),...(n===1?[tempo(body[0])]:[]),...body.map(tempo)],normalBarSecondsBySong:body.map(barSecondsForSong)};
 }
-window.OuenkaMedleyCore={getTransitionOffsetSec,build,resolveSongs,registeredAudioUrls,tempo,barSecondsForSong,seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix:mixSmoothIndependent};
+window.OuenkaMedleyCore={getTransitionOffsetSec,build,resolveSongs,registeredAudioUrls,tempo,barSecondsForSong,seamless,barSeconds:MEDLEY_BAR_SEC,buildDynamicSongStarts,getSongJoinOffsetSec,mix(ctx,songs,intro,starts,range=null,destination=null){
+ const levels={peak:0};
+ const buffer=mixSmoothIndependent(ctx,songs,intro,starts,range,destination,levels);
+ applyHeadroom(buffer,destination?undefined:levels.peak);
+ return buffer;
+}};
 })();

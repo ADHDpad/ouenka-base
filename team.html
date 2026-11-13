@@ -20,7 +20,7 @@
   <p class="tap-hint">タップすると再生します</p>
   <nav class="filter-tabs" aria-label="表示区分">
     <button type="button" class="filter active" data-filter="all">全曲</button>
-    <button type="button" class="filter" data-filter="active">現役のみ</button>
+    <button type="button" class="filter" data-filter="active">使用中のみ</button>
     <button type="button" class="filter" data-filter="ob">現在未使用のみ</button>
   </nav>
 </header>
@@ -36,14 +36,14 @@
 </div>
 <script src="./ouenka-transport.js?v=20261111-r350"></script>
 <script src="./ouenka-favorites.js?v=20261103-r331"></script>
-<script src="audio-recovery.js?v=20261111-r360"></script>
+<script src="audio-recovery.js?v=20261113-r366"></script>
 <script src="pwa-diagnostic.js?v=20261103-r331"></script>
-<script src="ouenka-medley-core.js?v=20261111-r359"></script>
+<script src="ouenka-medley-core.js?v=20261112-r362"></script>
 <script src="audio-loading-dialog.js?v=20261103-r331"></script>
-<script src="playback-speed.js?v=20261111-r359"></script><script src="team.js?v=20261111-r361"></script>
+<script src="playback-speed.js?v=20261113-r366"></script><script src="team.js?v=20261113-r366"></script>
 <script>document.getElementById("lyricsCardLink").href="./lyrics-card.html?team="+encodeURIComponent(new URLSearchParams(location.search).get("team")||"北海道日本ハムファイターズ");</script>
 <script>
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js?v=20261111-r344').catch(console.warn)}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js?v=20261113-r366').catch(console.warn)}
 </script>
 <script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script></body>
 </html>

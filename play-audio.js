@@ -16,6 +16,12 @@ function schedule(offset=0){
  const context=ctx,token=epoch;for(const s of sources){s.onended=null;try{s.stop()}catch{}}sources=[];const output=timeline.starts?context.destination:window.OuenkaPlaybackSpeed.mixOutput(context,timeline.entries);const base=context.currentTime+.04;started=base-offset;position=offset;
  const scale=window.OuenkaPlaybackSpeed.bufferScale(context);
  let pending=0;for(const item of timeline.entries){if(offset>=item.start+item.buffer.duration)continue;const source=window.OuenkaPlaybackSpeed.source(context,item.buffer);source.connect(output);source.start(base+Math.max(0,item.start-offset),Math.max(0,offset-item.start)*scale,Math.max(0,Math.min(item.buffer.duration-Math.max(0,offset-item.start),timeline.duration-Math.max(offset,item.start)))*scale);sources.push(source);pending++;source.onended=()=>{if(token!==epoch||context!==ctx||!sources.includes(source)||--pending>0)return;position=timeline.duration;context.close().catch(()=>{});ctx=null;paused=false;onTick?.(position);const callback=endCallback;endCallback=null;callback?.();if(navigator.mediaSession)navigator.mediaSession.playbackState='none'}}
+ window.ouenkaAudioRecovery?.watchPlayback(context,()=>ctx===context&&!paused&&sources.length>0,(fresh,clock)=>{
+  const at=Math.min(timeline.duration,Math.max(0,clock-started));
+  window.OuenkaPlaybackSpeed.transferKey(context,fresh);
+  ctx=fresh;schedule(at);trackPlayback(timeline.trackSongs||timeline.songs,timeline.starts||[0],fresh,token);
+ });
+
 }
 function mount(options={}){window.OuenkaTransport?.mount({
  ...window.OuenkaPlaybackSpeed.keyControl(()=>ctx,()=>timeline,()=>schedule(state().currentTime)),
@@ -30,14 +36,18 @@ async function play(song,options={}){
    normal?decode(context,song,'accompaniment.m4a',signal):decode(context,song,'intro_accompaniment.m4a',signal).catch(()=>decode(context,song,'accompaniment.m4a',signal))
   ]);
   if(token!==epoch)return null;
-  if(!options.mask&&buffers.length===2)buffers[1]=window.OuenkaPlaybackSpeed.tuneAccompaniment(context,song,buffers[1]);
+  const accompanimentIndex=buffers.length-1;
+  buffers[accompanimentIndex]=window.OuenkaPlaybackSpeed.tuneAccompaniment(context,song,buffers[accompanimentIndex]);
   const barSeconds=60/(Number(song.tempo||song.bpm)||170)*4;
   const bodyOffset=normal&&!options.chordOnly?Math.max(0,(Number(song.mainStartBar||song.main_start_bar||1)-1)*barSeconds):0;
   const duration=Math.max(...buffers.map(b=>b.duration))-bodyOffset;
+  if(options.fixedRandomStart&&options.random&&!Number.isFinite(options.start)){
+   options={...options,start:window.OuenkaQuizRules.excerpt(duration,{...options,bars:1},barSeconds).start};
+  }
   const excerpt=options.full?{start:0,duration}:window.OuenkaQuizRules.excerpt(duration,options,barSeconds),clip=excerpt.duration,start=excerpt.start+bodyOffset;excerpt.bodyOffset=bodyOffset;
   if(!options.full){const available=Math.floor((duration+.001)/barSeconds),end=options.random?available-2:available;excerpt.maxBars=Math.max(1,end-Math.round(excerpt.start/barSeconds))}
   const entries=buffers.filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}));
-  timeline={duration:clip,songs:options.mask?[]:[song],entries};
+  timeline={duration:clip,songs:options.mask?[]:[song],trackSongs:[song],entries};
   label=options.mask?'応援歌クイズ':song.name;replay=()=>play(song,options);endCallback=options.onEnded||null;schedule(0);trackPlayback([song],[0],context,token);if(!options.mask)mount(options);
   if(navigator.mediaSession){navigator.mediaSession.metadata=new MediaMetadata({title:label,artist:options.mask?'応援歌BASE':song.team||'応援歌BASE'});navigator.mediaSession.playbackState='playing'}
   return excerpt;

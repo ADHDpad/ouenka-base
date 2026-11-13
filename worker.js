@@ -1,4 +1,4 @@
-const WORKER_BUILD = "lineup-popular-filtered-20261014-r6-favorites-share-r136-quiz-room-r164-short-share-r240-favorites-r296";
+const WORKER_BUILD = "lineup-popular-filtered-20261014-r6-favorites-share-r136-quiz-room-r164-short-share-r240-favorites-r296-quiz-settings-r366";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -71,6 +71,7 @@ export default {
               lyrics,
               tempo,
               is_generic,
+              is_pitcher_song,
               random_excluded,
               audio_filename,
               garageband_filename,
@@ -119,6 +120,7 @@ export default {
               lyrics,
               tempo,
               is_generic,
+              is_pitcher_song,
               random_excluded,
               audio_filename,
               garageband_filename,
@@ -181,6 +183,7 @@ export default {
               lyrics,
               tempo,
               is_generic,
+              is_pitcher_song,
               random_excluded,
               audio_filename,
               garageband_filename,
@@ -370,10 +373,11 @@ export default {
               bass_filename,
               tempo,
               is_generic,
+              is_pitcher_song,
               random_excluded
             )
             VALUES (
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
           `)
           .bind(
@@ -391,6 +395,7 @@ export default {
             bassFilename,
             body.tempo===140?140:170,
             body.is_generic===true||body.is_generic===1?1:0,
+            body.is_pitcher_song===true||body.is_pitcher_song===1?1:0,
             body.random_excluded===true||body.random_excluded===1?1:0
           )
           .run();
@@ -591,6 +596,7 @@ export default {
             bass_filename = ?,
             tempo = ?,
             is_generic = ?,
+            is_pitcher_song = ?,
             random_excluded = ?
           WHERE id = ?
         `)
@@ -608,6 +614,7 @@ export default {
           bassFilename,
           hasOwn(body,"tempo")?(body.tempo===140?140:170):(current.tempo||170),
           hasOwn(body,"is_generic")?(body.is_generic===true||body.is_generic===1?1:0):(current.is_generic||0),
+          hasOwn(body,"is_pitcher_song")?(body.is_pitcher_song===true||body.is_pitcher_song===1?1:0):(current.is_pitcher_song||0),
           hasOwn(body,"random_excluded")?(body.random_excluded===true||body.random_excluded===1?1:0):(current.random_excluded||0),
           id
         )
@@ -625,6 +632,7 @@ export default {
               lyrics,
               tempo,
               is_generic,
+              is_pitcher_song,
               random_excluded,
               audio_filename,
               garageband_filename,
@@ -994,18 +1002,43 @@ async function handleQuizRoom(request,env){
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS quiz_rooms (code TEXT PRIMARY KEY, data TEXT NOT NULL, revision INTEGER NOT NULL, expires INTEGER NOT NULL)').run();
   const now=Date.now(),name=String(body.name||'').trim().slice(0,20);
   const cleanSong=s=>({name:String(s?.name||'').slice(0,120),team:String(s?.team||'').slice(0,120),productionNumber:String(s?.productionNumber||'1').slice(0,10)});
+  const answerKey=value=>String(value||'').normalize('NFKC').toLowerCase().replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-96)).replace(/[\s・･]/g,'');
+  const hintLevel=(room,id)=>room.hints?.[id]||1;
+  const correctAnswer=(room,answer)=>!!answer&&(answer.correct??(answer.choice===room.questions[room.at].correct));
   const view=(room,token)=>{
    const me=room.members.find(m=>m.token===token);if(!me)fail('参加情報が無効です。もう一度参加してください。',403);
    const q=room.questions[room.at],revealed=room.stage==='reveal'||room.stage==='finished';
    return {ok:true,code:room.code,stage:room.stage,at:room.at,total:room.questions.length,expires:room.expires,host:me.id===room.host,me:me.id,settings:room.settings,endedEarly:!!room.endedEarly,
-    members:room.members.map(m=>({id:m.id,name:m.name,score:m.score,answered:!!room.answers[m.id],choice:revealed?room.answers[m.id]?.choice:undefined})),
-    question:room.stage!=='lobby'&&q?{song:q.song,prompt:q.prompt,choices:q.choices,randomValue:q.randomValue,correct:revealed?q.correct:undefined}:null};
+    members:room.members.map(m=>({id:m.id,name:m.name,score:m.score,answered:!!room.answers[m.id],choice:revealed?room.answers[m.id]?.choice:undefined,correct:revealed?!!correctAnswer(room,room.answers[m.id]):undefined})),
+    hintLevel:hintLevel(room,me.id),question:room.stage!=='lobby'&&q?{song:q.song,prompt:q.hints?.[hintLevel(room,me.id)-1]?.prompt??q.prompt,lyricLines:q.lyricLines??room.settings.lyricLines,canExtendLyrics:hintLevel(room,me.id)<(q.hints?.length||0),choices:room.settings.answerMode==='search'?[]:q.choices,answerName:revealed?q.choices[q.correct]:undefined,randomValue:q.randomValue,correct:revealed?q.correct:undefined}:null};
   };
   if(url.pathname===base){
    if(!name)fail('参加名を入力してください。');
    if(!Array.isArray(body.questions)||!body.questions.length||body.questions.length>100)fail('問題数は1〜100問です。');
-   const questions=body.questions.map(q=>{if(!q||!Array.isArray(q.choices)||q.choices.length<4||q.choices.length>10||!Number.isInteger(q.correct)||q.correct<0||q.correct>=q.choices.length)fail('問題の形式を確認してください。');const choices=q.choices.map(n=>String(n).slice(0,120));if(choices.some(n=>!n)||new Set(choices).size!==choices.length)fail('選択肢を確認してください。');return {song:cleanSong(q.song),prompt:String(q.prompt||'').slice(0,8000),choices,correct:q.correct,randomValue:Math.random()}});
-   const input=body.settings||{},settings={kind:input.kind==='lyrics'?'lyrics':'audio',unit:input.unit==='bars'?'bars':'seconds',bars:[1,2,4,8,16].includes(Number(input.bars))?Number(input.bars):1,seconds:[5,10,20].includes(Number(input.seconds))?Number(input.seconds):10,excerpt:input.excerpt==='start'?'start':'random'};
+   const input=body.settings||{},modern=input.version===2;
+   const settings={version:modern?2:1,kind:['lyrics','chord'].includes(input.kind)?input.kind:'audio',
+    answerMode:modern&&input.answerMode==='search'?'search':'choices',
+    unit:modern||input.unit==='bars'?'bars':'seconds',bars:modern?1:([1,2,4,8,16].includes(Number(input.bars))?Number(input.bars):1),
+    seconds:[5,10,20].includes(Number(input.seconds))?Number(input.seconds):10,
+    excerpt:input.excerpt==='start'||modern&&input.excerpt==='custom'?input.excerpt:'random',
+    startBar:Math.max(1,Math.min(128,Math.floor(Number(input.startBar)||1))),
+    lyricLines:Math.max(1,Math.min(4,Math.floor(Number(input.lyricLines)||1))),
+    team:String(input.team||'').slice(0,120),active:['active','ob'].includes(input.active)?input.active:'all',
+    excludePitchers:input.excludePitchers===true};
+   if(modern&&body.questions.length>25)fail('問題数は25問までです。');
+   const names=values=>Array.isArray(values)?values.slice(0,2000).map(answerKey).filter(Boolean):[];
+   const questions=body.questions.map(q=>{
+    if(!q||!Array.isArray(q.choices)||q.choices.length<(settings.answerMode==='search'?1:4)||q.choices.length>10||
+       !Number.isInteger(q.correct)||q.correct<0||q.correct>=q.choices.length)fail('問題の形式を確認してください。');
+    const choices=q.choices.map(n=>String(n).slice(0,120));
+    if(choices.some(n=>!n)||new Set(choices.map(answerKey)).size!==choices.length)fail('選択肢を確認してください。');
+    const lyricLines=Math.max(1,Math.min(settings.lyricLines,Math.floor(Number(q.lyricLines)||settings.lyricLines)));
+    const hints=modern&&settings.kind==='lyrics'&&Array.isArray(q.hints)?q.hints.slice(0,5-lyricLines).map(h=>({
+     prompt:String(h?.prompt||'').slice(0,8000),accepted:names(h?.accepted)
+    })):[];
+    return {song:cleanSong(q.song),prompt:String(q.prompt||'').slice(0,8000),choices,correct:q.correct,
+     lyricLines,hints,accepted:names(q.accepted),randomValue:Math.random()};
+   });
    await env.DB.prepare('DELETE FROM quiz_rooms WHERE expires <= ?').bind(now).run();
    for(let i=0;i<5;i++){
     const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=crypto.getRandomValues(new Uint8Array(8)),code=Array.from(bytes,b=>alphabet[b&31]).join(''),token=crypto.randomUUID(),id=crypto.randomUUID(),expires=now+7200000;
@@ -1014,7 +1047,7 @@ async function handleQuizRoom(request,env){
     if(result.meta?.changes)return reply({...view(room,token),token},201);
    }fail('ルームを作成できませんでした。もう一度お試しください。',503);
   }
-  const match=url.pathname.match(/^\/quiz\/rooms\/([A-Z2-9]{8})\/(join|state|start|answer|reveal|next|leave)$/);if(!match)fail('参加コードを確認してください。',404);
+  const match=url.pathname.match(/^\/quiz\/rooms\/([A-Z2-9]{8})\/(join|state|start|answer|hint|reveal|next|leave)$/);if(!match)fail('参加コードを確認してください。',404);
   const [,code,action]=match;
   for(let attempt=0;attempt<8;attempt++){
    const row=await env.DB.prepare('SELECT data,revision,expires FROM quiz_rooms WHERE code = ?').bind(code).first();if(!row||row.expires<=now)fail('ルームが見つかりません。有効期限は作成から2時間です。',404);
@@ -1025,11 +1058,24 @@ async function handleQuizRoom(request,env){
    if(action==='state')return reply(view(room,token));
    if(['start','reveal','next'].includes(action)&&me.id!==room.host)fail('ホストだけが操作できます。',403);
    // 操作した問題番号を照合し、再送・連打で次の問題を飛ばさない。
-   if(['answer','reveal','next'].includes(action)&&body.at!==room.at)fail('問題が進みました。画面を更新します。',409);
-   const reveal=()=>{if(room.stage!=='question')return;const correct=room.questions[room.at].correct;for(const m of room.members)if(room.answers[m.id]?.choice===correct)m.score++;room.stage='reveal'};
+   if(['answer','hint','reveal','next'].includes(action)&&body.at!==room.at)fail('問題が進みました。画面を更新します。',409);
+   const reveal=()=>{if(room.stage!=='question')return;for(const m of room.members){const answer=room.answers[m.id];if(correctAnswer(room,answer))m.score+=answer.points??1;}room.stage='reveal'};
    if(action==='start'){if(room.stage!=='lobby')return reply(view(room,token));if(room.members.length<2)fail('2人以上集まってから開始してください。');room.stage='question'}
-   if(action==='answer'){
-    if(room.stage==='question'&&!room.answers[me.id]){const choice=body.choice;if(!Number.isInteger(choice)||choice< -1||choice>=room.questions[room.at].choices.length)fail('回答を確認してください。');room.answers[me.id]={choice};if(room.members.every(m=>room.answers[m.id]))reveal()}
+   if((action==='hint'||action==='answer')&&room.stage==='question'&&!room.answers[me.id]){
+    const q=room.questions[room.at],level=hintLevel(room,me.id),modern=room.settings.version===2;
+    if(action==='hint'){
+     const limit=room.settings.kind==='lyrics'?q.hints?.length||0:room.settings.kind==='audio'?128:0;
+     if(modern&&body.level===level+1&&body.level<=limit)(room.hints??={})[me.id]=body.level;
+    }else{
+     const choice=body.choice,search=room.settings.answerMode==='search';
+     const name=answerKey(String(body.answer||'').slice(0,120));
+     if(search?choice!==-1&&!name:!Number.isInteger(choice)||choice< -1||choice>=q.choices.length)fail('回答を確認してください。');
+     const accepted=q.hints?.[level-1]?.accepted??q.accepted??[];
+     const correct=search?!!name&&(name===answerKey(q.choices[q.correct])||accepted.includes(name)):choice===q.correct;
+     const points=!modern?1:room.settings.kind==='lyrics'?Math.max(1,6-(q.lyricLines??room.settings.lyricLines)-level):room.settings.kind==='chord'?4:Math.max(0,5-level);
+     room.answers[me.id]={choice,correct,points};
+     if(room.members.every(m=>room.answers[m.id]))reveal();
+    }
    }
    if(action==='reveal')reveal();
    if(action==='next'&&room.stage==='reveal'){if(room.at+1===room.questions.length)room.stage='finished';else{room.at++;room.answers={};room.stage='question'}}
@@ -1130,7 +1176,7 @@ let songSettingsReady;
 async function ensureSongSettings(env){
  if(!songSettingsReady)songSettingsReady=(async()=>{
   const columns=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;
-  for(const [name,definition] of [['tempo','INTEGER NOT NULL DEFAULT 170'],['is_generic','INTEGER NOT NULL DEFAULT 0'],['random_excluded','INTEGER NOT NULL DEFAULT 0']]){
+  for(const [name,definition] of [['tempo','INTEGER NOT NULL DEFAULT 170'],['is_generic','INTEGER NOT NULL DEFAULT 0'],['random_excluded','INTEGER NOT NULL DEFAULT 0'],['is_pitcher_song','INTEGER NOT NULL DEFAULT 0']]){
    if(!columns.some(c=>c.name===name))try{await env.DB.prepare('ALTER TABLE songs ADD COLUMN '+name+' '+definition).run()}catch(e){const now=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;if(!now.some(c=>c.name===name))throw e}
   }
   await env.DB.prepare('UPDATE songs SET tempo = 140 WHERE tempo = 150').run();

@@ -151,18 +151,6 @@ async function playSongData(player, gestureCtx=null) {
         homeAudioContext=ctx;
         homePlaybackActive=true;
         homePaused=false;
-        // WebKit standalone can leave resume() pending. Show an explicit user-gesture retry.
-        if(ctx.state!=='running'){
-            setTimeout(()=>{if(attemptId===playAttemptId && (ctx.state==='suspended'||ctx.state==='interrupted'))window.ouenkaAudioRecovery.showRetry(ctx,(fresh)=>playSongData(player,fresh))},1200);
-        }
-        ctx.addEventListener('statechange',()=>{
-            if(attemptId!==playAttemptId || homeAudioContext!==ctx)return;
-            if(ctx.state==='running')window.ouenkaAudioRecovery.hideRetry();
-            else if((ctx.state==='suspended'||ctx.state==='interrupted') && attemptId===playAttemptId && !homePaused){
-              setTimeout(()=>{if(attemptId===playAttemptId && homeAudioContext===ctx && ctx.state!=='running' && !homePaused)window.ouenkaAudioRecovery.showRetry(ctx,(fresh)=>playSongData(player,fresh));},1500);
-            }
-        });
-
         /*と同じ公開GitHub Pagesを基準にする。
            トップページ自身の相対URLには依存しない。 */
         const PUBLIC_BASE="https://adhdpad.github.io/ouenka-base/";
@@ -352,7 +340,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 // 他アプリから戻った後のAudioContext復帰。ユーザー操作が必要な場合は再生ボタンで再試行。
 async function recoverHomeAudio(){
-    const ctx=homeAudioContext,attempt=playAttemptId,song=homeRecoverySong;
+    const ctx=homeAudioContext,attempt=playAttemptId;
     if(!ctx||!homePlaybackActive||homePaused||ctx.state==='closed')return;
     try{
         window.ouenkaAudioRecovery.unlock(ctx);
@@ -363,8 +351,8 @@ async function recoverHomeAudio(){
         window.ouenkaAudioRecovery.hideRetry();setNowPlaying('♪ 再生中');
         if(navigator.mediaSession)navigator.mediaSession.playbackState='playing';
     }else{
-        setNowPlaying('音声エンジンの起動待ち…「音声を再起動」を押してください');
-        window.ouenkaAudioRecovery.showRetry(ctx,fresh=>playSongData(song,fresh));
+        setNowPlaying('音声エンジンの起動待ち…「音声を復旧する」を押してください');
+
     }
 }
 
@@ -376,6 +364,12 @@ function homePosition(){return homeAudioContext?Math.min(homeTotalDuration,Math.
 function homeQueue(){return window.ouenkaHomeQueue||((typeof d1Players!=='undefined'&&Object.keys(d1Players).length)?Object.values(d1Players):[])}
 function homeQueueIndex(){const song=homeRecoverySong;return homeQueue().findIndex(p=>p.name===song?.name&&String(p.productionNumber)===String(song?.productionNumber))}
 function attachHomeTransport(ctx,timeline,base,player){window.OuenkaSongbook?.track(ctx,player,()=>homeAudioContext===ctx&&!homePaused&&homeAudioSources.length>0,base);homeTimeline=timeline;homeTotalDuration=Math.max(...timeline.map(x=>x.start+x.buffer.duration));homeStartedAt=base;homeTransportOffset=0;
+ window.ouenkaAudioRecovery?.watchPlayback(ctx,()=>homeAudioContext===ctx&&homePlaybackActive&&!homePaused,(fresh,clock)=>{
+  const at=Math.min(homeTotalDuration,Math.max(0,clock-homeStartedAt));
+  window.OuenkaPlaybackSpeed.transferKey(ctx,fresh);
+  homeAudioContext=fresh;seekHomePlayback(at);
+  attachHomeTransport(fresh,homeTimeline,homeStartedAt,player);
+ });
  window.OuenkaTransport?.mount({
  ...window.OuenkaPlaybackSpeed.keyControl(()=>homeAudioContext,()=>({entries:homeTimeline}),()=>seekHomePlayback(homePosition())),
  state:()=>({song:homeRecoverySong||player,title:homeTotalDuration?(homeRecoverySong?.name||player.name):"音源を検索中…",busy:!homeTotalDuration,duration:homeTotalDuration,currentTime:homePosition(),playing:homePlaybackActive&&!homePaused&&homeAudioContext?.state==='running',paused:homePaused,hasPrevious:homeQueueIndex()>0,hasNext:homeQueueIndex()>=0&&homeQueueIndex()<homeQueue().length-1}),pause:pauseHomePlayback,play:async()=>{if(homePlaybackActive)return resumeHomePlayback();const at=homeTransportOffset;await playSongData(homeRecoverySong);if(at>0)seekHomePlayback(at)},stop:stopHomePlayback,previous:()=>{const i=homeQueueIndex();if(i>0)return playSongData(homeQueue()[i-1])},next:()=>{const i=homeQueueIndex();if(i>=0&&i+1<homeQueue().length)return playSongData(homeQueue()[i+1])},seek:seekHomePlayback});

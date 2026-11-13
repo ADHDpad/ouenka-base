@@ -86,11 +86,11 @@ body.row-dragging *{cursor:grabbing!important}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 </style>
 <script src="./ouenka-transport.js?v=20261111-r350"></script>
-<script src="./ouenka-medley-core.js?v=20261111-r359"></script>
+<script src="./ouenka-medley-core.js?v=20261112-r362"></script>
 <script src="audio-loading-dialog.js?v=20261103-r331"></script>
 <script src="./lineup-tempo.js?v=20261103-r331"></script>
-<script src="./lineup-settings.js?v=20261111-r354"></script>
-<script src="audio-recovery.js?v=20261111-r360"></script>
+<script src="./lineup-settings.js?v=20261112-r362"></script>
+<script src="audio-recovery.js?v=20261113-r366"></script>
 <script src="pwa-diagnostic.js?v=20261103-r331"></script>
 <script src="team-order.js"></script>
 <style>input,textarea,select{scroll-margin-top:90px}@media(max-width:700px){input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px!important}}</style>
@@ -259,15 +259,15 @@ function createRow(n,data={}){
  }).join("");
 
  row.innerHTML=`
-  <button class="order" type="button" title="応援歌を再生" aria-label="${n}番の応援歌を再生">${n}</button>
-  <select class="position" aria-label="${n}番のポジション">${options}</select>
+  <button class="order" type="button" title="応援歌を再生" aria-label="${n}曲目の応援歌を再生">▶</button>
+  <select class="position" aria-label="${n}曲目のポジション">${options}</select>
   <div class="search-wrap">
    <span class="search-icon">⌕</span>
-   <input class="player-search" type="text" placeholder="選手名を検索" autocomplete="off" aria-label="${n}番の選手検索">
+   <input class="player-search" type="text" placeholder="選手名を検索" autocomplete="off" aria-label="${n}曲目の選手検索">
    <button class="clear" type="button" aria-label="入力をクリア">×</button>
    <div class="suggestions"></div>
   </div>
-  <button class="move-handle" type="button" title="長押しして並べ替え" aria-label="${n}番を並べ替え">☰</button>`;
+  <button class="move-handle" type="button" title="長押しして並べ替え" aria-label="${n}曲目を並べ替え">☰</button>`;
 
  const input=row.querySelector(".player-search");
  const sug=row.querySelector(".suggestions");
@@ -300,10 +300,10 @@ function renumberRows(){
  [...document.querySelectorAll(".player-row")].forEach((row,i)=>{
   const n=i+1;row.dataset.row=n;
   const order=row.querySelector(".order"),pos=row.querySelector(".position"),input=row.querySelector(".player-search"),handle=row.querySelector(".move-handle");
-  if(order){order.textContent=n;order.setAttribute("aria-label",`${n}番の応援歌を再生`)}
-  if(pos)pos.setAttribute("aria-label",`${n}番のポジション`);
-  if(input)input.setAttribute("aria-label",`${n}番の選手検索`);
-  if(handle)handle.setAttribute("aria-label",`${n}番を並べ替え`);
+  if(order){order.setAttribute("aria-label",`${n}曲目の応援歌を再生`)}
+  if(pos)pos.setAttribute("aria-label",`${n}曲目のポジション`);
+  if(input)input.setAttribute("aria-label",`${n}曲目の選手検索`);
+  if(handle)handle.setAttribute("aria-label",`${n}曲目を並べ替え`);
  });
  rowCount=document.querySelectorAll(".player-row").length;
 }
@@ -690,7 +690,7 @@ function oneNineAudioKey(){return (window.OuenkaCalls?.signature()||'')+JSON.str
 async function makeOneNineAudio(ctx,selected,medleyOnly=false,render=true){
  setStatus('音源を読み込み中… 0 / '+selected.length,'ok');
  return window.OuenkaMedleyCore.build(ctx,selected,{
-  opening:!medleyOnly,render,linearHeadroom:true,concurrency:4,load:(item,file,optional)=>fetchFirstExistingAudio(ctx,item,file,optional),
+  opening:!medleyOnly,render,concurrency:4,load:(item,file,optional)=>fetchFirstExistingAudio(ctx,item,file,optional),
   callsRows:currentRows().filter(row=>row.name),rowIndices:currentRows().map((row,i)=>row.name?i:-1).filter(i=>i>=0),
   onProgress:(loaded,total)=>setStatus('音源を読み込み中… '+loaded+' / '+total,'ok')
  });
@@ -729,7 +729,7 @@ async function buildAndPlayOneNineMedley(){
   let playbackTimeline;
   if(loop){
    const repeatTimeline=await makeOneNineAudio(ctx,selected,true,false);
-   playbackTimeline=window.OuenkaMedleyCore.seamless(ctx,timeline,repeatTimeline,(buffer,plan)=>window.OuenkaCalls.decorate(ctx,buffer,plan),{linearHeadroom:true});
+   playbackTimeline=window.OuenkaMedleyCore.seamless(ctx,timeline,repeatTimeline,(buffer,plan)=>window.OuenkaCalls.decorate(ctx,buffer,plan));
   }else{
    const {separated,callPlan,...playable}=timeline;
    playbackTimeline=playable;
@@ -759,7 +759,7 @@ async function buildAndPlayOneNineMedley(){
 
   if("mediaSession" in navigator){
    try{
-    navigator.mediaSession.metadata=new MediaMetadata({title:"1-9",artist:"OUENKA BASE",album:"FIGHT SONG"});
+    navigator.mediaSession.metadata=new MediaMetadata({title:"メドレー",artist:"OUENKA BASE",album:"FIGHT SONG"});
     navigator.mediaSession.setActionHandler("play",async()=>{
      if(liveMedleyContext&&liveMedleyContext.state==="suspended")await liveMedleyContext.resume();
      navigator.mediaSession.playbackState="playing";
@@ -1054,8 +1054,8 @@ window.addEventListener("ouenka-team-order-change",renderTeamSelect);
 
 fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();queueMedleyPrefetch();
 </script>
-<script src="./active-roster.js?v=20261103-r331"></script>
-<script src="playback-speed.js?v=20261111-r359"></script><script src="./lineup-controls.js?v=20261111-r358"></script>
+<script src="./active-roster.js?v=20261113-r366"></script>
+<script src="playback-speed.js?v=20261113-r366"></script><script src="./lineup-controls.js?v=20261113-r366"></script>
 <script src="playlist-share.js?v=20261103-r331"></script><script src="playlist-share-ui.js?v=20261103-r331"></script>
 <script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script><script src="ouenka-favorites.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="medley-random.js?v=20261103-r331"></script></body>
 </html>

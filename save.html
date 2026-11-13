@@ -732,7 +732,7 @@ GarageBand ZIPと応援歌音源を選択して、選手情報を共通データ
 
 
 <div id="registerArea">
-<section class="card"><div class="card-title">応援歌の設定</div><label for="songTempo">テンポ</label><select id="songTempo" style="font-size:16px;min-height:44px"><option value="170" selected>170</option><option value="140">140</option></select><label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="songGeneric" style="width:20px;height:20px">汎用応援歌として使用する</label><label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="songRandomExcluded" style="width:20px;height:20px">ランダム再生の対象外にする</label><p style="font-size:14px">チェックした曲はメドレーのランダム抽選に出ません。</p></section>
+<section class="card"><div class="card-title">応援歌の設定</div><label for="songTempo">テンポ</label><select id="songTempo" style="font-size:16px;min-height:44px"><option value="170" selected>170</option><option value="140">140</option></select><label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="songGeneric" style="width:20px;height:20px">汎用応援歌として使用する</label><label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="songRandomExcluded" style="width:20px;height:20px">ランダム再生の対象外にする</label><p style="font-size:14px">チェックした曲はメドレーのランダム抽選に出ません。</p><label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="songPitcher" style="width:20px;height:20px">投手応援歌</label></section>
 
 <section class="card card-garage">
 
@@ -892,7 +892,7 @@ NPBから取得
   value="現在使用"
   checked
 >
-<label for="inUse">現在使用</label>
+<label for="inUse">使用中</label>
 </div>
 
 <div class="radio-item">
@@ -1249,7 +1249,7 @@ function showExistingEditMode(){
 }
 
 function clearNewRegisterForm(){
- $("songTempo").value="170";$("songGeneric").checked=false;$("songRandomExcluded").checked=false;
+ $("songTempo").value="170";$("songGeneric").checked=false;$("songPitcher").checked=false;$("songRandomExcluded").checked=false;
  const ids=["playerName","reading","team","number","lyrics"];
  ids.forEach(id=>{if($(id))$(id).value=""});
  const current=document.querySelector('input[name="playerType"][value="現在使用"]');
@@ -2165,6 +2165,7 @@ if(!name){
             player_type:type,
             tempo:Number($("songTempo").value),
             is_generic:$("songGeneric").checked,
+            is_pitcher_song:$("songPitcher").checked,
             random_excluded:$("songRandomExcluded").checked,
             uniform_number:
               number === ""
@@ -2233,6 +2234,7 @@ if(!name){
       productionNumber,
       tempo:Number($("songTempo").value),
       is_generic:$("songGeneric").checked,
+            is_pitcher_song:$("songPitcher").checked,
             random_excluded:$("songRandomExcluded").checked,
       lyrics,
 
@@ -2434,6 +2436,7 @@ function startEditSong(song){
 
     $("songTempo").value=String([140,150].includes(song.tempo)?140:170);
     $("songGeneric").checked=!!Number(song.is_generic||0);
+    $("songPitcher").checked=!!Number(song.is_pitcher_song||0);
     $("songRandomExcluded").checked=window.OuenkaRandomSettings.excluded(song);
     $("playerName").value =
       song.player_name || "";
@@ -2703,6 +2706,7 @@ async function updateExistingSong(){
             player_type:type,
             tempo:Number($("songTempo").value),
             is_generic:$("songGeneric").checked,
+            is_pitcher_song:$("songPitcher").checked,
             random_excluded:$("songRandomExcluded").checked,
             uniform_number:
               number === ""
@@ -2762,6 +2766,7 @@ async function updateExistingSong(){
 
         local.tempo=[140,150].includes(updated.tempo)?140:170;
         local.is_generic=!!Number(updated.is_generic||0);
+        local.is_pitcher_song=!!Number(updated.is_pitcher_song||0);
         local.random_excluded=$("songRandomExcluded").checked;
         local.name =
           updated.player_name;
@@ -3168,7 +3173,7 @@ function showSavedSongs(songs){
       let meta =
         (song.team || "") +
         " ／ " +
-        (song.player_type || "");
+        (["現在使用","現役","使用中"].includes(song.player_type)?"使用中":song.player_type||"");
 
       if(
         song.uniform_number !== null &&

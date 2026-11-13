@@ -48,7 +48,7 @@
  function identity(p){return p.jerseyNumber??p.number??p.uniformNumber??p.backNumber??''}
  function compactPosition(value){return ({SS:"遊撃手",C:"捕手","1B":"一塁手","2B":"二塁手","3B":"三塁手",LF:"左翼手",CF:"中堅手",RF:"右翼手",DH:"指名打者",P:"投手",SP:"先発",RP:"中継ぎ",CP:"抑え"})[value]||String(value||"")}
 
- function position(p){const n=Number(p.order);return [(n>=1&&n<=9)?n+'番':'',compactPosition(p.position)||''].filter(Boolean).join('  ')}
+ function position(p,showBattingOrder){const n=Number(p.order);return [(showBattingOrder!==false&&n>=1&&n<=9)?n+'番':'',compactPosition(p.position)||''].filter(Boolean).join('  ')}
  function drawPhotoImage(ctx,image,rect,p={}){
   if(!image?.complete||!image.naturalWidth)return;
   const [x,y,w,h]=rect,finite=(v,f)=>Number.isFinite(Number(v))?Number(v):f;
@@ -141,7 +141,7 @@
   if(!light&&!noPhoto){
    const jersey=identity(p);const nameLeft=jersey!==''?left+208:left;
    if(jersey!=='')text(ctx,jersey,left,267,144,accentInk,185,{weight:900,italic:true});
-   text(ctx,position(p),nameLeft,138,Math.min(36,Number(options.fontSizes?.order)||36),ink,right-nameLeft,{...fontStyle(options,'order'),shadow:false});
+   text(ctx,position(p,options.showBattingOrder),nameLeft,138,Math.min(36,Number(options.fontSizes?.order)||36),ink,right-nameLeft,{...fontStyle(options,'order'),shadow:false});
    text(ctx,p.name,nameLeft,256,Number(options.fontSizes?.name)||100,ink,right-nameLeft,{...fontStyle(options,'name'),band:[158,280]});
    
    rule(ctx,left,312,width,t.line,2);rule(ctx,left,347,3,t.line,286);rule(ctx,left+181,347,2,t.line,286);
@@ -151,7 +151,7 @@
    lyrics(ctx,p,[left+208,352,width-214,280],ink,options);
    ctx.restore();return;
   }
-  text(ctx,position(p),right,124,Math.min(40,Number(options.fontSizes?.order)||40),ink,width*.65,{...fontStyle(options,'order'),align:'right',shadow:false});
+  text(ctx,position(p,options.showBattingOrder),right,124,Math.min(40,Number(options.fontSizes?.order)||40),ink,width*.65,{...fontStyle(options,'order'),align:'right',shadow:false});
   const jersey=identity(p);if(jersey!=='')text(ctx,jersey,left,148,64,light?'#000000':accentInk,width*.3,{weight:900});
   text(ctx,p.name,left,252,Number(options.fontSizes?.name)||100,ink,width,{...fontStyle(options,'name'),shadow:options.shadows?.name,band:[158,280]});
   
@@ -167,9 +167,9 @@
   const t=theme(options),light=options.variant==='6',ink=light?t.dark:'#ffffff';ctx.save();ctx.globalAlpha=1;ctx.shadowColor='transparent';fillBackground(ctx,t,0,0,W,H,light);
   if(light){poly(ctx,[[1030,0],[1160,0],[920,H],[790,H]],mix(t.color,'#ffffff',.87));poly(ctx,[[1240,0],[1280,0],[1040,H],[1000,H]],t.color)}
   else{poly(ctx,[[770,0],[1030,0],[790,H],[530,H]],mix(t.dark,t.color,.4));poly(ctx,[[1170,0],[1280,0],[1040,H],[930,H]],t.color)}
-  text(ctx,'STARTING LINEUP',58,82,54,ink,900,{weight:900,italic:true});
-  text(ctx,'1–9',1218,90,64,light?t.color:'#ffffff',250,{weight:900,align:'right'});
-  text(ctx,options.title||'1-9 応援歌',60,128,27,light?t.color:mix(t.accent,'#ffffff',.4),1140,{weight:700});rule(ctx,60,151,1160,t.line,3);
+  text(ctx,options.showBattingOrder===false?'MEDLEY':'STARTING LINEUP',58,82,54,ink,900,{weight:900,italic:true});
+  if(options.showBattingOrder!==false)text(ctx,'1–9',1218,90,64,light?t.color:'#ffffff',250,{weight:900,align:'right'});
+  text(ctx,options.title||(options.showBattingOrder===false?'メドレー':'1-9 応援歌'),60,128,27,light?t.color:mix(t.accent,'#ffffff',.4),1140,{weight:700});rule(ctx,60,151,1160,t.line,3);
   // Nine fixed slots preserve batting-order numbers even when an input is blank.
   const slots=options.includeTenthSlot&&rows[9]?.name?10:9;
   const start=174,rowH=slots===10?49:51;
@@ -177,7 +177,7 @@
    const p=rows[i]||{},yy=start+i*rowH,active=Number(options.activeIndex)===i;
    if(active){ctx.fillStyle=light?mix(t.color,'#ffffff',.84):mix(t.dark,t.color,.55);ctx.fillRect(54,yy-4,1172,rowH-2);rule(ctx,54,yy-4,5,t.line,rowH-2)}
    const order=i===9&&/^(P|投|投手)$/i.test(p.position||'')?'投':String(i+1).padStart(2,'0');
-   text(ctx,order,76,yy+33,30,light?t.color:t.line,68,{weight:900,italic:true});
+   if(options.showBattingOrder!==false)text(ctx,order,76,yy+33,30,light?t.color:t.line,68,{weight:900,italic:true});
    rule(ctx,163,yy+5,2,t.line,28);
    text(ctx,compactPosition(p.position)||'',184,yy+31,22,light?t.color:mix(t.accent,'#ffffff',.5),180,{weight:700});
    text(ctx,p.name||'—',390,yy+33,33,ink,options.showStats?350:760,{weight:900});if(options.showStats){const pitching=/投|P|SP|RP/i.test(p.position||'')||p.statsType==='pitching';const fields=pitching?[['wins','勝'],['losses','敗'],['era','防御率'],['whip','WHIP'],['strikeouts','奪三振']]:[['avg','打率'],['hr','本'],['rbi','打点'],['ops','OPS']];const yearLabel=careerHighYearLabel(p);text(ctx,fields.map(([k,l])=>l+' '+(p[k]===undefined||p[k]===''?'—':p[k])).join('  '),760,yy+(yearLabel?23:31),18,ink,435,{weight:600});if(yearLabel)text(ctx,yearLabel,1195,yy+40,14,ink,160,{weight:600,align:'right'})}
@@ -197,7 +197,7 @@
   ctx.save();ctx.globalAlpha=1;ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.fillStyle='#06090d';ctx.fillRect(0,0,W,H);
   poly(ctx,[[950,0],[1090,0],[990,98],[850,98]],mix(t.color,'#06090d',.65));
   poly(ctx,[[1110,0],[1280,0],[1180,98],[1010,98]],mix(t.color,'#06090d',.82));
-  text(ctx,options.title||'1-9 応援歌',30,66,48,'#ffffff',1220,{weight:900});
+  text(ctx,options.title||(options.showBattingOrder===false?'メドレー':'1-9 応援歌'),30,66,48,'#ffffff',1220,{weight:900});
   rule(ctx,0,97,W,'#bdc9d1',1);
   const entries=rows.map((p,index)=>({p,index})).filter(({p})=>String(p?.name||'').trim()),required=entries.length;
   if(required>10){text(ctx,'11枠以上ではこのフォーマットは使用できません。',W/2,H/2,32,'#ffffff',1180,{align:'center'});ctx.restore();return}
@@ -208,7 +208,7 @@
    const entry=entries[i],index=entry?.index??-1,p=entry?.p||{},x=x0+i*cw,visible=shown.has(index)&&!!p.name,isActive=active===index;
    ctx.fillStyle='#090d12';ctx.fillRect(x,y0,cw,bottom-y0);
    // 空欄は打順と仕切りのみ。写真・背番号・名前は各曲の開始後に追加。
-   text(ctx,i===9?'P':i+1,x+12,y0+47,43,'#ffffff',49,{weight:900});
+   if(options.showBattingOrder!==false)text(ctx,i===9?'P':i+1,x+12,y0+47,43,'#ffffff',49,{weight:900});
    if(visible){
     ctx.save();ctx.beginPath();ctx.rect(x+1,y0+1,cw-2,bottom-y0-2);ctx.clip();
     const progress=isActive&&options.elapsed!==undefined?Math.min(1,Math.max(0,options.elapsed)/.42):1;
@@ -216,7 +216,7 @@
     text(ctx,compactPosition(p.position)||'',x+cw-12,y0+42,19,'#ffffff',cw-72,{align:'right'});
     const im=options.images?.[index];
     if(p.photoEnabled!==false&&im?.complete&&im.naturalWidth)photo(ctx,p,[x+5,y0+65,cw-10,300],t,im,options.credit);
-    else{ctx.fillStyle=mix(t.color,'#080d13',.78);ctx.fillRect(x+5,y0+65,cw-10,300);text(ctx,identity(p)||String(i+1),x+cw/2,y0+250,80,mix(t.color,'#ffffff',.4),cw-20,{align:'center',weight:900})}
+    else{ctx.fillStyle=mix(t.color,'#080d13',.78);ctx.fillRect(x+5,y0+65,cw-10,300);text(ctx,identity(p)||(options.showBattingOrder===false?'':String(i+1)),x+cw/2,y0+250,80,mix(t.color,'#ffffff',.4),cw-20,{align:'center',weight:900})}
     text(ctx,identity(p),x+12,y0+429,60,'#f3d993',cw-24,{weight:900});
     const parts=String(p.name).trim().split(/[\s　]+/);
     if(parts.length>1){text(ctx,parts[0],x+12,y0+468,24,'#ffffff',cw-24);text(ctx,parts.slice(1).join(' '),x+12,y0+501,24,'#ffffff',cw-24)}
