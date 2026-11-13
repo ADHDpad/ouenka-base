@@ -62,3 +62,6 @@ html body #songs .community-bars label>span{font-size:inherit}
 html body #songs .community-bars .quiz-rate-kind{display:flex;justify-content:space-between;align-items:center;min-width:0}
 html body #songs .community-bars .quiz-rate-value{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 html body #songs .community-bars progress{display:block;width:100%;min-width:0;box-sizing:border-box}
+
+html body #songs .song-book-status{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:4px}
+html body #songs .song-book-status .favorite-points{white-space:nowrap}

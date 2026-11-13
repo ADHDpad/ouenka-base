@@ -13,7 +13,7 @@ const $=id=>document.getElementById(id);
 
 document.title=team+" | OUENKA BASE";
 
-function activeOf(song){const v=String(song.player_type??song.active??"").trim();return v==="現在使用"||v==="現役"||v==="1"||v==="true"}
+function activeOf(song){return window.OuenkaSongRegistrationFlags.inUse(song)}
 function normalizeSong(song){
  const name=song.player_name||song.name||"", no=String(song.production_number||song.productionNumber||1);
  const base=PUBLIC_BASE+"%E3%83%87%E3%83%BC%E3%82%BF/"+encodeURIComponent(name)+"/"+encodeURIComponent(no)+"/";

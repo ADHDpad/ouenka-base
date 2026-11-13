@@ -102,6 +102,6 @@ function validLyrics(song){return mainLyrics(song).length>0}
 function sameBody(a,b){const group=s=>s.mainMelodyGroup||s.main_melody_group||s.body_group_id;if(group(a)&&group(b))return String(group(a))===String(group(b));const source=s=>{const r=s.audioSource||{};return key(s.reuseName||s.reuse_name||r.reuseName||r.name||s.name)+'#'+String(s.reuseProductionNumber||s.reuse_production_number||r.reuseProductionNumber||r.productionNumber||s.productionNumber||s.production_number||1)};if(source(a)===source(b))return true;const melody=s=>String(s.melodyUrl||s.melody_url||s.melody_filename||'');return !!melody(a)&&melody(a).includes('/')&&melody(a)===melody(b)}
 
 function lyricsMatch(song,prompt){const body=key(maskName(mainLyrics(song).join('\n'),song)),asked=key(prompt);return !!asked&&body.includes(asked)}
-const isPitcherSong=song=>[true,1,"1","true"].includes(song.is_pitcher_song??song.isPitcherSong);
+const isPitcherSong=song=>window.OuenkaSongRegistrationFlags?.pitcher(song)??[true,1,"1","true"].includes(song.is_pitcher_song??song.isPitcherSong);
 window.OuenkaQuizRules={isPitcherSong,excerpt,maskName,setPlayerNames,lyricsQuestion,audioAlternatives,key,mainLyrics,validLyrics,sameBody,lyricsMatch};
 })();
