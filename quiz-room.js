@@ -7,12 +7,12 @@
  function persist(){try{if(session)sessionStorage.setItem('ouenka_quiz_room_v1',JSON.stringify(session));else sessionStorage.removeItem('ouenka_quiz_room_v1')}catch{}}
  async function request(path,body){const response=await fetch(api+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});let data;try{data=await response.json()}catch{throw Error('対戦サービスを確認できません。更新版のworker.jsを公開してください。')}if(!response.ok||!data.ok)throw Object.assign(Error(data.error||'通信できませんでした。'),{status:response.status});return data}
  async function loadCatalog(){if(catalog)return catalog;if(catalogLoading)return catalogLoading;catalogLoading=fetchCatalog();try{return await catalogLoading}finally{catalogLoading=null}}
- async function fetchCatalog(){const r=await fetch('https://ouenka-base-data.ninzin5600.workers.dev/songs',{cache:'no-store',signal:AbortSignal.timeout(30000)});if(!r.ok)throw Error('応援歌の一覧を読み込めませんでした。');const d=await r.json();if(!Array.isArray(d.songs))throw Error('応援歌の一覧を確認できませんでした。');catalog=d.songs.filter(s=>!['1','true'].includes(String(s.is_generic??s.isGeneric??'').trim().toLowerCase())).map(raw=>{const s=window.OuenkaQuizMetadata?.merge(raw)||raw;return {...s,name:String(s.player_name||s.name||''),productionNumber:String(s.production_number||s.productionNumber||1),team:String(s.team||''),lyrics:String(s.lyrics||''),isActive:['現在使用','現役','1','true'].includes(String(s.player_type??s.active??'').trim())}}).filter(s=>s.name);const old=$('roomTeam').value;for(const t of [...new Set(catalog.map(s=>s.team).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja')))$('roomTeam').append(new Option(t,t));$('roomTeam').value=old;return catalog}
+ async function fetchCatalog(){const r=await fetch('https://ouenka-base-data.ninzin5600.workers.dev/songs',{cache:'no-store',signal:AbortSignal.timeout(30000)});if(!r.ok)throw Error('応援歌の一覧を読み込めませんでした。');const d=await r.json();if(!Array.isArray(d.songs))throw Error('応援歌の一覧を確認できませんでした。');catalog=d.songs.filter(s=>!['1','true'].includes(String(s.is_generic??s.isGeneric??'').trim().toLowerCase())).map(raw=>{const s=window.OuenkaQuizMetadata?.merge(raw)||raw;return {...s,name:String(s.player_name||s.name||''),productionNumber:String(s.production_number||s.productionNumber||1),team:String(s.team||''),lyrics:String(s.lyrics||''),isActive:['現在使用','現役','1','true'].includes(String(s.player_type??s.active??'').trim())}}).filter(s=>s.name);window.OuenkaTeamMulti.init('room',[...new Set(catalog.map(s=>s.team).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja')));return catalog}
  function settings(){
   const value=id=>$(id).value,startBar=Number(value('roomStartBar'));
   if(value('roomKind')==='audio'&&value('roomExcerpt')==='custom'&&(!Number.isInteger(startBar)||startBar<1||startBar>128))throw Error('開始小節を1〜128の整数で入力してください。');
   return {version:2,kind:value('roomKind'),answerMode:value('roomAnswerMode'),unit:'bars',bars:1,
-   excerpt:value('roomExcerpt'),startBar,lyricLines:Number(value('roomLyricLines')),team:value('roomTeam'),active:value('roomActive'),excludePitchers:$('roomExcludePitchers').checked};
+   excerpt:value('roomExcerpt'),startBar,lyricLines:Number(value('roomLyricLines')),teams:window.OuenkaTeamMulti.get('room'),team:'',active:value('roomActive'),excludePitchers:$('roomExcludePitchers').checked};
  }
  function lyricHints(song,problem,pool){
   const rules=window.OuenkaQuizRules,hints=[];let offset=problem.offset;
@@ -24,8 +24,9 @@
   return hints;
  }
  function buildQuestions(config){
+  if(config.teams&&!config.teams.length)throw Error('球団を1つ以上選んでください。');
   const rules=window.OuenkaQuizRules,count=Number($('roomQuestionCount').value),needed=config.answerMode==='search'?0:Number($('roomChoiceCount').value)-1;
-  const pool=catalog.filter(s=>(!config.team||s.team===config.team)&&(config.active==='all'||(config.active==='active'?s.isActive:!s.isActive))&&
+  const pool=catalog.filter(s=>(config.teams?config.teams.includes(s.team):(!config.team||s.team===config.team))&&(config.active==='all'||(config.active==='active'?s.isActive:!s.isActive))&&
    (!config.excludePitchers||!rules.isPitcherSong(s))&&(config.kind!=='lyrics'||rules.validLyrics(s)));
   const groups=new Map();
   for(const song of pool){const id=key(song.name);if(!groups.has(id))groups.set(id,[]);groups.get(id).push(song)}

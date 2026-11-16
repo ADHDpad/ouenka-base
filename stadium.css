@@ -46,3 +46,7 @@ html body[data-page=stadium]>header.stadium-header{
 }
 html body[data-page=stadium]>header.stadium-header>.top-menu-button,
 html body[data-page=stadium]>header.stadium-header>.top-menu-button small{color:var(--site-bar-ink,#fff)!important}
+
+/* r369: allow the stadium title bar to scroll with the page, as on other pages. */
+html body[data-page=stadium]>header.stadium-header{position:relative!important;top:auto!important;overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y!important;}
+html body[data-page=stadium]>header.stadium-header>*{flex-shrink:0!important;}
