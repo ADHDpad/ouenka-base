@@ -27,7 +27,7 @@ const pageIcons={
  'index.html':'home','favorites.html':'star','stadium.html':'flag',
  'requests.html':'mail','play.html':'music','medley.html':'music',
  'popular.html':'crown','ranking.html':'crown','songbook.html':'book',
- 'draft.html':'grid','save.html':'plus','settings.html':'settings'
+ 'draft.html':'grid','save.html':'plus','settings.html':'settings','manual.html':'book'
 };
 const actionIcons={'◀':'back','▣':'save','▤':'load','▧':'image','＋':'plus','⇄':'share','⚄':'random','⚙':'settings'};
 const lineupIcon='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><text x="12" y="15.5" text-anchor="middle" fill="currentColor" stroke="none" font-size="10">1-9</text></svg>';
