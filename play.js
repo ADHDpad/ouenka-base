@@ -3,7 +3,27 @@ const norm=value=>String(value??'').normalize('NFKC').toLocaleLowerCase('ja-JP')
 const active=s=>['現在使用','現役','1','true'].includes(String(s.player_type??s.active??'').trim());
 function normalized(s){s=window.OuenkaQuizMetadata?.merge(s)||s;return {...s,name:String(s.player_name||s.name||''),productionNumber:String(s.production_number||s.productionNumber||1),team:String(s.team||''),reading:String(s.reading||''),lyrics:String(s.lyrics||''),isActive:active(s)}}
 function shuffled(items){const result=[...items];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]]}return result}
-function filtered(teamId,activeId,source=catalog){const team=$(teamId).value,kind=$(activeId).value;return source.filter(s=>!['1','true'].includes(String(s.is_generic??s.isGeneric??'').trim().toLowerCase())&&(!team||s.team===team)&&(kind==='all'||(kind==='active'?s.isActive:!s.isActive)))}
+function quizTeams(){return window.OuenkaTeamMulti.get('quiz')}
+function filtered(teams,kind){
+ const selected=teams===null?null:new Set(teams);
+ return catalog.filter(s=>!['1','true'].includes(String(s.is_generic??s.isGeneric??'').trim().toLowerCase())&&
+  (!selected||selected.has(s.team))&&(kind==='all'||(kind==='active'?s.isActive:!s.isActive)));
+}
+function initQuizTeams(teams,requested){
+ const checks=$('quizTeamChecks');
+ const previous=checks.childElementCount?[...checks.querySelectorAll('input:checked')].map(input=>input.value):null;
+ window.OuenkaTeamMulti.init('quiz',teams);
+ const fromUrl=requested.filter(team=>teams.includes(team));
+ const selected=previous??(fromUrl.length?fromUrl:null);
+ if(selected)for(const input of checks.querySelectorAll('input'))input.checked=selected.includes(input.value);
+ if(previous===null&&fromUrl.length)$('quizTeamMode').value='selected';
+ $('quizTeamMode').onchange();
+}
+function quizTeamRecordKey(){
+ const teams=quizTeams();
+ if(!teams?.length)return '';
+ return teams.length===1?teams[0]:JSON.stringify([...teams].sort());
+}
 function node(tag,text,className){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(className)el.className=className;return el}
 let catalog=[],loading=false,loadToken=0,mode='',quiz=null,quizToken=0;const modes={quiz:['応援歌クイズ','quizPanel'],lyricsquiz:['歌詞クイズ','quizPanel'],chordquiz:['コード進行クイズ','quizPanel'],compare:['新旧応援歌の聴き比べ','comparePanel']};
 function setListening(value){$('quizListeningScene').classList.toggle('is-listening',value)}
@@ -37,22 +57,27 @@ function showMode(value,openSettings=true){
 }
 document.querySelectorAll('button[data-mode]').forEach(b=>b.onclick=()=>showMode(b.dataset.mode));window.addEventListener('hashchange',()=>showMode(location.hash.slice(1),location.hash!=='#quiz'));
 async function loadCatalog(){if(loading)return;loading=true;const token=++loadToken;$('catalogStatus').textContent='登録された応援歌を読み込んでいます…';$('reloadCatalog').hidden=true;
- try{const response=await fetch('https://ouenka-base-data.ninzin5600.workers.dev/songs',{cache:'no-store',signal:AbortSignal.timeout(30000)});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();if(data.ok===false||!Array.isArray(data.songs))throw Error('登録データの形式を確認できません。');if(token!==loadToken)return;catalog=data.songs.map(normalized).filter(s=>s.name);const teams=[...new Set(catalog.map(s=>s.team).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));for(const id of ['quizTeam']){const select=$(id),previous=select.value;select.replaceChildren(new Option('すべての球団',''),...teams.map(t=>new Option(t,t)));if(teams.includes(previous))select.value=previous}const urlParams=new URLSearchParams(location.search);if(urlParams.has('team'))for(const id of ['quizTeam'])if(teams.includes(urlParams.get('team')))$(id).value=urlParams.get('team');if(urlParams.get('name'))$('compareQuery').value=urlParams.get('name');$('catalogStatus').textContent=catalog.length+'曲の応援歌から楽しめます。';renderCompareCandidates();showBest();
+ try{const response=await fetch('https://ouenka-base-data.ninzin5600.workers.dev/songs',{cache:'no-store',signal:AbortSignal.timeout(30000)});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();if(data.ok===false||!Array.isArray(data.songs))throw Error('登録データの形式を確認できません。');if(token!==loadToken)return;catalog=data.songs.map(normalized).filter(s=>s.name);const teams=[...new Set(catalog.map(s=>s.team).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));const urlParams=new URLSearchParams(location.search);initQuizTeams(teams,urlParams.getAll('team'));if(urlParams.get('name'))$('compareQuery').value=urlParams.get('name');$('catalogStatus').textContent=catalog.length+'曲の応援歌から楽しめます。';renderCompareCandidates();showBest();
  }catch(error){$('catalogStatus').textContent='登録データを読み込めませんでした。通信を確認して再度お試しください。';$('reloadCatalog').hidden=false}finally{loading=false}}
 $('reloadCatalog').onclick=loadCatalog;
-function bestKey(){return 'ouenka_quiz_points_v3:'+[$('quizKind').value,$('quizQuestionCount').value,$('quizTeam').value,$('quizActive').value,$('quizAnswerMode').value,$('quizChoiceCount').value,$('quizLyricLines').value,$('quizExcerpt').value,$('quizStartBar').value].join('|')+($('quizExcludePitchers').checked?'|exclude-pitchers':'')}
+function bestKey(){return 'ouenka_quiz_points_v3:'+[$('quizKind').value,$('quizQuestionCount').value,quizTeamRecordKey(),$('quizActive').value,$('quizAnswerMode').value,$('quizChoiceCount').value,$('quizLyricLines').value,$('quizExcerpt').value,$('quizStartBar').value].join('|')+($('quizExcludePitchers').checked?'|exclude-pitchers':'')}
 function showBest(){try{const best=JSON.parse(localStorage.getItem(bestKey())||'null');$('quizBest').textContent=best?'この条件の最高記録：'+best.score+' / '+best.total+'点':''}catch{$('quizBest').textContent=''}}
-for(const id of ['quizTeam','quizActive','quizExcerpt','quizStartBar','quizLyricLines','quizChoiceCount','quizAnswerMode','quizQuestionCount','quizExcludePitchers'])$(id).addEventListener('change',()=>{syncQuizControls();showBest()});
+for(const id of ['quizTeamPicker','quizActive','quizExcerpt','quizStartBar','quizLyricLines','quizChoiceCount','quizAnswerMode','quizQuestionCount','quizExcludePitchers'])$(id).addEventListener('change',()=>{syncQuizControls();showBest()});
+$('quizTeamPicker').addEventListener('click',event=>{if(['quizTeamAll','quizTeamNone'].includes(event.target.id))showBest()});
 $('quizTypes').onclick=()=>{resetQuizSetup();showMode(mode,false)};
 $('quizKind').addEventListener('change',()=>showMode($('quizKind').value==='lyrics'?'lyricsquiz':$('quizKind').value==='chord'?'chordquiz':'quiz'));
 let quizPreparing=false;
 $('quizStart').onclick=async()=>{
- if(quizPreparing)return;quizPreparing=true;$('quizStart').disabled=true;
+ if(quizPreparing)return;
+ if(quizTeams()?.length===0){$('quizBest').textContent='球団を1つ以上選んでください。';return}
+ quizPreparing=true;$('quizStart').disabled=true;
  try{const directory=await window.OuenkaNpbDirectory?.load();window.OuenkaQuizRules.setPlayerNames([...catalog,...(directory||[])])}catch{window.OuenkaQuizRules.setPlayerNames(catalog)}finally{quizPreparing=false;$('quizStart').disabled=false}
  const direct=$('quizKind').value!=='blank'&&$('quizAnswerMode').value==='search',kind=$('quizKind').value,choiceCount=Math.max(4,Math.min(10,Number($('quizChoiceCount').value)||4));
  if(kind==='audio'&&$('quizExcerpt').value==='custom'&&(!Number.isInteger(Number($('quizStartBar').value))||Number($('quizStartBar').value)<1||Number($('quizStartBar').value)>128)){$('quizBest').textContent='開始小節を1〜128の整数で入力してください。';return}
  audio.stop();quizToken++;
- const eligible=filtered('quizTeam','quizActive').filter(song=>!$('quizExcludePitchers').checked||!window.OuenkaQuizRules.isPitcherSong(song)).filter(song=>!['lyrics','blank'].includes(kind)||window.OuenkaQuizRules.validLyrics(song)),unique=new Map();
+ const teams=quizTeams();
+ if(teams?.length===0){$('quizBest').textContent='球団を1つ以上選んでください。';return}
+ const eligible=filtered(teams,$('quizActive').value).filter(song=>!$('quizExcludePitchers').checked||!window.OuenkaQuizRules.isPitcherSong(song)).filter(song=>!['lyrics','blank'].includes(kind)||window.OuenkaQuizRules.validLyrics(song)),unique=new Map();
  for(const song of eligible){const id=nameKey(song.name);if(!unique.has(id))unique.set(id,[]);unique.get(id).push(song)}const groups=[...unique.values()];
  if(kind!=='blank'&&!direct&&groups.length<choiceCount){$('quizBest').textContent=choiceCount+'択には異なる選手が'+choiceCount+'人分必要です。球団・対象を広げるか、選択肢を減らしてください。';return}
  const blankPool=kind==='blank'?window.OuenkaBlankQuiz.pool(eligible):null;
@@ -110,7 +135,7 @@ function finishQuiz(){
  $('quizResult').scrollIntoView?.({behavior:'smooth',block:'start'});
 }
 $('quizSettings').onclick=resetQuizSetup;$('quizResultSettings').onclick=resetQuizSetup;$('quizRetry').onclick=()=>{$('quizStart').onclick()};
-$('quizAnswerQuery').addEventListener('input',()=>{if(!quiz||quiz.answered)return;const q=nameKey($('quizAnswerQuery').value),seen=new Set();const songs=q?catalog.filter(s=>{const id=nameKey(s.name);if(!(!['1','true'].includes(String(s.is_generic??s.isGeneric??'').trim().toLowerCase()))||seen.has(id)||!nameKey(s.name+' '+s.reading).includes(q))return false;seen.add(id);return true}).slice(0,20):[];$('quizAnswerCandidates').replaceChildren(...songs.map(song=>{const b=node('button');b.type='button';b.className='suggestion';b.dataset.team=song.team;b.append(node('strong',song.name),node('small',song.team));b.onclick=()=>answer(song,b);return b}))});$('quizMoreLyrics').onclick=()=>{if(!quiz||quiz.answered)return;const correct=quiz.questions[quiz.at];const limit=Math.min(4,correct.quizLines.length);if(correct.quizLyricStart+correct.quizVisibleLines>=correct.quizLines.length)correct.quizLyricStart=Math.max(0,correct.quizLyricStart-1);correct.quizVisibleLines=Math.min(limit,correct.quizVisibleLines+1);$('quizLyricPrompt').textContent=window.OuenkaQuizRules.maskName(correct.quizLines.slice(correct.quizLyricStart,correct.quizLyricStart+correct.quizVisibleLines).join('\n'),correct);$('quizListenStatus').textContent=correct.quizVisibleLines+'フレーズ表示：正解で'+lyricPoints(correct)+'点';$('quizMoreLyrics').hidden=correct.quizVisibleLines>=Math.min(4,correct.quizLines.length)};
+$('quizAnswerQuery').addEventListener('input',()=>{if(!quiz||quiz.answered)return;const q=nameKey($('quizAnswerQuery').value),seen=new Set();const songs=q?catalog.filter(s=>{const id=nameKey(s.name);if(!(!['1','true'].includes(String(s.is_generic??s.isGeneric??'').trim().toLowerCase()))||seen.has(id)||!nameKey(s.name+' '+s.reading).includes(q))return false;seen.add(id);return true}).slice(0,20):[];$('quizAnswerCandidates').replaceChildren(...songs.map(song=>{const b=node('button',song.name,'secondary quiz-search-candidate');b.type='button';b.onclick=()=>answer(song,b);return b}))});$('quizMoreLyrics').onclick=()=>{if(!quiz||quiz.answered)return;const correct=quiz.questions[quiz.at];const limit=Math.min(4,correct.quizLines.length);if(correct.quizLyricStart+correct.quizVisibleLines>=correct.quizLines.length)correct.quizLyricStart=Math.max(0,correct.quizLyricStart-1);correct.quizVisibleLines=Math.min(limit,correct.quizVisibleLines+1);$('quizLyricPrompt').textContent=window.OuenkaQuizRules.maskName(correct.quizLines.slice(correct.quizLyricStart,correct.quizLyricStart+correct.quizVisibleLines).join('\n'),correct);$('quizListenStatus').textContent=correct.quizVisibleLines+'フレーズ表示：正解で'+lyricPoints(correct)+'点';$('quizMoreLyrics').hidden=correct.quizVisibleLines>=Math.min(4,correct.quizLines.length)};
 $('quizMoreAudio').onclick=()=>hearQuestion(true);$('quizReplay').onclick=()=>hearQuestion();$('quizStop').onclick=()=>{quizToken++;if(quiz)quiz.hearing=false;audio.stop();setListening(false);syncMoreAudio();$('quizReplay').disabled=!!quiz?.answered;$('quizListenStatus').textContent='停止しました。'};$('quizSkip').onclick=()=>answer(null);$('quizNext').onclick=()=>{if(quiz?.answered){quiz.at++;nextQuestion()}};
 $('quizAnswerPlay').onclick=()=>{if(quiz?.answered)playSong(quiz.questions[quiz.at])};
 async function playSong(song){$('audioStatus').textContent=song.name+' の音源を読み込み中…';try{const result=await audio.play(song);if(result)$('audioStatus').textContent='再生中：'+song.name+' ／ '+song.team+' ／ 制作番号 '+song.productionNumber}catch(error){$('audioStatus').textContent=error.message}}

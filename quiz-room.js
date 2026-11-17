@@ -60,7 +60,7 @@
  function renderSearch(){
   const query=key($('roomAnswerQuery').value),seen=new Set();
   const matches=query?(catalog||[]).filter(song=>{const id=key(song.name);if(seen.has(id)||!key(song.name+' '+(song.reading||'')).includes(query))return false;seen.add(id);return true}).slice(0,20):[];
-  $('roomAnswerCandidates').replaceChildren(...matches.map(song=>{const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=song.name+' ／ '+song.team;b.onclick=()=>submitAnswer({answer:song.name});return b}));
+  $('roomAnswerCandidates').replaceChildren(...matches.map(song=>{const b=document.createElement('button');b.type='button';b.className='secondary quiz-search-candidate';b.textContent=song.name;b.onclick=()=>submitAnswer({answer:song.name});return b}));
  }
  function render(data){current=data;$('roomSetup').hidden=true;$('roomBattle').hidden=false;$('roomDisplayCode').textContent=data.code;$('roomHostActions').hidden=!data.host;
   $('roomLeave').textContent=data.host?'ルームを終了して退出':'ルームから退出';$('roomStart').hidden=data.stage!=='lobby';$('roomStart').disabled=data.members.length<2;$('roomReveal').hidden=data.stage!=='question';$('roomNext').hidden=data.stage!=='reveal';$('roomNext').textContent=data.at+1===data.total?'最終結果を見る':'次の問題へ';
