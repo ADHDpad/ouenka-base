@@ -127,6 +127,7 @@
    copy.textContent='Safari用URLをコピー';
    const note=document.createElement('p');
    note.className='menu-audio-status';
+   note.hidden=true;
    note.setAttribute('role','status');
    const address=document.createElement('input');
    address.type='url';
@@ -145,6 +146,7 @@
        address.select();
        note.textContent='このURLをコピーして、Safariのアドレス欄に貼り付けてください。';
      }
+     note.hidden=false;
    });
    anchor.after(copy,note,address);
  }

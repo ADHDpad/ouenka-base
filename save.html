@@ -659,7 +659,7 @@ main{max-width:760px}
 input,textarea,select{scroll-margin-top:90px}
 @media(max-width:700px){input,textarea,select{font-size:16px!important}}
 </style>
-<link rel="stylesheet" href="ui-r177.css?v=20261103-r331"><link rel="stylesheet" href="site-theme.css?v=20261103-r331"><script src="site-theme.js?v=20261103-r331"></script><link rel="stylesheet" href="site-settings.css?v=20261109-r332"><script defer src="site-settings.js?v=20261109-r332"></script><link rel="stylesheet" href="shared-navigation.css?v=20261103-r331"><script defer src="home-menu-icon-unify.js?v=20261113-r368"></script><script defer src="shared-navigation.js?v=20261113-r368"></script><link rel="stylesheet" href="titlebar-type.css?v=20261109-r334"><link rel="stylesheet" href="npb-register-search.css?v=20261103-r331"><script src="npb-player-directory.js?v=20261103-r331"></script><script src="npb-register-search.js?v=20261103-r331"></script><script defer src="field-state.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script></head>
+<link rel="stylesheet" href="ui-r177.css?v=20261103-r331"><link rel="stylesheet" href="site-theme.css?v=20261103-r331"><script src="site-theme.js?v=20261103-r331"></script><link rel="stylesheet" href="site-settings.css?v=20261109-r332"><script defer src="site-settings.js?v=20261109-r332"></script><link rel="stylesheet" href="shared-navigation.css?v=20261103-r331"><script defer src="home-menu-icon-unify.js?v=20261113-r368"></script><script defer src="shared-navigation.js?v=20261113-r368"></script><link rel="stylesheet" href="titlebar-type.css?v=20261109-r334"><link rel="stylesheet" href="npb-register-search.css?v=20261103-r331"><script src="npb-player-directory.js?v=20261103-r331"></script><script src="npb-register-search.js?v=20261103-r331"></script><script defer src="field-state.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="creator-password.js?v=20261118-ranking-admin"></script></head>
 
 <body>
 
@@ -667,7 +667,7 @@ input,textarea,select{scroll-margin-top:90px}
   <div class="creator-login">
     <h2>CREATOR LOGIN</h2>
     <p>応援歌BASE 作成者専用画面</p>
-    <input type="password" id="creatorPassword" inputmode="numeric" autocomplete="new-password" placeholder="作成者用パスワード">
+    <input type="password" id="creatorPassword" autocomplete="current-password" placeholder="作成者用パスワード">
     <button type="button" onclick="unlockCreator()">作成者画面を開く</button>
     <div id="creatorError"></div>
     <a class="creator-back" href="./index.html">◀戻る</a>
@@ -1286,17 +1286,17 @@ function clearNewRegisterForm(){
 /* =========================================
    作成者認証（簡易ロック）
 ========================================= */
-const CREATOR_PASSWORD = "1224";
+const CREATOR_SESSION_KEY = "ouenkaCreatorUnlockedV2";
 
 function unlockCreator(){
   const input = $("creatorPassword");
   const error = $("creatorError");
 
-  if(input.value === CREATOR_PASSWORD){
+  if(window.OuenkaCreatorPassword?.matches(input.value)){
     $("creatorGate").style.display = "none";
     $("creatorContent").style.display = "block";
     error.textContent = "";
-    sessionStorage.setItem("ouenkaCreatorUnlocked","1");
+    try { sessionStorage.setItem(CREATOR_SESSION_KEY,"1"); } catch {}
     return;
   }
 
@@ -1311,7 +1311,9 @@ function openSongDataSubmit(){
 window.addEventListener("DOMContentLoaded",()=>{
   setRegisterMode("new");
 
-  if(sessionStorage.getItem("ouenkaCreatorUnlocked") === "1"){
+  let unlocked = false;
+  try { unlocked = sessionStorage.getItem(CREATOR_SESSION_KEY) === "1"; } catch {}
+  if(unlocked){
     $("creatorGate").style.display = "none";
     $("creatorContent").style.display = "block";
   }

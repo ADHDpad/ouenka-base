@@ -5,7 +5,32 @@ const index=document.createElement('section');index.id='settingsIndex';index.cla
 const groups=[];let count=0;for(const [panel,label]of [[user,'ユーザー向け設定'],[admin,'管理者用設定']]){const items=[];for(const section of panel.querySelectorAll(':scope > section,:scope > .card,:scope > .titlebar-settings')){const title=section.querySelector('h2,.cardhead,h3');if(!title)continue;if(!section.id)section.id='settingsItem'+(++count);items.push({id:section.id,title:title.textContent.trim(),panel})}groups.push({label,items})}
 const toolbar=document.createElement('div');toolbar.className='settings-detail-toolbar';toolbar.hidden=true;const back=document.createElement('button');back.type='button';back.textContent='‹ 設定項目一覧';toolbar.append(back);const tabs=main.querySelector('.settings-tabs');tabs.hidden=true;tabs.before(index,toolbar);
 function showIndex(){user.hidden=true;admin.hidden=true;index.hidden=false;toolbar.hidden=true;main.querySelector('h1').textContent='設定';if(dialog?.open)dialog.close();index.scrollIntoView({block:'start'});index.tabIndex=-1;index.focus({preventScroll:true})}
-function jump(item){document.getElementById(item.panel===admin?'admin-settings-tab':'user-settings-tab').click();index.hidden=true;toolbar.hidden=false;main.querySelector('h1').textContent=item.title;for(const panel of [user,admin]){panel.hidden=panel!==item.panel;for(const node of panel.children){if(node.tagName==='SCRIPT')continue;node.hidden=node!==document.getElementById(item.id)}}
+const gate=document.createElement('dialog');
+gate.id='adminPasswordDialog';
+gate.setAttribute('aria-labelledby','adminPasswordTitle');
+gate.innerHTML='<form><h2 id="adminPasswordTitle">管理者用設定</h2><label for="adminPassword">パスワード</label><input id="adminPassword" type="password" autocomplete="current-password" required><p id="adminPasswordError" role="alert"></p><div><button type="button">キャンセル</button><button type="submit">開く</button></div></form>';
+document.body.append(gate);
+const password=gate.querySelector('input'),error=gate.querySelector('[role="alert"]');
+let pendingItem=null;
+gate.querySelector('button').onclick=()=>gate.close();
+gate.addEventListener('close',()=>{if(!gate.open)pendingItem=null});
+gate.querySelector('form').onsubmit=event=>{
+ event.preventDefault();
+ if(!window.OuenkaCreatorPassword?.matches(password.value)){
+  error.textContent='パスワードが違います。';
+  password.select();
+  return;
+ }
+ const item=pendingItem;
+ gate.close();
+ if(item)openItem(item);
+};
+function jump(item){
+ if(item.panel!==admin||!admin.hidden){openItem(item);return}
+ pendingItem=item;
+ if(!gate.open){password.value='';error.textContent='';gate.showModal();password.focus()}
+}
+function openItem(item){index.hidden=true;toolbar.hidden=false;main.querySelector('h1').textContent=item.title;for(const panel of [user,admin]){panel.hidden=panel!==item.panel;for(const node of panel.children){if(node.tagName==='SCRIPT')continue;node.hidden=node!==document.getElementById(item.id)}}
 // The team-order save actions are siblings of its card in the original page.
 if(document.getElementById(item.id).contains(document.getElementById('teamList')))for(const id of ['reset','save'])document.getElementById(id).hidden=false;
 if(dialog?.open)dialog.close();requestAnimationFrame(()=>{toolbar.scrollIntoView({block:'start'});const target=document.getElementById(item.id);target.tabIndex=-1;target.focus({preventScroll:true})})}
@@ -14,6 +39,17 @@ function list(destination){for(const group of groups){const h=document.createEle
 list(index);const data=document.createElement('a');data.className='settings-data-link';data.href='save.html';data.textContent='データ登録・編集を開く ›';index.append(data);
 if(dialog&&general){const specific=document.createElement('section');specific.id='sharedSpecificMenu';specific.setAttribute('role','tabpanel');specific.setAttribute('aria-labelledby','settingsMenuTab1');const all=document.createElement('button');all.type='button';all.className='settings-index-all';all.textContent='設定項目一覧';all.onclick=showIndex;specific.append(all);list(specific);dialog.append(specific);general.setAttribute('role','tabpanel');general.setAttribute('aria-labelledby','settingsMenuTab0');const menuTabs=document.createElement('div');menuTabs.className='shared-menu-tabs';menuTabs.setAttribute('role','tablist');menuTabs.setAttribute('aria-label','メニューの種類');function select(n){[general,specific].forEach((panel,i)=>{panel.hidden=i!==n;menuTabs.children[i].setAttribute('aria-selected',String(i===n));menuTabs.children[i].tabIndex=i===n?0:-1})}for(const [n,label]of [[0,'通常メニュー'],[1,'設定メニュー']]){const b=document.createElement('button');b.type='button';b.id='settingsMenuTab'+n;b.textContent=label;b.setAttribute('role','tab');b.setAttribute('aria-controls',n?specific.id:general.id);b.onclick=()=>select(n);menuTabs.append(b)}menuTabs.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const n=e.key==='Home'?0:e.key==='End'?1:general.hidden?0:1;select(n);menuTabs.children[n].focus()};dialog.querySelector('.lineup-menu-heading').after(menuTabs);select(1)}
 // Existing category tabs still drive internal panel setup, but are replaced by the item index.
-window.addEventListener('hashchange',()=>{const item=groups.flatMap(g=>g.items).find(x=>x.id===location.hash.slice(1));if(item)jump(item)});
-const initial=groups.flatMap(g=>g.items).find(x=>x.id===location.hash.slice(1));if(initial)jump(initial);else{user.hidden=true;admin.hidden=true}
+function hashItem(){
+ const id=location.hash.slice(1);
+ return id==='admin'?groups[1].items[0]:groups.flatMap(g=>g.items).find(x=>x.id===id);
+}
+window.addEventListener('hashchange',()=>{
+ if(gate.open)gate.close();
+ const item=hashItem();
+ if(item)jump(item);else showIndex();
+});
+user.hidden=true;
+admin.hidden=true;
+const initial=hashItem();
+if(initial)jump(initial);
 });})();
