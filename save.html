@@ -922,10 +922,11 @@ NPBから取得
 </label>
 
 <input
-  type="number"
+  type="text"
   id="number"
+  pattern="[0-9]+"
   inputmode="numeric"
-  placeholder="例：58"
+  placeholder="例：00、58"
 >
 
 </div>
@@ -2069,9 +2070,11 @@ async function registerPlayer(){
       )
       ?.value || "";
 
-  const number =
-    $("number")
-      .value;
+  const number = $("number").value.normalize("NFKC").trim();
+  if (number !== "" && !/^\d+$/.test(number)) {
+    showError("背番号は数字で入力してください。");
+    return;
+  }
 
   const lyrics =
     $("lyrics")
@@ -2170,9 +2173,7 @@ if(!name){
             is_pitcher_song:$("songPitcher").checked,
             random_excluded:$("songRandomExcluded").checked,
             uniform_number:
-              number === ""
-                ? null
-                : Number(number),
+              number === "" || number === "00" ? (number || null) : Number(number),
             lyrics:lyrics,
             production_number:requestedProductionNumber,
             audio_filename:
@@ -2614,8 +2615,11 @@ async function updateExistingSong(){
       )
       ?.value || "";
 
-  const number =
-    $("number").value;
+  const number = $("number").value.normalize("NFKC").trim();
+  if (number !== "" && !/^\d+$/.test(number)) {
+    showError("背番号は数字で入力してください。");
+    return;
+  }
 
   const lyrics =
     $("lyrics")
@@ -2711,9 +2715,7 @@ async function updateExistingSong(){
             is_pitcher_song:$("songPitcher").checked,
             random_excluded:$("songRandomExcluded").checked,
             uniform_number:
-              number === ""
-                ? null
-                : Number(number),
+              number === "" || number === "00" ? (number || null) : Number(number),
             lyrics:lyrics,
             production_number:productionNumber,
             audio_filename: selectedAudioFile ? "audio.m4a" : (editingSong.audio_filename || "audio.m4a"),

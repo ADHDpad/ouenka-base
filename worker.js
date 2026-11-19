@@ -66,7 +66,7 @@ export default {
               reading,
               team,
               player_type,
-              uniform_number,
+              COALESCE(uniform_number_text, uniform_number) AS uniform_number,
               production_number,
               lyrics,
               tempo,
@@ -115,7 +115,7 @@ export default {
               reading,
               team,
               player_type,
-              uniform_number,
+              COALESCE(uniform_number_text, uniform_number) AS uniform_number,
               production_number,
               lyrics,
               tempo,
@@ -178,7 +178,7 @@ export default {
               reading,
               team,
               player_type,
-              uniform_number,
+              COALESCE(uniform_number_text, uniform_number) AS uniform_number,
               production_number,
               lyrics,
               tempo,
@@ -295,9 +295,7 @@ export default {
             body.player_type
           );
         const uniformNumber =
-          parseNumberOrNull(
-            body.uniform_number
-          );
+          readUniformNumber(body.uniform_number);
         const lyrics =
           String(
             body.lyrics ?? ""
@@ -364,6 +362,7 @@ export default {
               team,
               player_type,
               uniform_number,
+              uniform_number_text,
               production_number,
               lyrics,
               audio_filename,
@@ -377,7 +376,7 @@ export default {
               random_excluded
             )
             VALUES (
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
           `)
           .bind(
@@ -385,7 +384,8 @@ export default {
             reading,
             team,
             playerType,
-            uniformNumber,
+            parseNumberOrNull(uniformNumber),
+            uniformNumber === "00" ? "00" : null,
             productionNumber,
             lyrics,
             audioFilename,
@@ -503,10 +503,8 @@ export default {
             body,
             "uniform_number"
           )
-            ? parseNumberOrNull(
-                body.uniform_number
-              )
-            : current.uniform_number;
+            ? readUniformNumber(body.uniform_number)
+            : (current.uniform_number_text ?? current.uniform_number);
         const lyrics =
           hasOwn(
             body,
@@ -588,6 +586,7 @@ export default {
             team = ?,
             player_type = ?,
             uniform_number = ?,
+            uniform_number_text = ?,
             lyrics = ?,
             audio_filename = ?,
             garageband_filename = ?,
@@ -605,7 +604,8 @@ export default {
           reading,
           team,
           playerType,
-          uniformNumber,
+          parseNumberOrNull(uniformNumber),
+          uniformNumber === "00" ? "00" : null,
           lyrics,
           audioFilename,
           garageBandFilename,
@@ -627,7 +627,7 @@ export default {
               reading,
               team,
               player_type,
-              uniform_number,
+              COALESCE(uniform_number_text, uniform_number) AS uniform_number,
               production_number,
               lyrics,
               tempo,
@@ -805,6 +805,10 @@ function validateSong(
 // ==============================================
 // 数値変換
 // ==============================================
+function readUniformNumber(value) {
+  return value === "00" ? value : parseNumberOrNull(value);
+}
+
 function parseNumberOrNull(
   value
 ) {
@@ -1176,7 +1180,7 @@ let songSettingsReady;
 async function ensureSongSettings(env){
  if(!songSettingsReady)songSettingsReady=(async()=>{
   const columns=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;
-  for(const [name,definition] of [['tempo','INTEGER NOT NULL DEFAULT 170'],['is_generic','INTEGER NOT NULL DEFAULT 0'],['random_excluded','INTEGER NOT NULL DEFAULT 0'],['is_pitcher_song','INTEGER NOT NULL DEFAULT 0']]){
+  for(const [name,definition] of [['tempo','INTEGER NOT NULL DEFAULT 170'],['is_generic','INTEGER NOT NULL DEFAULT 0'],['random_excluded','INTEGER NOT NULL DEFAULT 0'],['is_pitcher_song','INTEGER NOT NULL DEFAULT 0'],['uniform_number_text','TEXT']]){
    if(!columns.some(c=>c.name===name))try{await env.DB.prepare('ALTER TABLE songs ADD COLUMN '+name+' '+definition).run()}catch(e){const now=(await env.DB.prepare('PRAGMA table_info(songs)').all()).results;if(!now.some(c=>c.name===name))throw e}
   }
   await env.DB.prepare('UPDATE songs SET tempo = 140 WHERE tempo = 150').run();

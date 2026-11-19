@@ -46,9 +46,12 @@ async function loadSongs(){
      // 現役（現在使用）を先頭にし、現役選手は背番号順。
      // 同じ背番号・同じ選手に複数曲ある場合は応援歌番号順。
      if(a.isActive!==b.isActive)return a.isActive?-1:1;
-     const an=parseInt(a.uniformNumber,10),bn=parseInt(b.uniformNumber,10);
-     const aHas=Number.isFinite(an),bHas=Number.isFinite(bn);
      if(a.isActive&&b.isActive){
+       const aDoubleZero = a.uniformNumber === "00";
+       const bDoubleZero = b.uniformNumber === "00";
+       if (aDoubleZero !== bDoubleZero) return aDoubleZero ? -1 : 1;
+       const an=parseInt(a.uniformNumber,10),bn=parseInt(b.uniformNumber,10);
+       const aHas=Number.isFinite(an),bHas=Number.isFinite(bn);
        if(aHas&&bHas&&an!==bn)return an-bn;
        if(aHas!==bHas)return aHas?-1:1;
        const byName=a.name.localeCompare(b.name,"ja");
