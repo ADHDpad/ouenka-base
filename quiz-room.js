@@ -115,7 +115,7 @@
   const token=++audioEpoch,question=current.question,settings=current.settings;
   const level=(current.hintLevel||1)+(extend?1:0);
   const options=settings.kind==='chord'?{mask:true,chordOnly:true,full:true}:{...settings,
-   bars:settings.version===2?level:settings.bars,random:settings.excerpt==='random',randomValue:question.randomValue,fixedRandomStart:settings.version===2,mask:true,start:played?.start};
+   bars:settings.version===2?level:settings.bars,random:settings.excerpt==='random',randomValue:question.randomValue,fixedRandomStart:settings.version===2,growFromOne:settings.version===2,mask:true,start:settings.version===2?undefined:played?.start};
   hearing=true;render(current);$('roomAudioStatus').textContent='音源を読み込んでいます…';
   try{
    const result=await audio.play(question.song,options);

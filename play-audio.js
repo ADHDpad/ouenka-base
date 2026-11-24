@@ -45,7 +45,6 @@ async function play(song,options={}){
    options={...options,start:window.OuenkaQuizRules.excerpt(duration,{...options,bars:1},barSeconds).start};
   }
   const excerpt=options.full?{start:0,duration}:window.OuenkaQuizRules.excerpt(duration,options,barSeconds),clip=excerpt.duration,start=excerpt.start+bodyOffset;excerpt.bodyOffset=bodyOffset;
-  if(!options.full){const available=Math.floor((duration+.001)/barSeconds),end=options.random?available-2:available;excerpt.maxBars=Math.max(1,end-Math.round(excerpt.start/barSeconds))}
   const entries=buffers.filter(b=>b.duration>start).map(buffer=>({buffer,start:-start}));
   timeline={duration:clip,songs:options.mask?[]:[song],trackSongs:[song],entries};
   label=options.mask?'応援歌クイズ':song.name;replay=()=>play(song,options);endCallback=options.onEnded||null;schedule(0);trackPlayback([song],[0],context,token);if(!options.mask)mount(options);

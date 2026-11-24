@@ -100,7 +100,7 @@ function syncMoreAudio(){if(!quiz)return;const b=$('quizMoreAudio'),max=quiz.pla
 async function hearQuestion(extend=false){
  if(!quiz||quiz.answered||['lyrics','blank'].includes(quiz.kind)||quiz.hearing)return;const current=quiz,token=++quizToken;quiz.hearing=true;setListening(false);$('quizReplay').disabled=true;syncMoreAudio();$('quizListenStatus').textContent='音源を読み込んでいます…';
  const wanted=quiz.revealedBars+(extend?1:0);
- try{const options=quiz.kind==='chord'?{mask:true,chordOnly:true,full:true}:{mask:true,unit:'bars',bars:wanted,excerpt:quiz.excerpt,startBar:quiz.startBar,random:quiz.random,start:quiz.start};
+ try{const options=quiz.kind==='chord'?{mask:true,chordOnly:true,full:true}:{mask:true,unit:'bars',bars:wanted,excerpt:quiz.excerpt,startBar:quiz.startBar,random:quiz.random,start:quiz.start,extendExcerpt:extend?quiz.playedExcerpt:null};
   const result=await audio.play(quiz.questions[quiz.at],{...options,onEnded:()=>{if(token===quizToken)setListening(false)}});
   if(token!==quizToken||!result)return;quiz.start=result.start;quiz.playedExcerpt=result;if(quiz.kind==='audio')quiz.revealedBars=result.bars;
   setListening(audio.state().playing);$('quizListenStatus').textContent=quiz.kind==='chord'?'コード進行を全編再生。正解で4点。':result.bars+'小節（第'+result.startBar+'〜'+(result.startBar+result.bars-1)+'小節）：正解で'+Math.max(0,5-result.bars)+'点';

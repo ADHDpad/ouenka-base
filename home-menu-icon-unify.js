@@ -25,7 +25,7 @@ crown:'<path d="M2 6 7 11l5-8 5 8 5-5-2 14H4z"/>'
 function svg(name){return '<svg viewBox="0 0 24 24" width="20" height="20" fill="'+(solid[name]?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(solid[name]||paths[name])+'</svg>'}
 const pageIcons={
  'index.html':'home','favorites.html':'star','stadium.html':'flag',
- 'requests.html':'mail','play.html':'music','medley.html':'music',
+ 'requests.html':'mail','notices.html':'mail','play.html':'music','medley.html':'music',
  'popular.html':'crown','ranking.html':'crown','songbook.html':'book',
  'draft.html':'grid','save.html':'plus','settings.html':'settings','manual.html':'book'
 };
