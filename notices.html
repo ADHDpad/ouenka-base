@@ -17,8 +17,21 @@
       flex-wrap: wrap;
       gap: 10px;
       padding: 12px;
+      background: linear-gradient(110deg, color-mix(in srgb, var(--team-light) 25%, white), white 90%);
+      color: #123650;
     }
     .notice-song h2 { font-size: 1.1rem; overflow-wrap: anywhere; }
+    .notice-team {
+      display: table;
+      margin-top: 5px;
+      padding: 2px 7px;
+      border-left: 4px solid var(--main);
+      border-radius: 4px;
+      background: white;
+      color: #123650;
+      font-size: .8rem;
+      font-weight: 700;
+    }
     .notice-song .feature-actions { margin: 0; }
     #nowPlaying { margin: 0; }
   </style>
@@ -26,7 +39,7 @@
   <script defer src="home-menu-icon-unify.js?v=20261125-notices"></script>
   <script defer src="shared-navigation.js?v=20261125-notices"></script>
   <script defer src="field-state.js?v=20261103-r331"></script>
-</head>
+<link rel="stylesheet" href="notice-badge.css?v=20261125-unread"></head>
 <body>
   <header class="feature-header">
     <b>お知らせ</b>
@@ -51,6 +64,7 @@
   <script src="pwa-diagnostic.js?v=20261103-r331"></script>
   <script src="playback-speed.js?v=20261113-r366"></script>
   <script src="player.js?v=20261113-r366"></script>
-  <script src="notices.js?v=20261125-notices"></script>
+  <script src="notice-feed.js?v=20261125-unread"></script>
+  <script src="notices.js?v=20261125-unread"></script>
 </body>
 </html>

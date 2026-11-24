@@ -1,0 +1,23 @@
+[data-notice-unread]::after {
+  content: "";
+  display: inline-block;
+  flex: 0 0 9px;
+  width: 9px;
+  height: 9px;
+  margin-inline-start: 6px;
+  border-radius: 50%;
+  background: #ff384f;
+  box-shadow: 0 0 0 1px white;
+  vertical-align: middle;
+}
+
+:is(#homeMenuButton, #sharedMenuButton)[data-notice-unread] {
+  position: relative;
+}
+
+:is(#homeMenuButton, #sharedMenuButton)[data-notice-unread]::after {
+  position: absolute;
+  inset-block-start: 5px;
+  inset-inline-end: 5px;
+  margin: 0;
+}

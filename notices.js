@@ -10,20 +10,12 @@
   let entries = [];
   let shown = 0;
 
-  function registrationTime(value) {
-    if (value == null || String(value).trim() === '') return NaN;
-    if (/^\d{10}(?:\d{3})?$/.test(String(value))) {
-      return Number(value) * (String(value).length === 10 ? 1000 : 1);
-    }
-    // SQLite timestamps without a timezone are UTC.
-    const timestamp = String(value).trim().replace(' ', 'T');
-    return Date.parse(/^\d{4}-\d\d-\d\dT[\d:.]+$/.test(timestamp) ? timestamp + 'Z' : timestamp);
-  }
-
   function songCard({ song, timestamp }) {
     const row = document.createElement('article');
     row.className = 'feature-song notice-song';
-    row.style.setProperty('--main', window.OuenkaTeamColors.get(song.team)[0]);
+    const [main, light] = window.OuenkaTeamColors.get(song.team);
+    row.style.setProperty('--main', main);
+    row.style.setProperty('--team-light', light);
 
     const info = document.createElement('div');
     const name = document.createElement('h2');
@@ -33,9 +25,15 @@
     const date = document.createElement('time');
     date.dateTime = new Date(timestamp).toISOString();
     date.textContent = dateFormat.format(timestamp);
-    detail.append(date, '追加', song.team ? ' ／ ' + song.team : '');
+    detail.append(date, '追加');
     if (song.productionNumber !== '1') detail.append(' ／ 制作番号 ' + song.productionNumber);
     info.append(name, detail);
+    if (song.team) {
+      const team = document.createElement('span');
+      team.className = 'notice-team';
+      team.textContent = song.team;
+      info.append(team);
+    }
 
     const actions = document.createElement('div');
     actions.className = 'feature-actions';
@@ -64,16 +62,12 @@
     retry.hidden = true;
     status.textContent = 'お知らせを読み込み中…';
     try {
-      const songs = await window.OuenkaCatalog.load(force);
-      entries = songs
-        .filter(song => !['1', 'true'].includes(String(song.is_generic ?? song.isGeneric).trim().toLowerCase()))
-        .map(song => ({ song, timestamp: registrationTime(song.created_at ?? song.createdAt) }))
-        .filter(entry => Number.isFinite(entry.timestamp))
-        .sort((a, b) => b.timestamp - a.timestamp || (Number(b.song.id) || 0) - (Number(a.song.id) || 0));
+      entries = await window.OuenkaNoticeFeed.load(force);
       shown = 0;
       list.replaceChildren();
       window.ouenkaHomeQueue = entries.map(entry => entry.song);
       appendPage();
+      if (!document.hidden) window.OuenkaNoticeFeed.markRead(entries[0]);
     } catch {
       status.textContent = 'お知らせを読み込めませんでした。';
       retry.hidden = false;
@@ -82,5 +76,8 @@
 
   more.onclick = () => appendPage(true);
   retry.onclick = () => load(true);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && entries.length) window.OuenkaNoticeFeed.markRead(entries[0]);
+  });
   load();
 })();
