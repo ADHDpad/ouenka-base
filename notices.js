@@ -21,7 +21,7 @@
 
   function songCard({ song, timestamp }) {
     const row = document.createElement('article');
-    row.className = 'feature-song notice-song';
+    row.className = 'notice-song';
     const [main] = window.OuenkaTeamColors.get(song.team);
     row.style.setProperty('--main', main);
     row.style.setProperty('--notice-ink', readableInk(main));
