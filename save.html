@@ -659,28 +659,18 @@ main{max-width:760px}
 input,textarea,select{scroll-margin-top:90px}
 @media(max-width:700px){input,textarea,select{font-size:16px!important}}
 </style>
-<link rel="stylesheet" href="ui-r177.css?v=20261103-r331"><link rel="stylesheet" href="site-theme.css?v=20261103-r331"><script src="site-theme.js?v=20261103-r331"></script><link rel="stylesheet" href="site-settings.css?v=20261109-r332"><script defer src="site-settings.js?v=20261125-notices"></script><link rel="stylesheet" href="shared-navigation.css?v=20261103-r331"><script defer src="home-menu-icon-unify.js?v=20261125-notices"></script><script defer src="shared-navigation.js?v=20261125-r352"></script><link rel="stylesheet" href="titlebar-type.css?v=20261109-r334"><link rel="stylesheet" href="npb-register-search.css?v=20261103-r331"><script src="npb-player-directory.js?v=20261103-r331"></script><script src="npb-register-search.js?v=20261103-r331"></script><script defer src="field-state.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="creator-password.js?v=20261118-ranking-admin"></script><link rel="stylesheet" href="notice-badge.css?v=20261125-unread"><script defer src="ouenka-catalog.js?v=20261103-r331"></script><script defer src="notice-feed.js?v=20261125-unread"></script><script src="review-store.js?v=1"></script></head>
+<link rel="stylesheet" href="ui-r177.css?v=20261103-r331"><link rel="stylesheet" href="site-theme.css?v=20261103-r331"><script src="site-theme.js?v=20261103-r331"></script><link rel="stylesheet" href="site-settings.css?v=20261109-r332"><script defer src="site-settings.js?v=20261125-notices"></script><link rel="stylesheet" href="shared-navigation.css?v=20261103-r331"><script defer src="home-menu-icon-unify.js?v=20261125-notices"></script><script defer src="shared-navigation.js?v=20261125-r352"></script><link rel="stylesheet" href="titlebar-type.css?v=20261109-r334"><link rel="stylesheet" href="npb-register-search.css?v=20261103-r331"><script src="npb-player-directory.js?v=20261103-r331"></script><script src="npb-register-search.js?v=20261103-r331"></script><script defer src="field-state.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="creator-password.js?v=20261118-ranking-admin"></script><link rel="stylesheet" href="notice-badge.css?v=20261125-unread"><script defer src="ouenka-catalog.js?v=20261103-r331"></script><script defer src="notice-feed.js?v=20261125-unread"></script><script src="review-store.js?v=1"></script><link rel="stylesheet" href="creator-login.css?v=1"></head>
 
 <body>
 
-<div id="creatorGate">
+<div id="creatorGate" class="creator-auth-overlay">
   <div class="creator-login">
     <h2>CREATOR LOGIN</h2>
     <p>応援歌BASE 作成者専用画面</p>
     <input type="password" id="creatorPassword" autocomplete="current-password" placeholder="作成者用パスワード">
     <button type="button" onclick="unlockCreator()">作成者画面を開く</button>
-    <div id="creatorError"></div>
+    <div id="creatorError" class="creator-auth-error" role="alert"></div>
     <a class="creator-back" href="./index.html">◀戻る</a>
-
-    <div class="gate-divider">一般利用者はこちら</div>
-
-    <button
-      type="button"
-      class="submit-data-button"
-      onclick="openSongDataSubmit()"
-    >
-      作成者に応援歌データを渡す
-    </button>
   </div>
 </div>
 
@@ -1304,9 +1294,7 @@ function unlockCreator(){
   input.select();
 }
 
-function openSongDataSubmit(){
-  window.location.href = "./submit.html";
-}
+
 
 window.addEventListener("DOMContentLoaded",()=>{
   setRegisterMode("new");

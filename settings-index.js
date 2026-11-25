@@ -7,13 +7,13 @@ const groups=[];let count=0;for(const [panel,label]of [[user,'ユーザー向け
 const toolbar=document.createElement('div');toolbar.className='settings-detail-toolbar';toolbar.hidden=true;const back=document.createElement('button');back.type='button';back.textContent='‹ 設定項目一覧';toolbar.append(back);const tabs=main.querySelector('.settings-tabs');tabs.hidden=true;tabs.before(index,toolbar);
 function showIndex(){user.hidden=true;admin.hidden=true;index.hidden=false;toolbar.hidden=true;main.querySelector('h1').textContent='設定';if(dialog?.open)dialog.close();index.scrollIntoView({block:'start'});index.tabIndex=-1;index.focus({preventScroll:true})}
 const gate=document.createElement('dialog');
-gate.id='adminPasswordDialog';
+gate.id='adminPasswordDialog';gate.className='creator-auth-dialog';
 gate.setAttribute('aria-labelledby','adminPasswordTitle');
-gate.innerHTML='<form><h2 id="adminPasswordTitle">管理者用設定</h2><label for="adminPassword">パスワード</label><input id="adminPassword" type="password" autocomplete="current-password" required><p id="adminPasswordError" role="alert"></p><div><button type="button">キャンセル</button><button type="submit">開く</button></div></form>';
+gate.innerHTML='<form class="creator-login"><h2 id="adminPasswordTitle">CREATOR LOGIN</h2><p>応援歌BASE 作成者専用画面</p><input id="adminPassword" type="password" autocomplete="current-password" placeholder="作成者用パスワード" aria-label="作成者用パスワード" required><button type="submit">作成者画面を開く</button><div class="creator-auth-error" id="adminPasswordError" role="alert"></div><button class="creator-back" type="button">◀戻る</button></form>';
 document.body.append(gate);
 const password=gate.querySelector('input'),error=gate.querySelector('[role="alert"]');
 let pendingItem=null;
-gate.querySelector('button').onclick=()=>gate.close();
+gate.querySelector('.creator-back').onclick=()=>gate.close();
 gate.addEventListener('close',()=>{if(!gate.open)pendingItem=null});
 gate.querySelector('form').onsubmit=event=>{
  event.preventDefault();

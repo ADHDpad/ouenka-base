@@ -4,11 +4,3 @@ html body #user-settings>section>.cardhead,html body #admin-settings>section>.ca
 html body #user-settings>[hidden],html body #admin-settings>[hidden]{display:none!important}
 html[data-site-theme] body #user-settings>section>h2,html[data-site-theme] body #admin-settings>section>h2,html[data-site-theme] body #user-settings>section>.cardhead,html[data-site-theme] body #admin-settings>section>.cardhead{background:var(--site-menu-background,#0b2f55)!important;color:var(--site-menu-ink,#fff)!important}
 
-#adminPasswordDialog { box-sizing: border-box; max-width: calc(100vw - 32px); width: 360px; padding: 20px; border: 1px solid var(--site-line, #b8cede); border-radius: 14px; background: var(--site-surface, #fff); color: var(--site-text, #143149); }
-#adminPasswordDialog::backdrop { background: #081c36aa; }
-#adminPasswordDialog h2 { margin: 0 0 16px; }
-#adminPasswordDialog label { display: block; margin-bottom: 6px; }
-#adminPasswordDialog input { box-sizing: border-box; width: 100%; min-height: 44px; padding: 8px; font-size: 16px; }
-#adminPasswordDialog [role="alert"]:empty { display: none; }
-#adminPasswordDialog form > div { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-#adminPasswordDialog button { min-height: 44px; }
