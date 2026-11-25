@@ -1098,7 +1098,7 @@ m4aが選択されていません
 編集をやめる
 </button>
 
-<div id="message"></div>
+<div id="message"></div><p><a href="publication-review.html">公開前チェックリストを開く</a></p>
 
 </section>
 
@@ -2144,7 +2144,13 @@ if(!name){
 
     const draft={key:crypto.randomUUID(),createdAt:Date.now(),checks:[false,false,false,false,false],meta:{player_name:name,reading,team,player_type:type,tempo:Number($("songTempo").value),is_generic:$("songGeneric").checked,is_pitcher_song:$("songPitcher").checked,random_excluded:$("songRandomExcluded").checked,uniform_number:number===""?null:Number(number),lyrics,production_number:requestedProductionNumber,audio_filename:"audio.m4a",garageband_filename:"garageband.zip"},files:{"audio.m4a":selectedAudioFile,"melody.m4a":selectedMelodyAudioFile,"accompaniment.m4a":selectedAccompanimentAudioFile,"intro_melody.m4a":selectedIntroMelodyAudioFile,"intro_accompaniment.m4a":selectedIntroAccompanimentAudioFile,"special_audio.m4a":selectedSpecialAudioFile,"garageband.zip":selectedZipFile}};
     await OuenkaReview.put(draft);
-    location.href="publication-review.html";
+    clearNewRegisterForm();
+    if($("specialAudioFile")) $("specialAudioFile").value="";
+    if($("selectedSpecialAudioName")) $("selectedSpecialAudioName").textContent="未選択（通常版で再生）";
+    if($("fileResult")) $("fileResult").textContent="";
+    const count=(await OuenkaReview.all()).length;
+    showSuccess(name+" を未公開リストに追加しました。未公開："+count+"曲。続けて登録できます。");
+    window.scrollTo({top:0,behavior:"smooth"});
 
 
   }catch(error){
