@@ -10,21 +10,13 @@
   let entries = [];
   let shown = 0;
 
-  function readableInk(hex) {
-    const channels = hex.slice(1).match(/../g).map(pair => parseInt(pair, 16) / 255);
-    const [red, green, blue] = channels.map(value =>
-      value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
-    );
-    const luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-    return luminance >= 0.179 ? '#000' : '#fff';
-  }
-
   function songCard({ song, timestamp }) {
     const row = document.createElement('article');
     row.className = 'notice-song';
-    const [main] = window.OuenkaTeamColors.get(song.team);
-    row.style.setProperty('--main', main);
-    row.style.setProperty('--notice-ink', readableInk(main));
+    const colors = window.OuenkaTeamColors;
+    const palette = colors.get(song.team);
+    row.style.setProperty('--main', palette[0]);
+    row.style.setProperty('--notice-team-gradient', colors.css(palette, colors.getWidth(song.team)));
 
     const info = document.createElement('div');
     const name = document.createElement('h2');
