@@ -659,7 +659,7 @@ main{max-width:760px}
 input,textarea,select{scroll-margin-top:90px}
 @media(max-width:700px){input,textarea,select{font-size:16px!important}}
 </style>
-<link rel="stylesheet" href="ui-r177.css?v=20261103-r331"><link rel="stylesheet" href="site-theme.css?v=20261103-r331"><script src="site-theme.js?v=20261103-r331"></script><link rel="stylesheet" href="site-settings.css?v=20261109-r332"><script defer src="site-settings.js?v=20261125-notices"></script><link rel="stylesheet" href="shared-navigation.css?v=20261103-r331"><script defer src="home-menu-icon-unify.js?v=20261125-notices"></script><script defer src="shared-navigation.js?v=20261125-r352"></script><link rel="stylesheet" href="titlebar-type.css?v=20261109-r334"><link rel="stylesheet" href="npb-register-search.css?v=20261103-r331"><script src="npb-player-directory.js?v=20261103-r331"></script><script src="npb-register-search.js?v=20261103-r331"></script><script defer src="field-state.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="creator-password.js?v=20261118-ranking-admin"></script><link rel="stylesheet" href="notice-badge.css?v=20261125-unread"><script defer src="ouenka-catalog.js?v=20261103-r331"></script><script defer src="notice-feed.js?v=20261125-unread"></script><script src="review-store.js?v=1"></script><link rel="stylesheet" href="creator-login.css?v=1"></head>
+<link rel="stylesheet" href="ui-r177.css?v=20261103-r331"><link rel="stylesheet" href="site-theme.css?v=20261103-r331"><script src="site-theme.js?v=20261103-r331"></script><link rel="stylesheet" href="site-settings.css?v=20261109-r332"><script defer src="site-settings.js?v=20261125-notices"></script><link rel="stylesheet" href="shared-navigation.css?v=20261103-r331"><script defer src="home-menu-icon-unify.js?v=20261125-notices"></script><script defer src="shared-navigation.js?v=20261125-r352"></script><link rel="stylesheet" href="titlebar-type.css?v=20261109-r334"><link rel="stylesheet" href="npb-register-search.css?v=20261103-r331"><script src="npb-player-directory.js?v=20261103-r331"></script><script src="npb-register-search.js?v=20261103-r331"></script><script defer src="field-state.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="creator-password.js?v=20261118-ranking-admin"></script><link rel="stylesheet" href="notice-badge.css?v=20261125-unread"><script defer src="ouenka-catalog.js?v=20261103-r331"></script><script defer src="notice-feed.js?v=20261125-unread"></script><script src="review-store.js?v=2"></script><link rel="stylesheet" href="creator-login.css?v=1"></head>
 
 <body>
 
@@ -2136,8 +2136,9 @@ if(!name){
     if($("specialAudioFile")) $("specialAudioFile").value="";
     if($("selectedSpecialAudioName")) $("selectedSpecialAudioName").textContent="未選択（通常版で再生）";
     if($("fileResult")) $("fileResult").textContent="";
-    const count=(await OuenkaReview.all()).length;
-    showSuccess(name+" を未公開リストに追加しました。未公開："+count+"曲。続けて登録できます。");
+    const count = await OuenkaReview.count().catch(() => null);
+    const pending = count === null ? "" : "未公開：" + count + "曲。";
+    showSuccess(name + " を未公開リストに追加しました。" + pending + "続けて登録できます。");
     window.scrollTo({top:0,behavior:"smooth"});
 
 
