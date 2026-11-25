@@ -26,7 +26,7 @@
     }
   }
 
-  async function put(draft) {
+  async function encode(draft) {
     // Read file-picker objects before opening the transaction. IndexedDB only
     // receives the bytes, so it does not need access to the original files.
     const files = {};
@@ -38,7 +38,7 @@
         throw new Error(name + " を読み込めませんでした。ファイルを選び直してください。", { cause: error });
       }
     }
-    return run("readwrite", store => store.put({ ...draft, files }));
+    return { ...draft, files };
   }
 
   async function all() {
@@ -56,7 +56,20 @@
 
   window.OuenkaReview = {
     all,
-    put,
+    put: async draft => {
+      const encoded = await encode(draft);
+      return run("readwrite", store => store.put(encoded));
+    },
+    putAll: async drafts => {
+      const encoded = [];
+      for(const draft of drafts) encoded.push(await encode(draft));
+      if(!encoded.length) return;
+      return run("readwrite", store => {
+        let request;
+        for(const draft of encoded) request = store.put(draft);
+        return request;
+      });
+    },
     count: () => run("readonly", store => store.count()),
     remove: key => run("readwrite", store => store.delete(key))
   };
