@@ -84,6 +84,13 @@ body.row-dragging *{cursor:grabbing!important}
 #savedLineupsDialog{width:min(92vw,560px);max-height:80vh;border:0;border-radius:16px;padding:20px;color:#0b2b4a}#savedLineupsDialog::backdrop{background:#071d3399}#savedLineupsDialog h2{font-size:20px}#savedLineupsDialog button{border:0;border-radius:8px;padding:12px;background:#0B2F55;color:white} .saved-entry{display:flex;gap:8px;margin-bottom:10px;align-items:center}.saved-entry .saved-load{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}.saved-entry small{display:block;margin-top:5px;font-size:11px;color:#d9e6f2}.saved-entry .saved-delete{background:#e9eef3!important;color:#0b2b4a!important}
 @media(max-width:760px){.filters .chat{font-size:12px;padding:0 3px}}
 @media(hover:none),(pointer:coarse){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
+#medleyMidiDialog{width:min(92vw,560px);max-height:85vh;overflow:auto;border:0;border-radius:16px;padding:20px;color:#0b2b4a}
+#medleyMidiDialog::backdrop{background:#071d3399}
+#medleyMidiDialog label{display:grid;gap:4px;margin:8px 0}
+#medleyMidiDialog input,#medleyMidiDialog select{width:100%;min-height:38px;font-size:16px}
+#medleyMidiDialog fieldset{min-width:0;margin:12px 0;border:1px solid #b9cede;border-radius:8px}
+#medleyMidiDialog legend,#medleyMidiDialog [role=status]{overflow-wrap:anywhere;white-space:pre-line}
+#medleyMidiDialog button{margin-top:6px}
 </style>
 <script src="./ouenka-transport.js?v=20261125-r352"></script>
 <script src="./ouenka-medley-core.js?v=20261112-r362"></script>
@@ -146,6 +153,17 @@ body.row-dragging *{cursor:grabbing!important}
    <button id="resetButton" class="action reset" type="button">↻ リセット</button>
    <button id="medleyPlayButton" class="action create" type="button">▶ メドレーを作成・再生</button>
   </div>
+  <button id="medleyMidiButton" class="chat" type="button">MIDIを書き出す</button>
+  <dialog id="medleyMidiDialog" aria-labelledby="medleyMidiTitle">
+   <h2 id="medleyMidiTitle">メドレーのMIDI出力</h2>
+   <button class="chat" type="button" data-registered>現在の曲順から読み込む</button>
+   <label>手元のGarageBandプロジェクト<input type="file" accept=".zip,.band,application/zip" multiple></label>
+   <p>曲ごとに元データの小節範囲とパートを選んでください。指定範囲を曲順に連結します。</p>
+   <div data-projects></div>
+   <p role="status"></p>
+   <button class="chat" type="button" data-export>MIDIを保存</button>
+   <form method="dialog"><button class="chat">閉じる</button></form>
+  </dialog>
   <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:700"><input id="medleyLoop" type="checkbox" style="width:22px;height:22px">ループ再生</label><p style="font-size:13px;color:#526d87">最後の曲と先頭曲もメドレー形式でつなげて繰り返します。</p>
   <div id="status" class="status"></div>
   <section id="previewCard" class="preview-card">
@@ -491,7 +509,9 @@ async function getSelectedMedleyPlayers(){
   if(!urls)throw Error(`${song.name} の登録音源情報を確認できませんでした。`);
   if(row.dataset.reuseName)row.dataset.reuseTempo=String(song.tempo);else{row.dataset.tempo=String(song.tempo);for(const field of ['audioUrl','medleyUrl','melodyUrl','accompanimentUrl','introMelodyUrl','introAccompanimentUrl'])row.dataset[field]=urls[field]||''}
   if(song.lyrics||song.lyric)row.dataset.lyrics=String(song.lyrics||song.lyric).replace(/<br\s*\/?\s*>/gi,'\n');
-  return {...urls,name:song.name,tempo:song.tempo};
+  const filename=String(song.garageband_filename || 'garageband.zip');
+  const garagebandUrl=new URL(encodeURIComponent(filename),urls.audioUrl).href;
+  return {...urls,name:song.name,tempo:song.tempo,garagebandUrl};
  });
  saveDraft();return selected;
 }
@@ -1057,5 +1077,11 @@ fillYears();renderTeamSelect();loadDraft();updateAllInputFieldColors();queueMedl
 <script src="./active-roster.js?v=20261113-r366"></script>
 <script src="playback-speed.js?v=20261113-r366"></script><script src="./lineup-controls.js?v=20261113-r366"></script>
 <script src="playlist-share.js?v=20261103-r331"></script><script src="playlist-share-ui.js?v=20261103-r331"></script>
-<script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script><script src="ouenka-favorites.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="song-registration-flags.js?v=20261113-r367"></script><script src="medley-random.js?v=20261117-medley-count"></script></body>
+<script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script><script src="ouenka-favorites.js?v=20261103-r331"></script><script src="random-song-settings.js?v=20261103-r331"></script><script src="song-registration-flags.js?v=20261113-r367"></script><script src="medley-random.js?v=20261117-medley-count"></script><script src="./medley-midi.js?v=20261126"></script>
+<script>
+window.OuenkaMedleyMidi.mount({
+ selected: getSelectedMedleyPlayers,
+ title: () => document.getElementById('lineupTitle').value
+});
+</script></body>
 </html>
