@@ -1,295 +1,187 @@
 (() => {
   'use strict';
 
-  const ticksPerBeat = 960;
-  const ticksPerBar = 4 * ticksPerBeat;
-  const roles = [
-    { name: 'Melody', label: 'メロディー', program: 56 },
-    { name: 'Chords', label: 'コード', program: 0 },
-    { name: 'Bass', label: 'ベース', program: 33 }
-  ];
-  const decoder = new TextDecoder();
-  const encoder = new TextEncoder();
+  const size = 4096;
+  const analysisRate = 11025;
+  const hop = 220;
+  const ppq = 960;
+  const windowCurve = Float32Array.from({ length: size }, (_, i) => .5 - .5 * Math.cos(2 * Math.PI * i / size));
+  const pause = () => new Promise(resolve => setTimeout(resolve, 0));
 
-  function zipEntries(bytes) {
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    let end = bytes.length - 22;
-    while (end >= Math.max(0, bytes.length - 65557)) {
-      if (view.getUint32(end, true) === 0x06054b50 &&
-          end + 22 + view.getUint16(end + 20, true) === bytes.length) break;
-      end--;
+  function spectrum(real, imag) {
+    imag.fill(0);
+    for (let i = 1, j = 0; i < size; i++) {
+      let bit = size >> 1;
+      while (j & bit) { j ^= bit; bit >>= 1; }
+      j ^= bit;
+      if (i < j) [real[i], real[j]] = [real[j], real[i]];
     }
-    if (end < Math.max(0, bytes.length - 65557)) throw Error('GarageBandのZIPを選んでください。');
-    const count = view.getUint16(end + 10, true);
-    const entries = [];
-    let at = view.getUint32(end + 16, true);
-    for (let i = 0; i < count; i++) {
-      if (view.getUint32(at, true) !== 0x02014b50) throw Error('ZIPを読み込めません。');
-      const nameLength = view.getUint16(at + 28, true);
-      const name = decoder.decode(bytes.subarray(at + 46, at + 46 + nameLength));
-      const size = view.getUint32(at + 20, true);
-      const expanded = view.getUint32(at + 24, true);
-      const method = view.getUint16(at + 10, true);
-      const local = view.getUint32(at + 42, true);
-      if (!name.startsWith('__MACOSX/') && !name.split('/').pop().startsWith('._')) {
-        entries.push({ name, async read() {
-          if (expanded > 96 * 1024 * 1024 || view.getUint32(local, true) !== 0x04034b50) {
-            throw Error('ZIP内のプロジェクトを読み込めません。');
-          }
-          const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
-          const compressed = bytes.subarray(start, start + size);
-          if (method === 0 && compressed.length === expanded) return compressed;
-          if (method !== 8) throw Error('このZIPの圧縮方式には対応していません。');
-          const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-          const output = new Uint8Array(await new Response(stream).arrayBuffer());
-          if (output.length !== expanded) throw Error('ZIPのサイズが一致しません。');
-          return output;
-        } });
-      }
-      at += 46 + nameLength + view.getUint16(at + 30, true) + view.getUint16(at + 32, true);
-    }
-    return entries;
-  }
-
-  async function readProject(blob) {
-    let entries = zipEntries(new Uint8Array(await blob.arrayBuffer()));
-    let data = entries.find(e => /(?:^|\/)projectData$/.test(e.name));
-    if (!data) {
-      const archive = entries.find(e => /\.(band|zip)$/i.test(e.name));
-      if (archive) {
-        entries = zipEntries(await archive.read());
-        data = entries.find(e => /(?:^|\/)projectData$/.test(e.name));
-      }
-    }
-    if (!data) throw Error('GarageBandのprojectDataが見つかりません。');
-    const xml = decoder.decode(await data.read());
-    const encoded = xml.match(/<key>NS\.data<\/key>\s*<data>([\s\S]*?)<\/data>/)?.[1];
-    if (!encoded) throw Error('この形式のGarageBandプロジェクトには対応していません。');
-    const song = Uint8Array.from(atob(encoded.replace(/\s/g, '')), c => c.charCodeAt(0));
-    const metadata = entries.find(e => /\/Output\/metadata\.plist$/.test('/' + e.name));
-    const meta = metadata ? decoder.decode(await metadata.read()) : '';
-    const tempo = Number(meta.match(/metadata_songTempo<\/key>\s*<(?:integer|real)>([\d.]+)/)?.[1]) || 170;
-    const beats = Number(meta.match(/metadata_songSignatureNominator<\/key>\s*<integer>(\d+)/)?.[1]) || 4;
-    const unit = Number(meta.match(/metadata_songSignatureDeNominator<\/key>\s*<integer>(\d+)/)?.[1]) || 4;
-    if (beats !== 4 || unit !== 4) throw Error('このMIDI出力は4/4拍子に対応しています。');
-    return { tempo, tracks: readTracks(song) };
-  }
-
-  function readTracks(song) {
-    const view = new DataView(song.buffer, song.byteOffset, song.byteLength);
-    const tracks = [];
-    const seen = new Set();
-    for (let at = 0; at + 36 <= song.length; at++) {
-      if (view.getUint32(at) !== 0x71537645 || view.getUint16(at + 4, true) !== 1 ||
-          view.getUint16(at + 6, true) !== 23) continue;
-      const size = view.getUint32(at + 28, true);
-      const end = at + 36 + size;
-      if (size % 16 || end > song.length) continue;
-      const notes = [];
-      for (let pos = at + 36; pos + 32 <= end; pos += 16) {
-        if ((song[pos] & 240) !== 144 || song[pos + 23] !== 137) continue;
-        const tick = view.getUint32(pos + 4, true);
-        const duration = view.getUint32(pos + 28, true);
-        const pitch = song[pos + 12];
-        const velocity = song[pos + 11];
-        if (duration && pitch < 128 && velocity > 0 && velocity < 128) {
-          notes.push({ tick, duration, pitch, velocity });
+    for (let length = 2; length <= size; length *= 2) {
+      const step = -2 * Math.PI / length;
+      for (let j = 0; j < length / 2; j++) {
+        const cos = Math.cos(step * j), sin = Math.sin(step * j);
+        for (let i = j; i < size; i += length) {
+          const other = i + length / 2;
+          const r = real[other] * cos - imag[other] * sin;
+          const im = real[other] * sin + imag[other] * cos;
+          real[other] = real[i] - r;
+          imag[other] = imag[i] - im;
+          real[i] += r;
+          imag[i] += im;
         }
-        pos += 16;
       }
-      if (!notes.length) continue;
-      // GarageBand can retain copies of the same MIDI sequence.
-      const key = JSON.stringify(notes);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const first = notes.reduce((min, n) => Math.min(min, n.tick), Infinity);
-      const last = notes.reduce((max, n) => Math.max(max, n.tick + n.duration), 0);
-      tracks.push({ notes, firstBar: Math.floor(first / ticksPerBar) + 1, lastBar: Math.ceil(last / ticksPerBar) });
     }
-    if (!tracks.length) throw Error('打ち込みのノートデータが見つかりません。');
-    return tracks;
   }
 
-  function vlq(value) {
-    if (!Number.isInteger(value) || value < 0 || value > 0x0fffffff) throw Error('MIDIの時間範囲を超えています。');
-    const bytes = [value & 127];
-    while (value > 127) {
-      value >>>= 7;
-      bytes.unshift((value & 127) | 128);
+  function pitches(real, imag, melody) {
+    const magnitude = Float32Array.from(real.subarray(0, 1100), (r, i) => Math.hypot(r, imag[i]));
+    const peaks = [];
+    for (let i = 13; i < 900; i++) {
+      const value = magnitude[i];
+      if (value < 1.4 || value <= magnitude[i - 1] || value <= magnitude[i + 1]) continue;
+      const left = Math.log(magnitude[i - 1] || .001), middle = Math.log(value), right = Math.log(magnitude[i + 1] || .001);
+      const bin = i + .5 * (left - right) / (left - 2 * middle + right);
+      const pitch = 69 + 12 * Math.log2(bin * analysisRate / size / 440);
+      if (pitch >= (melody ? 47.5 : 27.5) && pitch <= 96.5) peaks.push({ bin, pitch: Math.round(pitch), value });
     }
+    const strongest = peaks.reduce((max, peak) => Math.max(max, peak.value), 0);
+    const fundamentals = peaks.filter(peak => peak.value >= strongest * (melody ? .18 : .12) &&
+      !peaks.some(low => {
+        const multiple = Math.round(peak.bin / low.bin);
+        return multiple >= 2 && multiple <= 8 && Math.abs(peak.bin - multiple * low.bin) < 1.6 &&
+          low.value > peak.value * (melody ? .36 : 1.8);
+      }));
+    fundamentals.sort((a,b) => b.value - a.value);
+    if (melody) return [fundamentals.slice(0, 1)];
+    const bass = fundamentals.filter(p => p.pitch < 56).sort((a,b) => a.pitch - b.pitch).slice(0, 1);
+    const chords = fundamentals.filter(p => p.pitch >= 48 && p !== bass[0]).slice(0, 4);
+    return [chords, bass];
+  }
+
+  async function analyze(buffer, melody, progress) {
+    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+    const stride = buffer.sampleRate / analysisRate;
+    const real = new Float32Array(size), imag = new Float32Array(size);
+    const active = Array.from({ length: melody ? 1 : 2 }, () => new Map());
+    const result = active.map(() => []);
+    const frames = Math.ceil(buffer.duration * analysisRate / hop);
+    function close(notes, pitch, note, frame) {
+      if (note.hits < 3) return;
+      const start = Math.max(0, (note.start - .5) * hop / analysisRate);
+      const end = Math.min(buffer.duration, (frame - .5) * hop / analysisRate);
+      if (end > start) notes.push({ pitch, start, end, velocity: Math.min(110, 45 + Math.round(12 * Math.log2(note.peak))) });
+    }
+
+    for (let frame = 0; frame < frames; frame++) {
+      // Center the effective window on the frame, retaining zero padding at both edges.
+      const width = 1536, pad = (size - width) / 2;
+      real.fill(0);
+      for (let i = pad; i < size - pad; i++) {
+        const at = Math.round((frame * hop + i - size / 2) * stride);
+        if (at < 0 || at >= buffer.length) continue;
+        let sample = 0;
+        for (const channel of channels) sample += channel[at];
+        real[i] = sample / channels.length * windowCurve[Math.floor((i-pad) * size / width)];
+      }
+      spectrum(real, imag);
+      pitches(real, imag, melody).forEach((peaks, part) => {
+        const playing = new Map(peaks.map(p => [p.pitch, p.value]));
+        for (const [pitch, note] of active[part]) {
+          if (playing.has(pitch)) continue;
+          close(result[part], pitch, note, frame);
+          active[part].delete(pitch);
+        }
+        for (const [pitch, value] of playing) {
+          const note = active[part].get(pitch);
+          if (note) { note.hits++; note.peak = Math.max(note.peak, value); }
+          else active[part].set(pitch, { start: frame, hits: 1, peak: value });
+        }
+      });
+      if (frame % 48 === 0) { progress(frame / frames); await pause(); }
+    }
+    active.forEach((part, i) => {
+      for (const [pitch, note] of part) close(result[i], pitch, note, frames);
+    });
+    return result;
+  }
+
+  function variableLength(value) {
+    const bytes = [value & 127];
+    while (value > 127) { value >>>= 7; bytes.unshift((value & 127) | 128); }
     return bytes;
   }
 
-  function midiFile(projects) {
-    const parts = roles.map(() => []);
-    const tempoEvents = [{ tick: 0, data: [255, 88, 4, 4, 2, 24, 8] }];
-    let cursor = 0, previousTempo = 0;
-    for (const project of projects) {
-      const { startBar, endBar, tempo, tracks, assignments } = project;
-      if (!Number.isInteger(startBar) || !Number.isInteger(endBar) || startBar < 1 || endBar < startBar) {
-        throw Error('開始小節と終了小節を確認してください。');
-      }
-      if (!Number.isFinite(tempo) || tempo < 20 || tempo > 400) throw Error('テンポは20〜400 BPMで指定してください。');
-      const start = (startBar - 1) * ticksPerBar;
-      const end = endBar * ticksPerBar;
-      let hasNotes = false;
-      if (tempo !== previousTempo) {
-        const us = Math.round(60000000 / tempo);
-        tempoEvents.push({ tick: cursor, data: [255, 81, 3, us >>> 16, (us >>> 8) & 255, us & 255] });
-        previousTempo = tempo;
-      }
-      assignments.forEach((index, channel) => {
-        for (const n of tracks[index]?.notes || []) {
-          if (n.tick >= end || n.tick + n.duration <= start) continue;
-          const on = cursor + Math.max(start, n.tick) - start;
-          const off = cursor + Math.min(end, n.tick + n.duration) - start;
-          parts[channel].push({ tick: on, data: [144 + channel, n.pitch, n.velocity] });
-          parts[channel].push({ tick: off, data: [128 + channel, n.pitch, 0] });
-          hasNotes = true;
-        }
-      });
-      if (!hasNotes) throw Error(`${project.name} の指定範囲とトラックにノートがありません。`);
-      cursor += end - start;
+  function encode(parts, timeline, duration) {
+    const chunks = [Uint8Array.of(77,84,104,100,0,0,0,6,0,1,0,4,3,192)];
+    const changes = [];
+    timeline.starts.forEach((time, i) => {
+      const us = Math.round(60000000 / timeline.tempos[i]);
+      const prev = changes.at(-1);
+      if (prev?.us === us) return;
+      const tick = prev ? prev.tick + Math.round((time - prev.time) * 1000000 * ppq / prev.us) : 0;
+      changes.push({ time, tick, us });
+    });
+    function tickAt(time) {
+      const change = changes.findLast(c => c.time <= time) ?? changes[0];
+      return Math.max(0, change.tick + Math.round((time - change.time) * 1000000 * ppq / change.us));
     }
-    const chunks = [];
-    const header = new Uint8Array([77,84,104,100, 0,0,0,6, 0,1, 0,4, 3,192]);
-    chunks.push(header);
-    function appendTrack(events) {
-      const data = [];
-      let position = 0;
+    function track(events) {
+      const bytes = [];
+      let tick = 0;
       for (const event of events) {
-        data.push(...vlq(event.tick - position), ...event.data);
-        position = event.tick;
+        bytes.push(...variableLength(event.tick - tick), ...event.data);
+        tick = event.tick;
       }
-      data.push(...vlq(cursor - position), 255, 47, 0);
-      const chunk = new Uint8Array([77,84,114,107,0,0,0,0]);
-      new DataView(chunk.buffer).setUint32(4, data.length);
-      chunks.push(chunk, Uint8Array.from(data));
+      bytes.push(...variableLength(Math.max(0, tickAt(duration) - tick)), 255,47,0);
+      const head = Uint8Array.of(77,84,114,107,0,0,0,0);
+      new DataView(head.buffer).setUint32(4, bytes.length);
+      chunks.push(head, Uint8Array.from(bytes));
     }
-    appendTrack(tempoEvents);
-    parts.forEach((events, channel) => {
-      const name = encoder.encode(roles[channel].name);
+    track(changes.map(({tick,us}) => ({ tick, data: [255,81,3,us >>> 16,(us >>> 8) & 255,us & 255] })));
+    parts.forEach((notes, channel) => {
+      const name = new TextEncoder().encode(['Melody','Chords','Bass'][channel]);
+      const events = notes.flatMap(n => {
+        const tick = tickAt(n.start), end = Math.max(tick + 1, tickAt(n.end));
+        return [{tick,data:[144+channel,n.pitch,n.velocity]}, {tick:end,data:[128+channel,n.pitch,0]}];
+      });
       events.sort((a,b) => a.tick-b.tick || a.data[0]-b.data[0]);
-      events.unshift(
-        { tick: 0, data: [255,3,name.length,...name] },
-        { tick: 0, data: [192+channel,roles[channel].program] }
-      );
-      appendTrack(events);
+      events.unshift({tick:0,data:[255,3,name.length,...name]}, {tick:0,data:[192+channel,[56,0,33][channel]]});
+      track(events);
     });
     return new Blob(chunks, { type: 'audio/midi' });
   }
 
-  function mount({ selected, title }) {
-    const dialog = document.getElementById('medleyMidiDialog');
-    const list = dialog.querySelector('[data-projects]');
-    const status = dialog.querySelector('[role=status]');
-    const files = dialog.querySelector('input[type=file]');
-    const fromList = dialog.querySelector('[data-registered]');
-    const save = dialog.querySelector('[data-export]');
-    let busy = false;
-    const cards = [];
-
-    function addProject(project, name) {
-      const card = document.createElement('fieldset');
-      const legend = document.createElement('legend');
-      legend.textContent = name;
-      card.append(legend);
-      const labelFor = (label, input) => {
-        const wrapper = document.createElement('label');
-        wrapper.append(label, input);
-        card.append(wrapper);
-      };
-      const number = (label, value, min, max) => {
-        const input = document.createElement('input');
-        Object.assign(input, { type: 'number', value, min, max, step: 1 });
-        labelFor(label, input);
-        return input;
-      };
-      const max = Math.max(...project.tracks.map(t => t.lastBar));
-      const start = number('開始小節', Math.min(...project.tracks.map(t => t.firstBar)), 1, max);
-      const end = number('終了小節', max, 1, max);
-      const bpm = number('テンポ (BPM)', project.tempo, 20, 400);
-      bpm.step = 'any';
-      const assignments = roles.map(role => {
-        const select = document.createElement('select');
-        select.add(new Option('なし', '-1'));
-        project.tracks.forEach((track, i) => {
-          select.add(new Option(`トラック ${i+1} · ${track.firstBar}〜${track.lastBar}小節 · ${track.notes.length}音`, i));
-        });
-        labelFor(role.label, select);
-        return select;
-      });
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.textContent = 'この曲を外す';
-      const read = () => ({
-        ...project, name, startBar: start.valueAsNumber, endBar: end.valueAsNumber,
-        tempo: bpm.valueAsNumber, assignments: assignments.map(input => Number(input.value))
-      });
-      remove.onclick = () => { cards.splice(cards.indexOf(read), 1); card.remove(); };
-      card.append(remove);
-      list.append(card);
-      cards.push(read);
-    }
-
-    async function load(action) {
-      if (busy) return;
-      busy = true;
-      files.disabled = fromList.disabled = save.disabled = true;
-      status.textContent = 'GarageBandのノートを読み込み中…';
-      try { await action(); }
-      catch (error) { status.textContent = error.message || String(error); }
-      finally {
-        busy = false;
-        files.disabled = fromList.disabled = save.disabled = false;
-      }
-    }
-
-    document.getElementById('medleyMidiButton').onclick = () => dialog.showModal();
-    files.onchange = () => load(async () => {
-      const chosen = [...files.files];
-      files.value = '';
-      const errors = [];
-      for (const file of chosen) {
-        try { addProject(await readProject(file), file.name); }
-        catch (error) { errors.push(`${file.name} — ${error.message}`); }
-      }
-      status.textContent = errors.join('\n');
-    });
-    fromList.onclick = () => load(async () => {
-      const songs = await selected();
-      if (!songs.length) throw Error('メドレーに曲を選んでください。');
-      const loaded = [];
-      for (const song of songs) {
-        try {
-          const response = await fetch(song.garagebandUrl, { signal: AbortSignal.timeout(20000) });
-          if (!response.ok) throw Error('GarageBandファイルを取得できません。');
-          const project = await readProject(await response.blob());
-          loaded.push({ project: { ...project, tempo: song.tempo }, name: song.name });
-        } catch (error) {
-          throw Error(`${song.name} — ${error.message} 手元のプロジェクトを追加できます。`);
-        }
-      }
-      loaded.forEach(({ project, name }) => addProject(project, name));
-      status.textContent = '';
-    });
-    save.onclick = () => {
+  function mount(prepare) {
+    const button = document.getElementById('medleyMidiButton');
+    const status = document.getElementById('medleyMidiStatus');
+    const download = document.getElementById('medleyMidiDownload');
+    button.onclick = async () => {
+      button.disabled = true;
+      download.hidden = true;
+      if (download.href) URL.revokeObjectURL(download.href);
+      status.textContent = 'メドレーの音声を読み込み中…';
       try {
-        if (!cards.length) throw Error('GarageBandプロジェクトを追加してください。');
-        if ([...list.querySelectorAll('input')].some(input => !input.checkValidity())) {
-          throw Error('曲ごとの小節範囲とテンポを確認してください。');
-        }
-        const blob = midiFile(cards.map(read => read()));
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = (title().trim() || 'メドレー').replace(/[\\/:*?"<>|]/g, '_') + '.mid';
-        document.body.append(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
-        status.textContent = 'MIDIを書き出しました。';
-      } catch (error) { status.textContent = error.message || String(error); }
+        const {ctx,timeline,title,isCurrent} = await prepare();
+        const core = window.OuenkaMedleyCore;
+        const melody = core.renderPart(ctx,timeline,'melody');
+        const report = (name, value) => {
+          if (!isCurrent()) throw Error('曲順や設定が変わりました。もう一度お試しください。');
+          status.textContent = name + 'を解析中… ' + Math.floor(value*100) + '%';
+        };
+        const [lead] = await analyze(melody,true,value => report('メロディー',value));
+        const duration = melody.duration;
+        const [chords,bass] = await analyze(core.renderPart(ctx,timeline,'accompaniment'),false,value => report('コード・ベース',value));
+        if (![lead,chords,bass].some(notes => notes.length)) throw Error('MIDIに変換できる音符が見つかりませんでした。');
+        report('メドレー',1);
+        download.href = URL.createObjectURL(encode([lead,chords,bass],timeline,duration));
+        download.download = (title.trim() || 'メドレー').replace(/[\\/:*?"<>|]/g,'_') + '.mid';
+        download.hidden = false;
+        status.textContent = 'MIDIができました。音声から推定した音符です。';
+      } catch (error) {
+        status.textContent = error.message || String(error);
+      } finally {
+        button.disabled = false;
+      }
     };
   }
 
