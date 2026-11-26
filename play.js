@@ -46,7 +46,9 @@ function showMode(value,openSettings=true){
  for(const [, [title,panel]] of Object.entries(modes))$(panel).hidden=panel!==modes[mode][1];
  $('pageTitle').textContent=modes[mode][0];document.querySelectorAll('[data-mode]').forEach(b=>{if(b.tagName==='BUTTON')b.setAttribute('aria-current',b.dataset.mode===mode?'page':'false')});$('audioStatus').textContent='';
  if(mode==='quiz'||mode==='lyricsquiz'||mode==='chordquiz'){
-  const kind=mode==='lyricsquiz'?'lyrics':mode==='chordquiz'?'chord':'audio';$('quizKind').value=kind;$('quizRoomEntry').href='quiz-room.html?kind='+kind;syncQuizControls();
+  const kind=mode==='lyricsquiz'?'lyrics':mode==='chordquiz'?'chord':'audio';
+  if(kind==='chord'&&$('quizKind').value!==kind)$('quizAnswerMode').value='choices';
+  $('quizKind').value=kind;$('quizRoomEntry').href='quiz-room.html?kind='+kind;syncQuizControls();
   if(quiz&&quiz.kind!==kind)resetQuizSetup();if(!quiz){document.body.dataset.quizStage='setup';$('quizSetup').hidden=false}
   if(quiz&&!quiz.answered&&!['lyrics','blank'].includes(kind)){$('quizReplay').disabled=false;$('quizListenStatus').textContent='「もう一度聴く」で再開できます。'}
   showBest();
@@ -64,7 +66,7 @@ function showBest(){try{const best=JSON.parse(localStorage.getItem(bestKey())||'
 for(const id of ['quizTeamPicker','quizActive','quizExcerpt','quizStartBar','quizLyricLines','quizChoiceCount','quizAnswerMode','quizQuestionCount','quizExcludePitchers'])$(id).addEventListener('change',()=>{syncQuizControls();showBest()});
 $('quizTeamPicker').addEventListener('click',event=>{if(['quizTeamAll','quizTeamNone'].includes(event.target.id))showBest()});
 $('quizTypes').onclick=()=>{resetQuizSetup();showMode(mode,false)};
-$('quizKind').addEventListener('change',()=>showMode($('quizKind').value==='lyrics'?'lyricsquiz':$('quizKind').value==='chord'?'chordquiz':'quiz'));
+$('quizKind').addEventListener('change',()=>{if($('quizKind').value==='chord')$('quizAnswerMode').value='choices';showMode($('quizKind').value==='lyrics'?'lyricsquiz':$('quizKind').value==='chord'?'chordquiz':'quiz')});
 let quizPreparing=false;
 $('quizStart').onclick=async()=>{
  if(quizPreparing)return;

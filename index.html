@@ -414,6 +414,20 @@
 
 <section id="homeLyricsSearch" class="home-lyrics" aria-labelledby="homeLyricsTitle"><div class="section-header"><div class="section-number">02</div><div class="section-heading"><div class="section-english">LYRICS SEARCH</div><h2 id="homeLyricsTitle">歌詞検索</h2></div><div class="section-code">OUENKA LYRICS ///</div></div><div class="home-lyrics-body search-section"><div class="search-area"><label class="home-lyrics-label" for="homeLyricsQuery">歌詞</label><div class="search-input-wrapper"><span class="search-icon" aria-hidden="true">⌕</span><input id="homeLyricsQuery" type="search" placeholder="例：夢　勝利　北の大地" autocomplete="off"></div><div class="home-lyrics-filters"><label>球団<select id="homeLyricsTeam"><option value="">すべての球団</option></select></label><label>対象<select id="homeLyricsActive"><option value="all">すべて</option><option value="active">使用中のみ</option><option value="ob">現在未使用のみ</option></select></label></div><p id="homeLyricsStatus" role="status" aria-live="polite">空白で区切ると、すべての言葉を含む曲を探せます。</p><button id="homeLyricsRetry" type="button" hidden>もう一度読み込む</button><div id="homeLyricsResults"></div><button id="homeLyricsMore" type="button" hidden>もっと表示</button><p id="homeLyricsPlaybackStatus" role="status"></p></div></div></section>
 
+        <section class="home-lyrics" aria-labelledby="humSearchTitle">
+          <div class="section-header"><div class="section-heading"><h2 id="humSearchTitle">鼻歌検索（試験版）</h2></div></div>
+          <div class="home-lyrics-body search-section">
+            <p>メロディーを数秒歌って応援歌を探せます。初回は音源の照合に時間がかかります。</p>
+            <div style="display:flex; flex-wrap:wrap; gap:8px">
+              <button type="button" id="humStart">録音を開始</button>
+              <button type="button" id="humStop" hidden>録音終了・検索</button>
+              <button type="button" id="humCancel" hidden>中止</button>
+            </div>
+            <p id="humStatus" role="status"></p>
+            <div class="search-candidate-list" id="humResults"></div>
+          </div>
+        </section>
+
         <!-- =================================
              03 TEAM SEARCH
         ================================== -->
@@ -1201,6 +1215,6 @@
     </div>
 
 <script src="home-navigation.js?v=20261111-r356"></script><script src="home-menu-icon-unify.js?v=20261125-notices"></script><script src="lyric-candidates.js?v=20261103-r331"></script><script src="home-lyrics.js?v=20261103-r331"></script>
-<script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script></body>
+<script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script><script defer src="hum-search.js?v=20261126"></script><script defer src="access-counts.js?v=20261126"></script></body>
 
 </html>

@@ -38,7 +38,16 @@ function parsePitching(html){
 }
 export default {async fetch(request){
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers:CORS});
- const url=new URL(request.url);if(url.pathname==='/')return response({ok:true,service:'OUENKA NPB STATS',build:'20261015-pitching-2'});
+ const url=new URL(request.url);if(url.pathname==='/')return response({ok:true,service:'OUENKA NPB STATS',build:'20261126-team-career'});
+ const playerId=url.pathname.match(/^\/stats\/player\/(\d{8})$/)?.[1];
+ if(playerId&&request.method==='GET'){
+  const source='https://npb.jp/bis/players/'+playerId+'.html';
+  try{
+   const upstream=await fetch(source,{signal:AbortSignal.timeout(12000),redirect:'error'});
+   if(!upstream.ok)return response({ok:false,error:'NPB公式成績を取得できませんでした。'},upstream.status===404?404:502);
+   return new Response(upstream.body,{headers:{...CORS,'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff','Cache-Control':'public, max-age=3600'}});
+  }catch{return response({ok:false,error:'NPB公式成績を取得できませんでした。'},502)}
+ }
  if(url.pathname!=='/stats/batch'||request.method!=='POST')return response({ok:false,error:'Not found'},404);
  try{
   const body=await request.json(),year=Number(body.year),team=String(body.team||''),names=body.names,type=body.type||'batting';

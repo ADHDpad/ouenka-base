@@ -1,4 +1,4 @@
-const WORKER_BUILD = "lineup-popular-filtered-20261014-r6-favorites-share-r136-quiz-room-r164-short-share-r240-favorites-r296-quiz-settings-r366";
+const WORKER_BUILD = "lineup-popular-filtered-20261014-r6-favorites-share-r136-quiz-room-r164-short-share-r240-favorites-r296-quiz-settings-r366-access-20261126";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +20,9 @@ export default {
       );
     }
     try {
-      if(new URL(request.url).pathname.startsWith('/songs'))await ensureSongSettings(env);
+      const pathname = new URL(request.url).pathname;
+      if (pathname === "/access-counts") return await handleAccessCounts(request, env);
+      if(pathname.startsWith('/songs'))await ensureSongSettings(env);
       const statsResponse=await handleCommunityStats(request,env);
       if(statsResponse)return statsResponse;
       const shortShareResponse=await handleShortShare(request,env);
@@ -1182,4 +1184,39 @@ async function ensureSongSettings(env){
   await env.DB.prepare('UPDATE songs SET tempo = 140 WHERE tempo = 150').run();
  })().catch(e=>{songSettingsReady=null;throw e});
  return songSettingsReady;
+}
+
+
+let accessCountsReady;
+async function handleAccessCounts(request, env) {
+  if (request.method !== "GET" && request.method !== "POST") {
+    return json({ok: false}, 405);
+  }
+  accessCountsReady ??= env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS site_access_daily (
+      day TEXT PRIMARY KEY,
+      views INTEGER NOT NULL DEFAULT 0
+    )
+  `).run().catch(error => {
+    accessCountsReady = null;
+    throw error;
+  });
+  await accessCountsReady;
+
+  const day = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  if (request.method === "POST") {
+    await env.DB.prepare(`
+      INSERT INTO site_access_daily (day, views) VALUES (?, 1)
+      ON CONFLICT(day) DO UPDATE SET views = views + 1
+    `).bind(day).run();
+    if (new URL(request.url).searchParams.get("show") !== "1") {
+      return new Response(null, {status: 204, headers: CORS_HEADERS});
+    }
+  }
+  const counts = await env.DB.prepare(`
+    SELECT COALESCE(SUM(CASE WHEN day = ? THEN views ELSE 0 END), 0) AS today,
+           COALESCE(SUM(views), 0) AS total
+    FROM site_access_daily
+  `).bind(day).first();
+  return json({ok: true, ...counts});
 }

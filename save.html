@@ -700,6 +700,14 @@ OUENKA BASE /// DATA REGISTER
 </div>
 
 <h1>応援歌データ登録</h1>
+<section class="card" aria-label="サイト全体の閲覧数">
+  <div class="card-title">応援歌BASEのアクセス数</div>
+  <div role="status" id="siteAccessCounts" style="display:flex; flex-wrap:wrap; gap:8px 24px">
+    <span>今日 <strong id="todayAccessCount">—</strong></span>
+    <span>累計 <strong id="totalAccessCount">—</strong></span>
+    <span id="siteAccessStatus">集計を読み込み中…</span>
+  </div>
+</section>
 
 <div class="description">
 GarageBand ZIPと応援歌音源を選択して、選手情報を共通データベースに登録します。
@@ -3260,5 +3268,5 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <style>.clear-audio-file{display:inline-flex;align-items:center;justify-content:center;margin:8px 0;padding:8px 12px;min-height:40px;border:1px solid #a6bfd7;border-radius:6px;font:700 14px system-ui;cursor:pointer}</style>
 
-</body>
+<script defer src="access-counts.js?v=20261126"></script></body>
 </html>

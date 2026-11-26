@@ -69,4 +69,4 @@ rows.forEach((row,index)=>{if(!row.name?.trim())return;count++;
 });
 if(!count){box.innerHTML='<div class="empty">1-9画面で選手を登録してから、この画面を開いてください。</div>';document.getElementById('save').style.display='none'}
 document.getElementById('save').addEventListener('click',()=>{for(const row of rows){if(row.name?.trim()&&row.reuseMode&&(!row.reuseName||!row.reuseProductionNumber)){document.getElementById('message').textContent='流用・汎用を選んだ選手は、登録元の応援歌も選択してください。';return}}draft.rows=rows;localStorage.setItem(KEY,JSON.stringify(draft));location.href=BACK});
-</script><script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script></body></html>
+</script><script src="team-colors.js?v=20261103-r331"></script><script src="popular-sync.js?v=20261103-r331"></script><script src="ui-r177.js?v=20261103-r331"></script><script defer src="access-counts.js?v=20261126"></script></body></html>

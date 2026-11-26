@@ -103,7 +103,12 @@
  }
  const soloMode=new URLSearchParams(location.search).get('kind');
  if(['audio','lyrics','chord'].includes(soloMode))$('roomKind').value=soloMode;
- for(const id of ['roomKind','roomExcerpt','roomAnswerMode'])$(id).onchange=syncSettings;
+ if($('roomKind').value==='chord')$('roomAnswerMode').value='choices';
+ for(const id of ['roomExcerpt','roomAnswerMode'])$(id).onchange=syncSettings;
+ $('roomKind').onchange=()=>{
+  if($('roomKind').value==='chord')$('roomAnswerMode').value='choices';
+  syncSettings();
+ };
  syncSettings();
  $('roomAnswerQuery').oninput=renderSearch;
  $('roomSkip').onclick=()=>submitAnswer({choice:-1});

@@ -2,13 +2,40 @@
 const button=document.getElementById('randomSelectButton'),storage='ouenkaMedleyRandomV1';
 button.textContent='ランダム再生';
 const dialog=document.createElement('dialog');dialog.id='randomMedleyDialog';
-dialog.innerHTML='<form method="dialog"><div class="random-heading"><h2>メドレーのランダム再生</h2><button value="cancel" aria-label="閉じる">✕</button></div></form><p>使用する球団にチェックを入れてください。</p><label class="random-check"><input id="randomTeamsAll" type="checkbox">球団を一括チェック</label><div id="randomTeamChecks"></div><label class="random-check"><input id="randomFavoritesOnly" type="checkbox">お気に入りのみ</label><label class="random-count">対象<select id="randomUseStatus"><option value="all">全曲</option><option value="active">使用中のみ</option><option value="ob">現在未使用のみ</option></select></label><label class="random-count">曲数（空欄なら条件に合う全曲）<input id="randomSongLimit" type="number" min="1" step="1" inputmode="numeric"></label><label class="random-check"><input id="randomInclude140" type="checkbox">テンポ140の曲を含める</label><p id="randomMedleyStatus" role="status" aria-live="polite"></p><button type="button" id="randomMedleyStart">抽選して一覧に追加</button><p class="random-note">日本代表は対象外です。同じ曲は重複させず、候補が少ない場合は対象曲をすべて使用します。現在のメドレーは抽選結果に入れ替わります。一覧で順番を入れ替えてから再生できます。</p>';
+dialog.setAttribute('aria-labelledby','randomMedleyTitle');
+dialog.innerHTML=`
+ <form method="dialog" class="random-heading">
+  <h2 id="randomMedleyTitle">メドレーのランダム再生</h2>
+  <button value="cancel" aria-label="閉じる">✕</button>
+ </form>
+ <div class="random-options">
+  <fieldset>
+   <legend>球団</legend>
+   <label class="random-check"><input id="randomTeamsAll" type="checkbox">球団を一括チェック</label>
+   <div id="randomTeamChecks"></div>
+  </fieldset>
+  <fieldset>
+   <legend>応援歌の条件</legend>
+   <div class="random-counts">
+    <label>使用状況<select id="randomUseStatus"><option value="all">全曲</option><option value="active">使用中のみ</option><option value="ob">現在未使用のみ</option></select></label>
+    <label>曲数<input id="randomSongLimit" type="number" min="1" step="1" inputmode="numeric" placeholder="空欄なら全曲"></label>
+   </div>
+   <label class="random-check"><input id="randomFavoritesOnly" type="checkbox">お気に入りのみ</label>
+   <label class="random-check"><input id="randomExcludePitchers" type="checkbox">投手応援歌を除く</label>
+   <label class="random-check"><input id="randomInclude140" type="checkbox">テンポ140の曲を含める</label>
+  </fieldset>
+  <p class="random-note">日本代表は対象外です。現在のメドレーを抽選結果で入れ替えます。</p>
+ </div>
+ <div class="random-actions">
+  <p id="randomMedleyStatus" role="status" aria-live="polite"></p>
+  <button type="button" id="randomMedleyStart" disabled>抽選して一覧に追加</button>
+ </div>`;
 document.body.append(dialog);
 const $=id=>document.getElementById(id),japan=team=>/日本代表|侍ジャパン|samurai\s*japan/i.test(String(team).normalize('NFKC'));
 let songs=null,saved=null;
 try{saved=JSON.parse(localStorage.getItem(storage)||'null')}catch{}
 const validLimit=limit=>Number.isSafeInteger(limit)&&limit>0;
-if(saved){$('randomSongLimit').value=validLimit(saved.limit)?saved.limit:'';$('randomInclude140').checked=!!saved.include140;$('randomFavoritesOnly').checked=!!saved.favoritesOnly;$('randomUseStatus').value=['active','ob'].includes(saved.useStatus)?saved.useStatus:'all'}
+if(saved){$('randomSongLimit').value=validLimit(saved.limit)?saved.limit:'';$('randomInclude140').checked=!!saved.include140;$('randomExcludePitchers').checked=!!saved.excludePitchers;$('randomFavoritesOnly').checked=!!saved.favoritesOnly;$('randomUseStatus').value=['active','ob'].includes(saved.useStatus)?saved.useStatus:'all'}
 function checks(){return [...$('randomTeamChecks').querySelectorAll('input')]}
 function sync(){const items=checks(),n=items.filter(x=>x.checked).length;$('randomTeamsAll').checked=!!items.length&&n===items.length;$('randomTeamsAll').indeterminate=n>0&&n<items.length}
 function teamOptions(){
@@ -23,21 +50,21 @@ async function load(){
 $('randomTeamsAll').onchange=()=>{for(const input of checks())input.checked=$('randomTeamsAll').checked;sync()};
 button.addEventListener('click',()=>{dialog.showModal();if(!songs)load()});
 dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
-function choose(source,teams,limit,include140,favoritesOnly=false,useStatus='all'){
+function choose(source,teams,limit,include140,favoritesOnly=false,useStatus='all',excludePitchers=false){
  const favorites=new Set(favoritesOnly?window.OuenkaFavorites.list().map(window.OuenkaFavorites.key):[]);
  const matchesStatus=song=>useStatus==='all'||window.OuenkaSongRegistrationFlags.inUse(song)===(useStatus==='active');
- const seen=new Set(),pool=source.filter(song=>{const team=getTeam(song),name=getName(song),no=String(song.production_number??song.productionNumber??'').trim(),id=norm(name)+'#'+no;if(!matchesStatus(song)||window.OuenkaRandomSettings.excluded(song)||(favoritesOnly&&!favorites.has(window.OuenkaFavorites.key(song)))||!name||!no||japan(team)||!teams.includes(team)||(!include140&&window.OuenkaLineupTempo.tempo(song)===140)||seen.has(id))return false;seen.add(id);return true});
+ const seen=new Set(),pool=source.filter(song=>{const team=getTeam(song),name=getName(song),no=String(song.production_number??song.productionNumber??'').trim(),id=norm(name)+'#'+no;if(!matchesStatus(song)||(excludePitchers&&window.OuenkaSongRegistrationFlags.pitcher(song))||window.OuenkaRandomSettings.excluded(song)||(favoritesOnly&&!favorites.has(window.OuenkaFavorites.key(song)))||!name||!no||japan(team)||!teams.includes(team)||(!include140&&window.OuenkaLineupTempo.tempo(song)===140)||seen.has(id))return false;seen.add(id);return true});
  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}return limit==null?pool:pool.slice(0,limit)
 }
 $('randomMedleyStart').onclick=async()=>{
  const countInput=$('randomSongLimit');
- const limit=countInput.value===''?null:Number(countInput.value),teams=checks().filter(x=>x.checked).map(x=>x.value),include140=$('randomInclude140').checked,favoritesOnly=$('randomFavoritesOnly').checked,useStatus=$('randomUseStatus').value;
+ const limit=countInput.value===''?null:Number(countInput.value),teams=checks().filter(x=>x.checked).map(x=>x.value),include140=$('randomInclude140').checked,favoritesOnly=$('randomFavoritesOnly').checked,useStatus=$('randomUseStatus').value,excludePitchers=$('randomExcludePitchers').checked;
  if(countInput.validity.badInput||(limit!==null&&!validLimit(limit))){$('randomMedleyStatus').textContent='曲数は1以上の整数で入力してください。空欄にすると条件に合う全曲を選びます。';countInput.focus();return}
  if(!teams.length){$('randomMedleyStatus').textContent='球団を1つ以上選んでください。';return}
  if(!songs)return;
- const selected=choose(songs,teams,limit,include140,favoritesOnly,useStatus);
- if(!selected.length){$('randomMedleyStatus').textContent='条件に合う応援歌がありません。球団・対象・お気に入り・テンポの条件を確認してください。';return}
- saved={teams,limit,include140,favoritesOnly,useStatus};try{localStorage.setItem(storage,JSON.stringify(saved))}catch{}
+ const selected=choose(songs,teams,limit,include140,favoritesOnly,useStatus,excludePitchers);
+ if(!selected.length){$('randomMedleyStatus').textContent='条件に合う応援歌がありません。抽選条件を確認してください。';return}
+ saved={teams,limit,include140,favoritesOnly,useStatus,excludePitchers};try{localStorage.setItem(storage,JSON.stringify(saved))}catch{}
  stopOneNineMedley();stopRowAudio();
  const rows=selected.map(song=>{const name=getName(song),productionNumber=String(song.production_number??song.productionNumber),urls=registeredSongUrls(song,name,productionNumber);return {...urls,name,productionNumber,team:getTeam(song),songId:String(song.id??''),lyrics:String(song.lyrics||''),tempo:window.OuenkaLineupTempo.tempo(song),jerseyNumber:String(song.uniform_number??song.uniformNumber??'')}});
  renderRows(rows);document.getElementById('lineupTitle').value='ランダムメドレー（'+rows.length+'曲）';saveDraft();updateAllInputFieldColors();dialog.close();setStatus(rows.length+'曲を一覧に追加しました。順番を入れ替えてから再生できます。','ok');
