@@ -48,6 +48,10 @@
    const favorites=button.cloneNode();
    favorites.id='favoriteRosterButton';
    favorites.textContent='お気に入りから選択';
+   const star=document.createElement('span');
+   star.setAttribute('aria-hidden','true');
+   star.textContent='☆ ';
+   favorites.prepend(star);
    toolbar.append(favorites);
    favorites.addEventListener('click',()=>open(true));
   }

@@ -62,3 +62,21 @@ main{max-width:1050px;margin:auto;padding:10px 12px calc(84px + env(safe-area-in
  html body #teamTitlebar .filter-tabs{grid-column:1/-1!important;grid-row:4!important;width:100%;min-width:0}
  html body #teamTitlebar .filter{min-width:0!important;padding:0 2px!important;white-space:nowrap;font-size:clamp(10px,2.8vw,13px)!important}
 }
+
+.team-player-search {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 0 0 10px;
+  padding: 6px 12px;
+  border: 1px solid var(--site-line, #b9cad8);
+  border-radius: 7px;
+  background: var(--site-surface, #fff);
+  color: var(--site-text, #102c43);
+  font: inherit;
+  font-size: 16px;
+}
+.team-player-search:focus-visible {
+  outline: 2px solid #0799e6;
+  outline-offset: 1px;
+}

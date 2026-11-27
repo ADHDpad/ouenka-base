@@ -10,6 +10,8 @@ let teamAudioContext=null,teamSources=[],teamPlayToken=0,teamStartedAt=0,teamPau
 let teamSavedDuration=0,teamStoppedPosition=0;
 let teamEndTimer=null,teamRemainingMs=0,teamTimerStartedAt=0;
 const $=id=>document.getElementById(id);
+const playerSearch=$("teamPlayerSearch");
+const searchText=value=>window.OuenkaCatalog.norm(value).replace(/\s+/g,"");
 
 document.title=team+" | OUENKA BASE";
 
@@ -57,6 +59,7 @@ async function loadSongs(){
      }
      return a.name.localeCompare(b.name,"ja")||Number(a.productionNumber)-Number(b.productionNumber);
    });
+   playerSearch.disabled=false;
    render(); preloadVisible();
  }catch(e){
    console.error(e);
@@ -65,9 +68,29 @@ async function loadSongs(){
    status.textContent="この球団の登録データを読み込めませんでした";
  }
 }
-function visibleSongs(){return songs.filter(s=>(filter==="all"||(filter==="active"?s.isActive:!s.isActive))&&(!favoritesOnly||window.OuenkaFavorites?.has(s)))}
+function visibleSongs(query=searchText(playerSearch.value)){
+ return songs.filter(song=>{
+   const matchesStatus=filter==="all"||(filter==="active"?song.isActive:!song.isActive);
+   const matchesFavorite=!favoritesOnly||window.OuenkaFavorites?.has(song);
+   const reading=song.reading||song.furigana||song.kana;
+   return matchesStatus&&matchesFavorite&&
+     (!query||searchText(song.name).includes(query)||searchText(reading).includes(query));
+ });
+}
 function render(){
- const list=$("songList"), arr=visibleSongs();const favoriteCount=songs.filter(s=>window.OuenkaFavorites?.has(s)).length;$("teamFavoritesButton").textContent="★ お気に入り（"+favoriteCount+"）";$("teamFavoritesButton").setAttribute("aria-pressed",String(favoritesOnly)); list.innerHTML=""; $("teamStatus").style.display=arr.length?"none":"block"; if(!arr.length){$("teamStatus").textContent=favoritesOnly?"この条件のお気に入りはありません。各曲の☆から登録できます。":"該当する応援歌はありません";return}
+ const list=$("songList"),status=$("teamStatus"),query=searchText(playerSearch.value);
+ const arr=visibleSongs(query);
+ const favoriteCount=songs.filter(s=>window.OuenkaFavorites?.has(s)).length;
+ $("teamFavoritesButton").textContent="★ お気に入り（"+favoriteCount+"）";
+ $("teamFavoritesButton").setAttribute("aria-pressed",String(favoritesOnly));
+ list.innerHTML="";
+ status.style.display=arr.length?"none":"block";
+ if(!arr.length){
+   if(query)status.textContent="入力した名前に一致する選手はいません";
+   else if(favoritesOnly)status.textContent="この条件のお気に入りはありません。各曲の☆から登録できます。";
+   else status.textContent="該当する応援歌はありません";
+   return;
+ }
  arr.forEach((s,i)=>{const row=document.createElement("article");row.className="song-row";row.dataset.key=s.name+"#"+s.productionNumber;
    const num=s.uniformNumber!==""?s.uniformNumber:"—";
    row.innerHTML=`<div class="number"></div><div class="name"></div><span class="tag ${s.isActive?'active':'ob'}">${s.isActive?'使用中':'現在未使用'}</span><div class="lyrics"></div>`;
@@ -219,6 +242,7 @@ $("miniPlay").addEventListener("click",async()=>{
 $("miniStop").addEventListener("click",()=>stopAudio());
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&current&&!paused)$("miniState").textContent="再生中"});
 $("teamFavoritesButton").addEventListener("click",()=>{favoritesOnly=!favoritesOnly;render();preloadVisible()});
+playerSearch.addEventListener("input",render);
 window.addEventListener("ouenka-favorites-change",render);
 loadSongs();
 

@@ -21,6 +21,7 @@ dialog.innerHTML=`
     <label>曲数<input id="randomSongLimit" type="number" min="1" step="1" inputmode="numeric" placeholder="空欄なら全曲"></label>
    </div>
    <label class="random-check"><input id="randomFavoritesOnly" type="checkbox">お気に入りのみ</label>
+   <label class="random-check"><input id="randomIncludeGeneric" type="checkbox">汎用応援歌を含める</label>
    <label class="random-check"><input id="randomExcludePitchers" type="checkbox">投手応援歌を除く</label>
    <label class="random-check"><input id="randomInclude140" type="checkbox">テンポ140の曲を含める</label>
   </fieldset>
@@ -35,7 +36,7 @@ const $=id=>document.getElementById(id),japan=team=>/日本代表|侍ジャパ�
 let songs=null,saved=null;
 try{saved=JSON.parse(localStorage.getItem(storage)||'null')}catch{}
 const validLimit=limit=>Number.isSafeInteger(limit)&&limit>0;
-if(saved){$('randomSongLimit').value=validLimit(saved.limit)?saved.limit:'';$('randomInclude140').checked=!!saved.include140;$('randomExcludePitchers').checked=!!saved.excludePitchers;$('randomFavoritesOnly').checked=!!saved.favoritesOnly;$('randomUseStatus').value=['active','ob'].includes(saved.useStatus)?saved.useStatus:'all'}
+if(saved){$('randomIncludeGeneric').checked=!!saved.includeGeneric;$('randomSongLimit').value=validLimit(saved.limit)?saved.limit:'';$('randomInclude140').checked=!!saved.include140;$('randomExcludePitchers').checked=!!saved.excludePitchers;$('randomFavoritesOnly').checked=!!saved.favoritesOnly;$('randomUseStatus').value=['active','ob'].includes(saved.useStatus)?saved.useStatus:'all'}
 function checks(){return [...$('randomTeamChecks').querySelectorAll('input')]}
 function sync(){const items=checks(),n=items.filter(x=>x.checked).length;$('randomTeamsAll').checked=!!items.length&&n===items.length;$('randomTeamsAll').indeterminate=n>0&&n<items.length}
 function teamOptions(){
@@ -50,21 +51,25 @@ async function load(){
 $('randomTeamsAll').onchange=()=>{for(const input of checks())input.checked=$('randomTeamsAll').checked;sync()};
 button.addEventListener('click',()=>{dialog.showModal();if(!songs)load()});
 dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
-function choose(source,teams,limit,include140,favoritesOnly=false,useStatus='all',excludePitchers=false){
+function choose(source,teams,limit,include140,favoritesOnly=false,useStatus='all',excludePitchers=false,includeGeneric=false){
  const favorites=new Set(favoritesOnly?window.OuenkaFavorites.list().map(window.OuenkaFavorites.key):[]);
  const matchesStatus=song=>useStatus==='all'||window.OuenkaSongRegistrationFlags.inUse(song)===(useStatus==='active');
- const seen=new Set(),pool=source.filter(song=>{const team=getTeam(song),name=getName(song),no=String(song.production_number??song.productionNumber??'').trim(),id=norm(name)+'#'+no;if(!matchesStatus(song)||(excludePitchers&&window.OuenkaSongRegistrationFlags.pitcher(song))||window.OuenkaRandomSettings.excluded(song)||(favoritesOnly&&!favorites.has(window.OuenkaFavorites.key(song)))||!name||!no||japan(team)||!teams.includes(team)||(!include140&&window.OuenkaLineupTempo.tempo(song)===140)||seen.has(id))return false;seen.add(id);return true});
+ const seen=new Set(),pool=source.filter(song=>{
+  const isGeneric=['1','true'].includes(String(song.is_generic??song.isGeneric??'').trim().toLowerCase());
+  if(isGeneric&&!includeGeneric)return false;
+  const team=getTeam(song),name=getName(song),no=String(song.production_number??song.productionNumber??'').trim(),id=norm(name)+'#'+no;if(!matchesStatus(song)||(excludePitchers&&window.OuenkaSongRegistrationFlags.pitcher(song))||window.OuenkaRandomSettings.excluded(song)||(favoritesOnly&&!favorites.has(window.OuenkaFavorites.key(song)))||!name||!no||japan(team)||!teams.includes(team)||(!include140&&window.OuenkaLineupTempo.tempo(song)===140)||seen.has(id))return false;seen.add(id);return true});
  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}return limit==null?pool:pool.slice(0,limit)
 }
 $('randomMedleyStart').onclick=async()=>{
  const countInput=$('randomSongLimit');
  const limit=countInput.value===''?null:Number(countInput.value),teams=checks().filter(x=>x.checked).map(x=>x.value),include140=$('randomInclude140').checked,favoritesOnly=$('randomFavoritesOnly').checked,useStatus=$('randomUseStatus').value,excludePitchers=$('randomExcludePitchers').checked;
+ const includeGeneric=$('randomIncludeGeneric').checked;
  if(countInput.validity.badInput||(limit!==null&&!validLimit(limit))){$('randomMedleyStatus').textContent='曲数は1以上の整数で入力してください。空欄にすると条件に合う全曲を選びます。';countInput.focus();return}
  if(!teams.length){$('randomMedleyStatus').textContent='球団を1つ以上選んでください。';return}
  if(!songs)return;
- const selected=choose(songs,teams,limit,include140,favoritesOnly,useStatus,excludePitchers);
+ const selected=choose(songs,teams,limit,include140,favoritesOnly,useStatus,excludePitchers,includeGeneric);
  if(!selected.length){$('randomMedleyStatus').textContent='条件に合う応援歌がありません。抽選条件を確認してください。';return}
- saved={teams,limit,include140,favoritesOnly,useStatus,excludePitchers};try{localStorage.setItem(storage,JSON.stringify(saved))}catch{}
+ saved={teams,limit,include140,favoritesOnly,useStatus,excludePitchers,includeGeneric};try{localStorage.setItem(storage,JSON.stringify(saved))}catch{}
  stopOneNineMedley();stopRowAudio();
  const rows=selected.map(song=>{const name=getName(song),productionNumber=String(song.production_number??song.productionNumber),urls=registeredSongUrls(song,name,productionNumber);return {...urls,name,productionNumber,team:getTeam(song),songId:String(song.id??''),lyrics:String(song.lyrics||''),tempo:window.OuenkaLineupTempo.tempo(song),jerseyNumber:String(song.uniform_number??song.uniformNumber??'')}});
  renderRows(rows);document.getElementById('lineupTitle').value='ランダムメドレー（'+rows.length+'曲）';saveDraft();updateAllInputFieldColors();dialog.close();setStatus(rows.length+'曲を一覧に追加しました。順番を入れ替えてから再生できます。','ok');
